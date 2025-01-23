@@ -1,0 +1,3 @@
+npm create vite -> crear proyecto con React 
+npm install 
+npm install react-router-dom -> para crear rutas

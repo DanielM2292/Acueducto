@@ -1,0 +1,10 @@
+Dependencias para el Backend
+
+pip install Flask
+pip install flask_cors
+pip install flask_mysqldb
+pip install MySQLdb.cursors
+pip install hashlib
+
+# Para programar el backup de la base de datos
+pip install python-dotenv
