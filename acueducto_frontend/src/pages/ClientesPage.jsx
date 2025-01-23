@@ -351,7 +351,6 @@ const ClientesPage = () => {
                                 style={{ cursor: 'pointer' }}
                             >
                                 <div>{cliente.id_cliente}</div>
-                                <div>{cliente.id_cliente}</div>
                                 <div>{cliente.tipo_documento}</div>
                                 <div>{cliente.numero_documento}</div>
                                 <div>{cliente.nombre}</div>
