@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   CaretDown,
   CaretLeft,
@@ -26,12 +26,14 @@ const Sidebar = () => {
   const [isSidebarActive, setSidebarActive] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [userName, setUserName] = useState("Usuario");
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     const name = localStorage.getItem("userName");
     setUserRole(role);
     if (name) setUserName(name);
+    if (!name || !role) {navigate("/")};
   }, []);
 
   const handleItemClick = (index) => {
@@ -47,13 +49,26 @@ const Sidebar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userRole");
+    fetch('http://localhost:9090/auth/logout', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => {
+        if (response.ok) {
+          localStorage.removeItem("userName");
+          localStorage.removeItem("userRole");
+        } else {
+          console.error("Error during logout");
+        }
+      })
+      .catch(error => console.error("Network error:", error));
   };
+  
 
   const renderMenuItems = () => (
     <>
-      {userRole === "ROL001" && (
+      {userRole === "ROL0001" && (
         <>
           <li className={activeItems.includes(1) ? "active" : ""}>
             <Link to="#" onClick={() => handleItemClick(1)}>
@@ -151,7 +166,7 @@ const Sidebar = () => {
         </>
       )}
 
-      {userRole === "ROL002" && (
+      {userRole === "ROL0002" && (
         <li className={activeItems.includes(2) ? "active" : ""}>
           <Link to="#" onClick={() => handleItemClick(2)}>
             <Calculator className="iconSidebar" />
@@ -183,7 +198,7 @@ const Sidebar = () => {
         </li>
       )}
 
-      {userRole === "ROL003" && (
+      {userRole === "ROL0003" && (
         <li className={activeItems.includes(1) ? "active" : ""}>
           <Link to="#" onClick={() => handleItemClick(1)}>
             <Invoice className="iconSidebar" />

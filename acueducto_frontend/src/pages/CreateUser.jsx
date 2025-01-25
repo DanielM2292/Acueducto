@@ -5,8 +5,8 @@ const CreateUser = () => {
         nombre: "",
         nombre_usuario: "",
         password: "",
-        id_rol: "ROL001",
-        id_estado_empleado: "ESTA001",
+        id_rol: "ROL0001",
+        id_estado_empleado: "EMP0001",
     });
 
     const [message, setMessage] = useState("");
@@ -22,7 +22,7 @@ const CreateUser = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("http://localhost:9090/register", {
+            const response = await fetch("http://localhost:9090/auth/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -38,7 +38,7 @@ const CreateUser = () => {
             const data = await response.json();
             if (response.ok) {
                 notify("Usuario creado exitosamente");
-                setFormData({ nombre: "", nombre_usuario: "", password: "", id_rol: "ROL001" });
+                setFormData({ nombre: "", nombre_usuario: "", password: "", id_rol: "ROL0001" });
             } else {
                 notify(data.message || "Error al crear el usuario");
             }
@@ -99,9 +99,9 @@ const CreateUser = () => {
                             className="styledSelect"
                             required
                         >
-                            <option value="ROL001">Administrador</option>
-                            <option value="ROL002">Contador</option>
-                            <option value="ROL003">Secretario</option>
+                            <option value="ROL0001">Administrador</option>
+                            <option value="ROL0002">Contador</option>
+                            <option value="ROL0003">Secretario</option>
                         </select>
                     </div>
                     <button type="submit" className="loginButton">

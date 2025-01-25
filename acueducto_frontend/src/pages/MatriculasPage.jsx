@@ -7,15 +7,14 @@ const MatriculasPage = () => {
     const [idMatricula, setIdMatricula] = useState("");
     const [numeroDocumento, setNumeroDocumento] = useState("");
     const [valorMatricula, setValorMatricula] = useState("");
-    const [estadoMatricula, setEstadoMatricula] = useState("ESTMAT001");
+    const [estadoMatricula, setEstadoMatricula] = useState("ESM0001");
     const [matriculas, setMatriculas] = useState([]);
     const [editMode, setEditMode] = useState(false);
     const [selectedMatricula, setSelectedMatricula] = useState(null); // Definir el estado aquí
 
     const estadosMatricula = {
-        "ESTMAT001": "Activo",
-        "ESTMAT002": "Inactivo",
-        "ESTMAT003": "Suspendido"
+        "ESM0001": "Parcial",
+        "ESM0002": "Total",
     };
 
     const formatCurrency = (value) => {
@@ -39,7 +38,7 @@ const MatriculasPage = () => {
             return;
         }
         try {
-            const response = await fetch("http://localhost:9090/crear_matricula", {
+            const response = await fetch("http://localhost:9090/matriculas/crear_matricula", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -70,7 +69,7 @@ const MatriculasPage = () => {
             return;
         }
         try {
-            const response = await fetch("http://localhost:9090/actualizar_matricula", {
+            const response = await fetch("http://localhost:9090/matriculas/actualizar_matricula", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -103,7 +102,7 @@ const MatriculasPage = () => {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:9090/buscar_matricula_por_documento?numero_documento=${numeroDocumento}`);
+            const response = await fetch(`http://localhost:9090/matriculas/buscar_matricula_por_documento?numero_documento=${numeroDocumento}`);
             const data = await response.json();
             if (response.ok) {
                 setMatriculas(data);
@@ -119,7 +118,7 @@ const MatriculasPage = () => {
 
     const handleMostrarTodasMatriculas = async () => {
         try {
-            const response = await fetch("http://localhost:9090/listar_todas_matriculas");
+            const response = await fetch("http://localhost:9090/matriculas/listar_todas_matriculas");
             const data = await response.json();
             if (response.ok) {
                 setMatriculas(data);
@@ -135,7 +134,7 @@ const MatriculasPage = () => {
 
     const fetchMatriculas = async () => {
         try {
-            const response = await fetch("http://localhost:9090/listar_todas_matriculas");
+            const response = await fetch("http://localhost:9090/matriculas/listar_todas_matriculas");
             const data = await response.json();
             if (response.ok) {
                 setMatriculas(data);
@@ -159,7 +158,7 @@ const MatriculasPage = () => {
     const resetForm = () => {
         setNumeroDocumento("");
         setValorMatricula("");
-        setEstadoMatricula("ESTMAT001");
+        setEstadoMatricula("ESM0001");
         setSelectedMatricula(null);
         setEditMode(false);
     };
@@ -204,9 +203,8 @@ const MatriculasPage = () => {
                         className="inputCustom"
                         required
                     >
-                        <option value="ESTMAT001">Activo</option>
-                        <option value="ESTMAT002">Inactivo</option>
-                        <option value="ESTMAT003">Suspendido</option>
+                        <option value="ESM0001">Parcial</option>
+                        <option value="ESM0002">Total</option>
                     </select>
                     <label>Estado Matrícula</label>
                 </div>
