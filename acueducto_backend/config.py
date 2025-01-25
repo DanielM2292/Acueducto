@@ -1,12 +1,11 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class Config:
-    MYSQL_HOST = '127.0.0.1'
-    MYSQL_USER = 'root'
-    MYSQL_PASSWORD = '1004624494'
-    MYSQL_DB = 'acueducto_santander'
-
-class DevelopmentConfig(Config):
-    DEBUG = False
-
-config = {
-    'development': DevelopmentConfig
-} 
+    MYSQL_HOST = os.getenv('DB_HOST')
+    MYSQL_USER = os.getenv('DB_USER')
+    MYSQL_PASSWORD = os.getenv('DB_PASSWORD')
+    MYSQL_DB = os.getenv('DB_NAME')
+    SECRET_KEY = os.getenv('SECRET_KEY')
