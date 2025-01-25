@@ -22,7 +22,7 @@ const MultasPage = () => {
             return;
         }
         try {
-            const response = await fetch("http://localhost:9090/crear_multa", {
+            const response = await fetch("http://localhost:9090/multas/crear_multa", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -45,7 +45,7 @@ const MultasPage = () => {
 
     const fetchMultas = async () => {
         try {
-            const response = await fetch("http://localhost:9090/listar_todas_multas");
+            const response = await fetch("http://localhost:9090/multas/listar_todas_multas");
             const data = await response.json();
             if (response.ok) {
                 setMultas(data);

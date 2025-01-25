@@ -9,8 +9,9 @@ const ListarUser = () => {
 
     const fetchUsuarios = async () => {
         try {
-            const response = await fetch("http://localhost:9090/listar_usuarios");
+            const response = await fetch("http://localhost:9090/auth/listar_usuarios");
             const data = await response.json();
+            console.log(data)
             if (response.ok) {
                 setUsuarios(data);
             } else {
@@ -29,7 +30,7 @@ const ListarUser = () => {
     const handleEditEstado = async () => {
         if (selectedUser && newEstado) {
             try {
-                const response = await fetch(`http://localhost:9090/actualizar_estado_usuario?id_administrador=${selectedUser.id_administrador}`, {
+                const response = await fetch(`http://localhost:9090/auth/actualizar_estado_usuario?id_administrador=${selectedUser.id_administrador}`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
@@ -95,9 +96,9 @@ const ListarUser = () => {
                     <h2>Editar Estado de {selectedUser.nombre}</h2>
                     <select className="estadoSelect" value={newEstado} onChange={handleEstadoChange}>
                         <option value="">Selecciona un estado</option>
-                        <option value="ESTA001">Activo</option>
-                        <option value="ESTA002">Inactivo</option>
-                        <option value="ESTA003">Suspendido</option>
+                        <option value="EMP0001">Activo</option>
+                        <option value="EMP0002">Inactivo</option>
+                        <option value="EMP0003">Suspendido</option>
                     </select>
                     <button className="updateButton" onClick={handleEditEstado}>
                         <svg

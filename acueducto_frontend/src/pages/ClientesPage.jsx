@@ -12,25 +12,25 @@ const ClientesPage = () => {
         nombre: "",
         telefono: "",
         direccion: "",
-        id_estado_cliente: "ESTCLI001",
-        id_tarifa_estandar: "TAREST001",  // Añadido
+        id_estado_cliente: "ESC0001",
+        id_tarifa_estandar: "TAE0001",  // Añadido
         id_tarifa_medidor: ""  // Añadido
     });
 
     const [clientes, setClientes] = useState([]);
 
     const estadosCliente = {
-        "ESTCLI001": "Activo",
-        "ESTCLI002": "Inactivo",
-        "ESTCLI003": "Suspendido"
+        "ESC0001": "Activo",
+        "ESC0002": "Inactivo",
+        "ESC0003": "Suspendido"
     };
 
     const tarifas = {
-        "TAREST001": "Tarifa Residencial",
-        "TAREST002": "Tarifa Quesera",
-        "TAREST003": "Tarifa Matadero",
-        "TAREST004": "Tarifa Marranera",
-        "TARMED001": "Tarifa Finca"
+        "TAE0001": "Tarifa Residencial",
+        "TAE0002": "Tarifa Quesera",
+        "TAE0003": "Tarifa Matadero",
+        "TAE0004": "Tarifa Marranera",
+        "TAE0005": "Tarifa Finca"
     };
 
     const notify = (message, type) => {
@@ -52,7 +52,7 @@ const ClientesPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("http://localhost:9090/agregar_cliente", {
+            const response = await fetch("http://localhost:9090/clientes/agregar_cliente", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -61,10 +61,12 @@ const ClientesPage = () => {
             });
             const data = await response.json();
             if (response.ok) {
+                console.log('Se procesa los datos ok')
                 notify("Cliente agregado exitosamente", "success");
                 resetForm();
                 fetchAllClientes();
             } else {
+                console.log('Se procesa los datos')
                 notify(data.message || "Error al agregar el cliente", "error");
             }
         } catch (error) {
@@ -81,8 +83,8 @@ const ClientesPage = () => {
             nombre: "",
             telefono: "",
             direccion: "",
-            id_estado_cliente: "ESTCLI001",
-            id_tarifa_estandar: "TAREST001",  // Añadido
+            id_estado_cliente: "ESC0001",
+            id_tarifa_estandar: "TAE0001",  // Añadido
             id_tarifa_medidor: ""  // Añadido
         });
     };
@@ -93,7 +95,7 @@ const ClientesPage = () => {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:9090/buscar_cliente?id_cliente=${formData.id_cliente}`);
+            const response = await fetch(`http://localhost:9090/clientes/buscar_cliente?id_cliente=${formData.id_cliente}`);
             const data = await response.json();
             if (response.ok) {
                 setFormData(data);
@@ -113,7 +115,7 @@ const ClientesPage = () => {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:9090/actualizar_cliente?id_cliente=${formData.id_cliente}`, {
+            const response = await fetch(`http://localhost:9090/clientes/actualizar_cliente?id_cliente=${formData.id_cliente}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -141,7 +143,7 @@ const ClientesPage = () => {
         }
         if (window.confirm("¿Está seguro de que desea eliminar este cliente?")) {
             try {
-                const response = await fetch(`http://localhost:9090/eliminar_cliente?id_cliente=${formData.id_cliente}`, {
+                const response = await fetch(`http://localhost:9090/clientes/eliminar_cliente?id_cliente=${formData.id_cliente}`, {
                     method: "DELETE",
                 });
                 const data = await response.json();
@@ -161,7 +163,7 @@ const ClientesPage = () => {
 
     const fetchAllClientes = async () => {
         try {
-            const response = await fetch("http://localhost:9090/buscar_todos_clientes");
+            const response = await fetch("http://localhost:9090/clientes/buscar_todos_clientes");
             const data = await response.json();
             if (response.ok) {
                 setClientes(data);
@@ -197,7 +199,7 @@ const ClientesPage = () => {
                             value={formData.id_cliente}
                             onChange={handleChange}
                             className="inputCustom"
-                            placeholder="CLI001"
+                            placeholder="CLI0001"
                         />
                         <span className="highlightCustom"></span>
                         <span className="barCustom"></span>
@@ -296,11 +298,11 @@ const ClientesPage = () => {
                             className="inputCustom"
                             required
                         >
-                            <option value="TAREST001">Tarifa Residencial</option>
-                            <option value="TAREST002">Tarifa Quesera</option>
-                            <option value="TAREST003">Tarifa Matadero</option>
-                            <option value="TAREST004">Tarifa Marranera</option>
-                            <option value="TARMED001">Tarifa Finca</option>
+                            <option value="TAE0001">Tarifa Residencial</option>
+                            <option value="TAE0002">Tarifa Quesera</option>
+                            <option value="TAE0003">Tarifa Matadero</option>
+                            <option value="TAE0004">Tarifa Marranera</option>
+                            <option value="TAE0005">Tarifa Finca</option>
                         </select>
                         <label>Tipo de Tarifa</label>
                     </div>

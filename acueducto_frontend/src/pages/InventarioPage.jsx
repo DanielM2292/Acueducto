@@ -31,7 +31,7 @@ const InventarioPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:9090/agregar_producto", {
+      const response = await fetch("http://localhost:9090/productos/agregar_producto", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,7 +58,7 @@ const InventarioPage = () => {
 
   const fetchProductById = async () => {
     try {
-      const response = await fetch(`http://localhost:9090/buscar_producto?id_producto=${formData.id_producto}`);
+      const response = await fetch(`http://localhost:9090/productos/buscar_producto?id_producto=${formData.id_producto}`);
       const data = await response.json();
       if (response.ok) {
         setFormData({
@@ -78,7 +78,7 @@ const InventarioPage = () => {
 
   const fetchAllProducts = async () => {
     try {
-      const response = await fetch("http://localhost:9090/buscar_todos_productos");
+      const response = await fetch("http://localhost:9090/productos/buscar_todos_productos");
       const data = await response.json();
       if (response.ok) {
         setProductos(data);
@@ -93,7 +93,7 @@ const InventarioPage = () => {
 
   const searchProductsByKeyword = async () => {
     try {
-      const response = await fetch(`http://localhost:9090/buscar_productos_por_palabra?palabra_clave=${formData.descripcion_producto}`);
+      const response = await fetch(`http://localhost:9090/productos/buscar_productos_por_palabra?palabra_clave=${formData.descripcion_producto}`);
       const data = await response.json();
       if (response.ok) {
         setProductos(data);
@@ -108,7 +108,7 @@ const InventarioPage = () => {
 
   const handleEdit = async () => {
     try {
-      const response = await fetch(`http://localhost:9090/actualizar_producto?id_producto=${formData.id_producto}`, {
+      const response = await fetch(`http://localhost:9090/productos/actualizar_producto?id_producto=${formData.id_producto}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -131,7 +131,7 @@ const InventarioPage = () => {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:9090/eliminar_producto?id_producto=${formData.id_producto}`, {
+      const response = await fetch(`http://localhost:9090/productos/eliminar_producto?id_producto=${formData.id_producto}`, {
         method: "DELETE",
       });
       const data = await response.json();
