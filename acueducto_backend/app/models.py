@@ -160,6 +160,21 @@ class Clientes:
         clientes = cursor.fetchall()
         cursor.close()
         return clientes
+    
+    @staticmethod
+    def verificar_cliente(mysql, numero_documento):
+        cursor = mysql.connection.cursor()
+        cursor.execute('SELECT id_cliente FROM clientes WHERE numero_documento = %s', (numero_documento))
+        cliente = cursor.fetchone()
+        cursor.close()
+        return cliente
+    
+    @staticmethod
+    def asociar_matricula_cliente(mysql,id_matricula, id_cliente):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE clientes SET id_matricula = %s WHERE id_cliente = %s', (id_matricula, id_cliente))
+        mysql.connection.commit()
+        cursor.close()
 
 class Facturas:
     # Generar las facturas automaticamente
@@ -232,3 +247,81 @@ class Inventario:
         products = cursor.fetchall()
         cursor.close()
         return products
+    
+class Matriculas:
+    @staticmethod
+    def verificar_matricula(mysql, id_matricula):
+        cursor = mysql.connection.cursor()
+        cursor.execute('SELECT * FROM matriculas WHERE id_matricula = %s', (id_matricula,))
+        matricula = cursor.fetchone()
+        cursor.close()
+        return matricula
+    
+    @staticmethod
+    def agregar_matricula(mysql, id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO matriculas (id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula, fecha_creacion) VALUES (%s, %s, %s, %s, %s, NOW())', 
+                        (id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def obtener_todas_matriculas(mysql):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM matriculas')
+        matriculas = cursor.fetchall()
+        cursor.close()
+        return matriculas
+    
+    @staticmethod
+    def actualizar_matricula(mysql, numero_documento, valor_matricula, id_estado_matricula, id_matricula):
+        cursor = mysql.connection.cursor
+        cursor.execute('UPDATE matriculas SET numero_documento = %s, valor_matricula = %s, id_estado_matricula = %s WHERE id_matricula = %s', 
+                        (numero_documento, valor_matricula, id_estado_matricula, id_matricula))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def buscar_matricula_documento(mysql, numero_documento):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM matriculas WHERE numero_documento = %s', (numero_documento))
+        matricula = cursor.fetchall()
+        cursor.close()
+        return matricula
+
+class Multas:
+    @staticmethod
+    def agregar_multa(mysql, id_multa, motivo_multa, valor_multa):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO multas (id_multa, motivo_multa, valor_multa) VALUES (%s, %s, %s)', 
+                        (id_multa, motivo_multa, valor_multa))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def mostrar_multas(mysql):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('''
+            SELECT 
+                m.id_multa, 
+                m.motivo_multa, 
+                m.valor_multa, 
+                c.numero_documento 
+            FROM multas m
+            JOIN cliente_multas cm ON m.id_multa = cm.id_multa
+            JOIN clientes c ON cm.id_cliente = c.id_cliente
+        ''')
+        multas = cursor.fetchall()
+        cursor.close()
+        return multas
+    
+class Cliente_multa:
+    @staticmethod
+    def asociar_cliente_multa(mysql, id_cliente, id_multa, id_cliente_multa):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO cliente_multas (id_cliente, id_multa, id_cliente_multa) VALUES (%s, %s, %s)', 
+                        (id_cliente, id_multa, id_cliente_multa))
+        mysql.connection.commit()
+        cursor.close()
+    
+    
