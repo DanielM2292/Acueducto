@@ -1,6 +1,5 @@
 from flask import request, current_app, session, jsonify
-import MySQLdb
-from app.models import Clientes, Auditoria
+from app.models import Clientes
 from app.services import MultasServices
 from app.routes import multas_bp
 

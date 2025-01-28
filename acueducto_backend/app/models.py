@@ -127,10 +127,10 @@ class Clientes:
     
     # Actualizar cliente
     @staticmethod
-    def update_cliente(mysql, id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente, id_tarifa_estandar, id_tarifa_medidor):
+    def update_cliente(mysql, id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE clientes SET tipo_documento = %s, numero_documento = %s, nombre = %s, telefono = %s, direccion = %s, id_estado_cliente = %s, id_tarifa_estandar = %s, id_tarifa_medidor = %s WHERE id_cliente = %s', 
-                    (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente, id_tarifa_estandar, id_tarifa_medidor))
+        cursor.execute('UPDATE clientes SET tipo_documento = %s, numero_documento = %s, nombre = %s, telefono = %s, direccion = %s, id_estado_cliente = %s WHERE id_cliente = %s', 
+                    (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente))
         mysql.connection.commit()
         cursor.close()
     
@@ -164,7 +164,7 @@ class Clientes:
     @staticmethod
     def verificar_cliente(mysql, numero_documento):
         cursor = mysql.connection.cursor()
-        cursor.execute('SELECT id_cliente FROM clientes WHERE numero_documento = %s', (numero_documento))
+        cursor.execute('SELECT id_cliente FROM clientes WHERE numero_documento = %s', (numero_documento,))
         cliente = cursor.fetchone()
         cursor.close()
         return cliente
@@ -291,10 +291,10 @@ class Matriculas:
 
 class Multas:
     @staticmethod
-    def agregar_multa(mysql, id_multa, motivo_multa, valor_multa):
+    def agregar_multa(mysql, id_multa, motivo_multa, valor_multa, id_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO multas (id_multa, motivo_multa, valor_multa) VALUES (%s, %s, %s)', 
-                        (id_multa, motivo_multa, valor_multa))
+        cursor.execute('INSERT INTO multas (id_multa, motivo_multa, valor_multa, id_cliente) VALUES (%s, %s, %s, %s)', 
+                        (id_multa, motivo_multa, valor_multa, id_cliente))
         mysql.connection.commit()
         cursor.close()
     
@@ -317,10 +317,10 @@ class Multas:
     
 class Cliente_multa:
     @staticmethod
-    def asociar_cliente_multa(mysql, id_cliente, id_multa, id_cliente_multa):
+    def asociar_cliente_multa(mysql, id_cliente_multa, id_cliente, id_multa):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO cliente_multas (id_cliente, id_multa, id_cliente_multa) VALUES (%s, %s, %s)', 
-                        (id_cliente, id_multa, id_cliente_multa))
+        cursor.execute('INSERT INTO cliente_multas (id_cliente_multa, id_cliente, id_multa) VALUES (%s, %s, %s)', 
+                        (id_cliente_multa, id_cliente, id_multa, ))
         mysql.connection.commit()
         cursor.close()
     

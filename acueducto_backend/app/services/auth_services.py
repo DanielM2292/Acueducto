@@ -115,7 +115,6 @@ class AuthServices:
     
     def changuePassword():
         mysql = current_app.mysql
-        
         if not session["user"] or not session["password"] or not session["rol"]:
             return jsonify({'message': 'Unauthorized'}), 401
         
