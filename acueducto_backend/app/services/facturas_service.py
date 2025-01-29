@@ -5,7 +5,6 @@ from app.models import Clientes, Facturas, Auditoria
 class FacturasServices:
     @staticmethod
     def generar_facturas():
-        
         mysql = current_app.mysql
         
         fecha_actual = datetime.now()

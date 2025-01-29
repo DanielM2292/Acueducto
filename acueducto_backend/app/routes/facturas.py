@@ -1,4 +1,4 @@
-from flask import Blueprint, Flask
+from flask import Flask
 from app.services import FacturasServices
 from app.routes import facturas_bp
 
