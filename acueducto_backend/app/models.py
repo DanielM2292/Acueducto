@@ -268,16 +268,17 @@ class Matriculas:
     @staticmethod
     def obtener_todas_matriculas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM matriculas')
+        cursor.execute('SELECT matriculas.id_matricula, matriculas.numero_matricula, clientes.numero_documento, matriculas.valor_matricula, matriculas.id_estado_matricula, matriculas.fecha_creacion FROM matriculas INNER JOIN clientes ON matriculas.id_cliente = clientes.id_cliente;')
+        #cursor.execute('SELECT * FROM matriculas')
         matriculas = cursor.fetchall()
         cursor.close()
         return matriculas
     
     @staticmethod
-    def actualizar_matricula(mysql, numero_documento, valor_matricula, id_estado_matricula, id_matricula):
-        cursor = mysql.connection.cursor
-        cursor.execute('UPDATE matriculas SET numero_documento = %s, valor_matricula = %s, id_estado_matricula = %s WHERE id_matricula = %s', 
-                        (numero_documento, valor_matricula, id_estado_matricula, id_matricula))
+    def actualizar_matricula(mysql, valor_matricula, id_estado_matricula, id_matricula):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE matriculas SET matriculas.valor_matricula = %s, matriculas.id_estado_matricula = %s WHERE matriculas.id_matricula = %s', 
+                        (valor_matricula, id_estado_matricula, id_matricula))
         mysql.connection.commit()
         cursor.close()
     
@@ -301,26 +302,17 @@ class Multas:
     @staticmethod
     def mostrar_multas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('''
-            SELECT 
-                m.id_multa, 
-                m.motivo_multa, 
-                m.valor_multa, 
-                c.numero_documento 
-            FROM multas m
-            JOIN cliente_multas cm ON m.id_multa = cm.id_multa
-            JOIN clientes c ON cm.id_cliente = c.id_cliente
-        ''')
+        cursor.execute('SELECT multas.id_multa, multas.motivo_multa, multas.valor_multa, clientes.numero_documento FROM multas INNER JOIN clientes ON multas.id_cliente = clientes.id_cliente;')
         multas = cursor.fetchall()
         cursor.close()
         return multas
     
 class Cliente_multa:
     @staticmethod
-    def asociar_cliente_multa(mysql, id_cliente_multa, id_cliente, id_multa):
+    def asociar_cliente_multa(mysql, id_multas_clientes, id_cliente, id_multa):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO cliente_multas (id_cliente_multa, id_cliente, id_multa) VALUES (%s, %s, %s)', 
-                        (id_cliente_multa, id_cliente, id_multa, ))
+        cursor.execute('INSERT INTO multas_clientes (id_multas_clientes, id_cliente, id_multa) VALUES (%s, %s, %s)', 
+                        (id_multas_clientes, id_cliente, id_multa, ))
         mysql.connection.commit()
         cursor.close()
     
