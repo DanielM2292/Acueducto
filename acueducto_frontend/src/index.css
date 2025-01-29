@@ -6,6 +6,14 @@
     box-sizing: border-box;
 }
 
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+input[type=number] { -moz-appearance:textfield; }
+
 body{
   background-color: #BCEEFF;
 }
@@ -1430,17 +1438,17 @@ label {
   background-color: #0056b3;
 }
 
-.MatriculasListCustom, .MultasListCustom {
+.MatriculasListCustom, .MultasListCustom, .IngresosListCustom, .egresosListCustom {
   width: 100%;
   overflow-x: auto;
 }
 
-.matriculasTableCustom, .multasTableCustom {
+.matriculasTableCustom, .multasTableCustom, .ingresosTableCustom, .egresosTableCustom {
   width: 100%;
   border-collapse: collapse;
 }
 
-.ListMultasTitleCustom, .ListMatriculasTitleCustom {
+.ListMultasTitleCustom, .ListMatriculasTitleCustom, .ListIngresosTitleCustom, .ListegresosTitleCustom{
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 20px;
@@ -1449,7 +1457,7 @@ label {
   font-family: 'fredoka', sans-serif;
 }
 
-.matriculasTableHeaderCustom, .multasTableHeaderCustom {
+.matriculasTableHeaderCustom, .multasTableHeaderCustom, .ingresosTableHeaderCustom, .EgresosTableHeaderCustom {
   display: flex;
   width: 100%;
   font-family: 'Fredoka', sans-serif;
@@ -1459,23 +1467,185 @@ label {
   text-align: left;
 }
 
-.matriculasTableHeaderCustom div, .multasTableHeaderCustom div {
+.matriculasTableHeaderCustom div, .multasTableHeaderCustom, .ingresosTableHeaderCustom, .EgresosTableHeaderCustom div {
   flex: 1;
   padding: 10px;
 }
 
-.matriculasTableRowCustom, .multasTableRowCustom {
+.matriculasTableRowCustom, .multasTableRowCustom, .ingresosTableRowCustom, .egresosTableRowCustom {
   display: flex;
   width: 100%;
   box-sizing: border-box;
 }
 
-.matriculasTableRowCustom div, .multasTableRowCustom div {
+.matriculasTableRowCustom div, .multasTableRowCustom, .ingresosTableRowCustom, .egresosTableRowCustom div {
   flex: 1;
   padding: 10px;
 }
 
-.matriculasTableBodyCustom, .multasTableBodyCustom {
+.matriculasTableBodyCustom, .multasTableBodyCustom, .ingresosTableBodyCustom, .egresosTableBodyCustom {
   width: 100%;
   font-family: 'Fredoka', sans-serif;
+}
+
+.ProductList,
+.UserList,
+.ClientListCustom,
+.MatriculasListCustom,
+.MultasListCustom,
+.IngresosListCustom,
+.egresosListCustom {
+  height: calc(100vh - 300px); 
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 15px;
+  margin-top: 20px;
+}
+
+.ProductList::-webkit-scrollbar,
+.UserList::-webkit-scrollbar,
+.ClientListCustom::-webkit-scrollbar,
+.MatriculasListCustom::-webkit-scrollbar,
+.MultasListCustom::-webkit-scrollbar,
+.IngresosListCustom::-webkit-scrollbar, 
+.egresosListCustom::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ProductList::-webkit-scrollbar-thumb,
+.UserList::-webkit-scrollbar-thumb,
+.ClientListCustom::-webkit-scrollbar-thumb,
+.MatriculasListCustom::-webkit-scrollbar-thumb,
+.MultasListCustom::-webkit-scrollbar-thumb,
+.IngresosListCustom::-webkit-scrollbar-thumb, 
+.egresosListCustom::-webkit-scrollbar-thumb {
+  background-color: rgba(240, 240, 240, 0.5);
+  border-radius: 10px;
+  width: 8px;
+  transition: none;
+}
+
+.ProductList::-webkit-scrollbar-track,
+.UserList::-webkit-scrollbar-track,
+.ClientListCustom::-webkit-scrollbar-track,
+.MatriculasListCustom::-webkit-scrollbar-track,
+.MultasListCustom::-webkit-scrollbar-track,
+.IngresosListCustom::-webkit-scrollbar-track, 
+.egresosListCustom::-webkit-scrollbar-track {
+  background-color: rgba(0, 63, 134, 0.5);
+}
+
+.ProductList,
+.UserList,
+.ClientListCustom,
+.MatriculasListCustom,
+.MultasListCustom,
+.IngresosListCustom, 
+.egresosListCustom {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(240, 240, 240, 0.5) rgba(0, 63, 134, 0.5);
+}
+
+.productTable,
+.userTable,
+.clientTableCustom,
+.matriculasTableCustom,
+.multasTableCustom,
+.ingresosTableCustom, 
+.egresosListCustom {
+  width: 100%;
+  min-width: min-content; 
+}
+
+.container {
+  max-width: 500px;
+  width: 100%; 
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center; 
+  border-radius: 8px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Fredoka', sans-serif; 
+  margin-bottom: 15px;
+}
+
+.card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #53D4FF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center; 
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.save-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.history-button {
+  background-color: #2196f3;
+  color: white;
+}
+
+.close-button {
+  background-color: #f44336;
+  color: white;
+  margin-top: 10px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 600px;
+  text-align: center;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-family: 'Fredoka', sans-serif;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  text-align: center; 
+  padding: 8px;
+}
+
+th {
+  background: #f2f2f2;
 }
