@@ -315,5 +315,3 @@ class Cliente_multa:
                         (id_multas_clientes, id_cliente, id_multa, ))
         mysql.connection.commit()
         cursor.close()
-    
-    
