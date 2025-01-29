@@ -24,8 +24,8 @@ class ClientesServices:
             print('recibe datos para procesar')
             
             cursor = mysql.connection.cursor()
-            cursor.execute('INSERT INTO clientes (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente, id_tarifa_estandar, id_tarifa_medidor) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', 
-                        (custom_id_cliente, data.get("tipo_documento"), data.get("numero_documento"), data.get("nombre"), data.get("telefono"), data.get("direccion"), data.get("id_estado_cliente"), id_tarifa_estandar, id_tarifa_medidor))
+            cursor.execute('INSERT INTO clientes (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente) VALUES (%s, %s, %s, %s, %s, %s, %s)', 
+                        (custom_id_cliente, data.get("tipo_documento"), data.get("numero_documento"), data.get("nombre"), data.get("telefono"), data.get("direccion"), data.get("id_estado_cliente")))
             mysql.connection.commit()
             Auditoria.log_audit(mysql, custom_id_auditoria, 'clientes', custom_id_cliente, 'INSERT', current_user, f'Se agrega cliente {custom_id_cliente}')
             cursor.close()
@@ -71,9 +71,7 @@ class ClientesServices:
                 data.get("nombre"),
                 data.get("telefono"),
                 data.get("direccion"),
-                data.get("id_estado_cliente"),
-                id_tarifa_estandar,
-                id_tarifa_medidor,
+                data.get("id_estado_cliente")
             )
             return jsonify({"message": "Cliente actualizado exitosamente"}), 200
         except Exception as e:

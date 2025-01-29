@@ -58,8 +58,8 @@ class ProductosServices:
         try:
             id_producto = request.args.get("id_producto")
             current_user = session.get("id_administrador")
-            Inventario.delete_product_by_id(mysql, id_producto, current_user)
-            Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", id_producto, "DELETE", "pendiente", "Se borra el producto")
+            Inventario.delete_product_by_id(mysql, id_producto)
+            Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", id_producto, "DELETE", "ADM0001", "Se borra el producto")
             return jsonify({"message": "Producto eliminado exitosamente"}), 200
         except Exception as e:
             return jsonify({"message": f"Error al eliminar producto: {str(e)}"}), 500

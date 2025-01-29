@@ -109,9 +109,10 @@ class MatriculasServices:
             matricula = Matriculas.verificar_matricula(mysql, id_matricula)
             if not matricula:
                 return jsonify({"message": "Matrícula no encontrada"}), 404
-
-            Matriculas.actualizar_matricula(mysql, numero_documento, valor_matricula, id_estado_matricula, id_matricula)
-            Auditoria.log_audit(mysql,custom_id,"matriculas", id_matricula, "UPDATE","pendiente", "Se actualiza el estado de la matricula")
+            cliente = Clientes.verificar_cliente(mysql, numero_documento)
+            cliente = cliente[0]
+            Matriculas.actualizar_matricula(mysql, valor_matricula, id_estado_matricula, id_matricula)
+            Auditoria.log_audit(mysql,custom_id,"matriculas", id_matricula, "UPDATE","ADM0001", "Se actualiza el estado de la matricula")
             
             return jsonify({"message": "Matrícula actualizada exitosamente"}), 200
         except MySQLdb.Error as e:
