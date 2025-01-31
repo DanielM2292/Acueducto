@@ -98,7 +98,6 @@ const ListarUser = () => {
                         <option value="">Selecciona un estado</option>
                         <option value="EMP0001">Activo</option>
                         <option value="EMP0002">Inactivo</option>
-                        <option value="EMP0003">Suspendido</option>
                     </select>
                     <button className="updateButton" onClick={handleEditEstado}>
                         <svg

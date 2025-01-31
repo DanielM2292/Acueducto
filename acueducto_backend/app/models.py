@@ -92,14 +92,16 @@ class Auditoria:
             new_id = f"{prefix}0001"
         return new_id
 
-    # Realizar el seguimiento de las operaciones y cambios para la base de datos -  Tabla auditoria en la DB
     @staticmethod
-    def log_audit(mysql, id_auditoria, table, id_registro_afectado, action, id_administrador, detalles):
+    def log_audit(mysql, id_auditoria, table, id_registro_afectado, accion, descripcion, id_administrador):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO auditoria (id_auditoria, tabla, id_registro_afectado, accion, id_administrador, detalles) VALUES (%s, %s, %s, %s, %s, %s)', 
-                    (id_auditoria, table, id_registro_afectado, action, id_administrador, detalles))
+        cursor.execute('''
+            INSERT INTO auditoria (id_auditoria, tabla, id_registro_afectado, accion, id_administrador, fecha, detalles) 
+            VALUES (%s, %s, %s, %s, %s, NOW(), %s)
+        ''', (id_auditoria, table, id_registro_afectado, accion, id_administrador, descripcion))
         mysql.connection.commit()
         cursor.close()
+
 
 class Clientes:
     # Obtener los clientes de la base de datos
@@ -161,21 +163,36 @@ class Clientes:
         cursor.close()
         return clientes
     
+    # Verificar si existe un cliente por número de documento
     @staticmethod
     def verificar_cliente(mysql, numero_documento):
-        cursor = mysql.connection.cursor()
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT id_cliente FROM clientes WHERE numero_documento = %s', (numero_documento,))
         cliente = cursor.fetchone()
         cursor.close()
-        return cliente
-    
+        if cliente:
+            return cliente['id_cliente']  
+        return None
+
     @staticmethod
-    def asociar_matricula_cliente(mysql,id_matricula, id_cliente):
+    def asociar_matricula_cliente(mysql, id_matricula, id_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE clientes SET id_matricula = %s WHERE id_cliente = %s', (id_matricula, id_cliente))
+        # Generate new id_matricula_cliente
+        cursor.execute('SELECT MAX(CAST(SUBSTRING(id_matricula_cliente, 4) AS UNSIGNED)) FROM matricula_cliente')
+        max_id = cursor.fetchone()[0]
+        new_id = (max_id or 0) + 1
+        id_matricula_cliente = f'MCL{new_id:03d}'
+        
+        # Create association in matricula_cliente table
+        cursor.execute('''
+            INSERT INTO matricula_cliente (id_matricula_cliente, id_matricula, id_cliente)
+            VALUES (%s, %s, %s)
+        ''', (id_matricula_cliente, id_matricula, id_cliente))
+        
         mysql.connection.commit()
         cursor.close()
-
+        return id_matricula_cliente
+    
 class Facturas:
     # Generar las facturas automaticamente
     @staticmethod
@@ -258,12 +275,13 @@ class Matriculas:
         return matricula
     
     @staticmethod
-    def agregar_matricula(mysql, id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula):
+    def agregar_matricula(mysql, id_matricula, numero_matricula, id_cliente, valor_matricula, id_estado_matricula):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO matriculas (id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula, fecha_creacion) VALUES (%s, %s, %s, %s, %s, NOW())', 
-                        (id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula))
+        cursor.execute('INSERT INTO matriculas (id_matricula, numero_matricula, id_cliente, valor_matricula, id_estado_matricula, fecha_creacion) VALUES (%s, %s, %s, %s, %s, NOW())', 
+                    (id_matricula, numero_matricula, id_cliente, valor_matricula, id_estado_matricula))
         mysql.connection.commit()
         cursor.close()
+
     
     @staticmethod
     def obtener_todas_matriculas(mysql):
@@ -302,7 +320,15 @@ class Multas:
     @staticmethod
     def mostrar_multas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT multas.id_multa, multas.motivo_multa, multas.valor_multa, clientes.numero_documento FROM multas INNER JOIN clientes ON multas.id_cliente = clientes.id_cliente;')
+        cursor.execute('''
+            SELECT 
+                multas.id_multa,
+                clientes.nombre,
+                multas.motivo_multa,
+                multas.valor_multa
+            FROM multas 
+            INNER JOIN clientes ON multas.id_cliente = clientes.id_cliente
+        ''')
         multas = cursor.fetchall()
         cursor.close()
         return multas

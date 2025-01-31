@@ -12,9 +12,7 @@ const ClientesPage = () => {
         nombre: "",
         telefono: "",
         direccion: "",
-        id_estado_cliente: "ESC0001",
-        id_tarifa_estandar: "TAE0001",  // Añadido
-        id_tarifa_medidor: ""  // Añadido
+        id_estado_cliente: "ESC0001"
     });
 
     const [clientes, setClientes] = useState([]);
@@ -26,11 +24,8 @@ const ClientesPage = () => {
     };
 
     const tarifas = {
-        "TAE0001": "Tarifa Residencial",
-        "TAE0002": "Tarifa Quesera",
-        "TAE0003": "Tarifa Matadero",
-        "TAE0004": "Tarifa Marranera",
-        "TAE0005": "Tarifa Finca"
+        "estandar": "Tarifa Estándar",
+        "medidor": "Tarifa Medidor"
     };
 
     const notify = (message, type) => {
@@ -61,12 +56,10 @@ const ClientesPage = () => {
             });
             const data = await response.json();
             if (response.ok) {
-                console.log('Se procesa los datos ok')
                 notify("Cliente agregado exitosamente", "success");
                 resetForm();
                 fetchAllClientes();
             } else {
-                console.log('Se procesa los datos')
                 notify(data.message || "Error al agregar el cliente", "error");
             }
         } catch (error) {
@@ -83,9 +76,7 @@ const ClientesPage = () => {
             nombre: "",
             telefono: "",
             direccion: "",
-            id_estado_cliente: "ESC0001",
-            id_tarifa_estandar: "TAE0001",  // Añadido
-            id_tarifa_medidor: ""  // Añadido
+            id_estado_cliente: "ESC0001"
         });
     };
 
@@ -114,50 +105,49 @@ const ClientesPage = () => {
             notify("Por favor, seleccione un cliente para editar", "error");
             return;
         }
+    
+        // Validate required fields
+        const requiredFields = ['tipo_documento', 'numero_documento', 'nombre', 'telefono', 'direccion', 'id_estado_cliente'];
+        const missingFields = requiredFields.filter(field => !formData[field]);
+        
+        if (missingFields.length > 0) {
+            notify(`Campos requeridos faltantes: ${missingFields.join(', ')}`, "error");
+            return;
+        }
+    
         try {
-            const response = await fetch(`http://localhost:9090/clientes/actualizar_cliente?id_cliente=${formData.id_cliente}`, {
-                method: "PUT",
+            // Log the data being sent
+            console.log("Sending update data:", formData);
+    
+            const response = await fetch('http://localhost:9090/clientes/actualizar_cliente', {
+                method: 'PUT',
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    id_cliente: formData.id_cliente,
+                    tipo_documento: formData.tipo_documento,
+                    numero_documento: formData.numero_documento,
+                    nombre: formData.nombre,
+                    telefono: formData.telefono,
+                    direccion: formData.direccion,
+                    id_estado_cliente: formData.id_estado_cliente
+                }),
             });
+    
             const data = await response.json();
+            console.log("Server response:", data);  // Log the server response
+    
             if (response.ok) {
                 notify("Cliente actualizado exitosamente", "success");
                 resetForm();
-                fetchAllClientes();
+                await fetchAllClientes();  // Refresh the client list
             } else {
                 notify(data.message || "Error al actualizar el cliente", "error");
             }
         } catch (error) {
+            console.error("Error in handleEdit:", error);
             notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!formData.id_cliente) {
-            notify("Por favor, seleccione un cliente para eliminar", "error");
-            return;
-        }
-        if (window.confirm("¿Está seguro de que desea eliminar este cliente?")) {
-            try {
-                const response = await fetch(`http://localhost:9090/clientes/eliminar_cliente?id_cliente=${formData.id_cliente}`, {
-                    method: "DELETE",
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    notify("Cliente eliminado exitosamente", "success");
-                    resetForm();
-                    fetchAllClientes();
-                } else {
-                    notify(data.message || "Error al eliminar el cliente", "error");
-                }
-            } catch (error) {
-                notify("Error de conexión con el servidor", "error");
-                console.error("Error:", error);
-            }
         }
     };
 
@@ -216,7 +206,6 @@ const ClientesPage = () => {
                             <option value="C.C">C.C</option>
                             <option value="Nit">Nit</option>
                         </select>
-
                         <label>Tipo de Documento</label>
                     </div>
 
@@ -289,23 +278,6 @@ const ClientesPage = () => {
                         </select>
                         <label>Estado</label>
                     </div>
-
-                    <div className="groupCustom">
-                        <select
-                            name="id_tarifa"
-                            value={formData.id_tarifa}
-                            onChange={handleChange}
-                            className="inputCustom"
-                            required
-                        >
-                            <option value="TAE0001">Tarifa Residencial</option>
-                            <option value="TAE0002">Tarifa Quesera</option>
-                            <option value="TAE0003">Tarifa Matadero</option>
-                            <option value="TAE0004">Tarifa Marranera</option>
-                            <option value="TAE0005">Tarifa Finca</option>
-                        </select>
-                        <label>Tipo de Tarifa</label>
-                    </div>
                 </div>
 
                 <div className="buttonsCustom">
@@ -317,9 +289,6 @@ const ClientesPage = () => {
                     </button>
                     <button type="button" className="crudBtnCustom" onClick={handleEdit}>
                         Actualizar
-                    </button>
-                    <button type="button" className="btnEliminarCustom" onClick={handleDelete}>
-                        Eliminar
                     </button>
                     <button type="button" className="crudBtnCustom" onClick={fetchAllClientes}>
                         Listar Todos
@@ -341,8 +310,7 @@ const ClientesPage = () => {
                         <div>Teléfono</div>
                         <div>Dirección</div>
                         <div>Estado</div>
-                        <div>Matrícula</div>
-                        <div>Tarifa</div>
+                        <div>Tipo Tarifa</div>
                     </div>
                     <div className="clientTableBodyCustom">
                         {clientes.map((cliente) => (
@@ -359,8 +327,7 @@ const ClientesPage = () => {
                                 <div>{cliente.telefono}</div>
                                 <div>{cliente.direccion}</div>
                                 <div>{estadosCliente[cliente.id_estado_cliente]}</div>
-                                <div>{cliente.id_matricula}</div>
-                                <div>{tarifas[cliente.id_tarifa_estandar] || tarifas[cliente.id_tarifa_medidor]}</div> {/* Actualizado */}
+                                <div>{tarifas[cliente.tipo_tarifa] || "No asignada"}</div>
                             </div>
                         ))}
                     </div>

@@ -4,6 +4,7 @@ const PagosPage = () => {
     const [tipo, setTipo] = useState('Factura');
     const [tarifa, setTarifa] = useState('Estandar'); 
     const [showHistorial, setShowHistorial] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [historialData] = useState([
         {
             id: 'TIP0001',
@@ -14,172 +15,111 @@ const PagosPage = () => {
         },
         {
             id: 'TIP0002',
-            tipo: 'Multa',
+            tipo: 'Factura',
             fecha: '2025-01-21',
             valor: 150000,
             estado: 'Pago recibido',
         },
     ]);
 
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setShowHistorial(false);
+            setIsClosing(false);
+        }, 300);
+    };
+
     const renderFields = () => {
-        switch (tipo) {
-            case 'Factura':
-                return (
-                    <div className='form-grid'>
+        return (
+            <div className="pagos-form-grid">
+                <input
+                    type="text"
+                    disabled
+                    placeholder="Tarifa"
+                    className="pagos-input"
+                />
+                <input
+                    type="text"
+                    disabled
+                    placeholder="Total"
+                    className="pagos-input"
+                />
+                <input
+                    type="text"
+                    disabled
+                    placeholder="Valor Pendiente"
+                    className="pagos-input"
+                />
+                <input
+                    type="text"
+                    disabled
+                    placeholder="Valor a Cancelar"
+                    className="pagos-input"
+                />
+                {tarifa === 'Medidor' && (
+                    <>
                         <input
-                            type='text'
-                            disabled
-                            placeholder='Tarifa'
-                            className='disabled-input'
+                            type="date"
+                            placeholder="Fecha Lectura Actual"
+                            className="pagos-input"
                         />
                         <input
-                            type='text'
-                            disabled
-                            placeholder='Tipo'
-                            className='disabled-input'
+                            type="date"
+                            placeholder="Fecha Lectura Anterior"
+                            className="pagos-input"
                         />
                         <input
-                            type='text'
-                            disabled
-                            placeholder='Total'
-                            className='disabled-input'
+                            type="number"
+                            placeholder="Lectura Actual"
+                            className="pagos-input"
                         />
                         <input
-                            type='text'
-                            disabled
-                            placeholder='Valor Pendiente'
-                            className='disabled-input'
+                            type="number"
+                            placeholder="Lectura Anterior"
+                            className="pagos-input"
                         />
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Valor a Cancelar'
-                            className='disabled-input'
-                        />
-                        {tarifa === 'Medidor' && (
-                            <>
-                                <input
-                                    type='date'
-                                    placeholder='Fecha Lectura Actual'
-                                    className='disabled-input'
-                                />
-                                <input
-                                    type='date'
-                                    placeholder='Fecha Lectura Anterior'
-                                    className='disabled-input'
-                                />
-                                <input
-                                    type='number'
-                                    placeholder='Lectura Actual'
-                                    className='disabled-input'
-                                />
-                                <input
-                                    type='number'
-                                    placeholder='Lectura Anterior'
-                                    className='disabled-input'
-                                />
-                            </>
-                        )}
-                    </div>
-                );
-            case 'Multa':
-                return (
-                    <div className='form-grid'>
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Concepto'
-                            className='disabled-input'
-                        />
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Total'
-                            className='disabled-input'
-                        />
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Valor Pendiente'
-                            className='disabled-input'
-                        />
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Valor a Cancelar'
-                            className='disabled-input'
-                        />
-                    </div>
-                );
-            case 'Matricula':
-                return (
-                    <div className='form-grid'>
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Estado'
-                            className='disabled-input'
-                        />
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Total'
-                            className='disabled-input'
-                        />
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Valor Pendiente'
-                            className='disabled-input'
-                        />
-                        <input
-                            type='text'
-                            disabled
-                            placeholder='Valor a Cancelar'
-                            className='disabled-input'
-                        />
-                    </div>
-                );
-            default:
-                return null;
-        }
+                    </>
+                )}
+            </div>
+        );
     };
 
     return (
-        <div className='container'>
-            <div className='card'>
-                <h2>Pagos</h2>
-                <div className='form-grid'>
+        <div className="pagos-container">
+            <div className="pagos-card">
+                <h2 className="pagos-title">Pagos</h2>
+                <div className="pagos-form-grid">
                     <select
                         value={tipo}
                         onChange={(e) => setTipo(e.target.value)}
+                        className="pagos-select"
                     >
-                        <option value='Factura'>Factura</option>
-                        <option value='Multa'>Multa</option>
-                        <option value='Matricula'>Matricula</option>
+                        <option value="Factura">Factura</option>
                     </select>
                     <input
-                        type='text'
-                        placeholder={`Id ${tipo}`}
-                        className='input-focus'
+                        type="text"
+                        placeholder="Id Factura"
+                        className="pagos-input"
                     />
                 </div>
-                {tipo === 'Factura' && (
-                    <div className='form-grid'>
-                        <select
-                            value={tarifa}
-                            onChange={(e) => setTarifa(e.target.value)}
-                        >
-                            <option value='Estandar'>Estandar</option>
-                            <option value='Medidor'>Medidor</option>
-                        </select>
-                    </div>
-                )}
+                <div className="pagos-form-grid">
+                    <select
+                        value={tarifa}
+                        onChange={(e) => setTarifa(e.target.value)}
+                        className="pagos-select"
+                    >
+                        <option value="Estandar">Estandar</option>
+                        <option value="Medidor">Medidor</option>
+                    </select>
+                </div>
                 {renderFields()}
-                <div className='button-group'>
-                    <button className='save-button'>Guardar Pago</button>
+                <div className="pagos-button-group">
+                    <button className="pagos-button pagos-button-save">
+                        Guardar Pago
+                    </button>
                     <button
-                        className='history-button'
+                        className="pagos-button pagos-button-history"
                         onClick={() => setShowHistorial(true)}
                     >
                         Ver Historial
@@ -187,34 +127,36 @@ const PagosPage = () => {
                 </div>
             </div>
             {showHistorial && (
-                <div className='modal-overlay'>
-                    <div className='modal'>
-                        <h3>Historial de Pagos</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Tipo</th>
-                                    <th>Fecha</th>
-                                    <th>Valor</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {historialData.map((item) => (
-                                    <tr key={item.id}>
-                                        <td>{item.id}</td>
-                                        <td>{item.tipo}</td>
-                                        <td>{item.fecha}</td>
-                                        <td>{item.valor}</td>
-                                        <td>{item.estado}</td>
+                <div className={`pagos-modal-overlay ${isClosing ? 'closing' : ''}`}>
+                    <div className={`pagos-modal ${isClosing ? 'closing' : ''}`}>
+                        <h3 className="pagos-modal-title">Historial de Pagos</h3>
+                        <div className="pagos-table-container">
+                            <table className="pagos-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tipo</th>
+                                        <th>Fecha</th>
+                                        <th>Valor</th>
+                                        <th>Estado</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {historialData.map((item) => (
+                                        <tr key={item.id}>
+                                            <td>{item.id}</td>
+                                            <td>{item.tipo}</td>
+                                            <td>{item.fecha}</td>
+                                            <td>{item.valor}</td>
+                                            <td>{item.estado}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                         <button
-                            className='close-button'
-                            onClick={() => setShowHistorial(false)}
+                            className="pagos-button pagos-button-close"
+                            onClick={handleCloseModal}
                         >
                             Cerrar
                         </button>

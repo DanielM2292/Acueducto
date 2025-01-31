@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
 
 const MatriculasPage = () => {
     const [idMatricula, setIdMatricula] = useState("");
     const [numeroDocumento, setNumeroDocumento] = useState("");
     const [valorMatricula, setValorMatricula] = useState("");
     const [estadoMatricula, setEstadoMatricula] = useState("ESM0001");
+    const [tipoTarifa, setTipoTarifa] = useState("estandar");
     const [matriculas, setMatriculas] = useState([]);
     const [editMode, setEditMode] = useState(false);
-    const [selectedMatricula, setSelectedMatricula] = useState(null); // Definir el estado aquí
+    const [selectedMatricula, setSelectedMatricula] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
 
     const estadosMatricula = {
         "ESM0001": "Parcial",
         "ESM0002": "Total",
+    };
+
+    const tiposTarifa = {
+        "estandar": "Estándar",
+        "medidor": "Medidor"
     };
 
     const formatCurrency = (value) => {
@@ -46,7 +54,8 @@ const MatriculasPage = () => {
                 body: JSON.stringify({ 
                     numero_documento: numeroDocumento, 
                     valor_matricula: valorMatricula, 
-                    id_estado_matricula: estadoMatricula 
+                    id_estado_matricula: estadoMatricula,
+                    tipo_tarifa: tipoTarifa
                 }),
             });
             const data = await response.json();
@@ -78,7 +87,8 @@ const MatriculasPage = () => {
                     id_matricula: selectedMatricula.id_matricula,
                     numero_documento: numeroDocumento,
                     valor_matricula: valorMatricula,
-                    id_estado_matricula: estadoMatricula 
+                    id_estado_matricula: estadoMatricula,
+                    tipo_tarifa: tipoTarifa
                 }),
             });
             const data = await response.json();
@@ -122,7 +132,7 @@ const MatriculasPage = () => {
             const data = await response.json();
             if (response.ok) {
                 setMatriculas(data);
-                notify("Todas las matrículas listadas", "success");
+                setIsModalOpen(true);
             } else {
                 notify("Error al obtener todas las matrículas", "error");
             }
@@ -152,13 +162,24 @@ const MatriculasPage = () => {
         setNumeroDocumento(matricula.numero_documento);
         setValorMatricula(matricula.valor_matricula);
         setEstadoMatricula(matricula.id_estado_matricula);
+        setTipoTarifa(matricula.tipo_tarifa);
         setEditMode(true);
+        setIsModalOpen(false);
+    };
+
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsModalOpen(false);
+            setIsClosing(false);
+        }, 300);
     };
 
     const resetForm = () => {
         setNumeroDocumento("");
         setValorMatricula("");
         setEstadoMatricula("ESM0001");
+        setTipoTarifa("estandar");
         setSelectedMatricula(null);
         setEditMode(false);
     };
@@ -208,6 +229,19 @@ const MatriculasPage = () => {
                     </select>
                     <label>Estado Matrícula</label>
                 </div>
+                <div className="groupCustom">
+                    <select
+                        name="tipo_tarifa"
+                        value={tipoTarifa}
+                        onChange={(e) => setTipoTarifa(e.target.value)}
+                        className="inputCustom"
+                        required
+                    >
+                        <option value="estandar">Estándar</option>
+                        <option value="medidor">Medidor</option>
+                    </select>
+                    <label>Tipo de Tarifa</label>
+                </div>
                 <div className="buttonsCustom">
                     {!editMode ? (
                         <button className="crudBtnCustom" onClick={handleAddMatricula}>
@@ -229,41 +263,107 @@ const MatriculasPage = () => {
                     </button>
                 </div>
             </div>
-    
-            <div className="MatriculasListCustom">
-                <h2 className="ListMatriculasTitleCustom">Lista de Matrículas</h2>
-                <div className="matriculasTableCustom">
-                    <div className="matriculasTableHeaderCustom">
-                        <div>ID Matrícula</div>
-                        <div>Número Matrícula</div>
-                        <div>Número de Documento</div>
-                        <div>Valor Matrícula</div>
-                        <div>Estado Matrícula</div>
-                        <div>Fecha Creación</div>
-                        <div>Acciones</div>
-                    </div>
-                    <div className="matriculasTableBodyCustom">
-                        {matriculas.map((item, index) => (
-                            <div key={index} className="matriculasTableRowCustom">
-                                <div>{item.id_matricula}</div>
-                                <div>{item.numero_matricula}</div>
-                                <div>{item.numero_documento}</div>
-                                <div>{formatCurrency(item.valor_matricula)}</div>
-                                <div>{estadosMatricula[item.id_estado_matricula]}</div>
-                                <div>{new Date(item.fecha_creacion).toLocaleDateString()}</div>
-                                <div>
-                                    <button className="crudBtnCustom" onClick={() => handleEdit(item)}>
-                                        <FaEdit />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+
+            {isModalOpen && (
+                <div className={`pagos-modal-overlay ${isClosing ? 'closing' : ''}`}>
+                    <div className={`pagos-modal pagos-modal-large ${isClosing ? 'closing' : ''}`}>
+                        <h3 className="pagos-modal-title">Lista de Matrículas</h3>
+                        <div className="pagos-table-container pagos-table-container-large">
+                            <table className="pagos-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID Matrícula</th>
+                                        <th>Número Matrícula</th>
+                                        <th>Número de Documento</th>
+                                        <th>Nombre Cliente</th>
+                                        <th>Valor Matrícula</th>
+                                        <th>Estado Matrícula</th>
+                                        <th>Tipo Tarifa</th>
+                                        <th>Fecha Creación</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {matriculas.map((item, index) => (
+                                        <tr key={index}>
+                                            <td>{item.id_matricula}</td>
+                                            <td>{item.numero_matricula}</td>
+                                            <td>{item.numero_documento}</td>
+                                            <td>{item.nombre_cliente}</td>
+                                            <td>{formatCurrency(item.valor_matricula)}</td>
+                                            <td>{estadosMatricula[item.id_estado_matricula]}</td>
+                                            <td>{tiposTarifa[item.tipo_tarifa]}</td>
+                                            <td>{new Date(item.fecha_creacion).toLocaleDateString()}</td>
+                                            <td>
+                                                <button 
+                                                    className="pagos-button pagos-button-save"
+                                                    onClick={() => handleEdit(item)}
+                                                >
+                                                    <FaEdit />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button
+                            className="pagos-button pagos-button-close"
+                            onClick={handleCloseModal}
+                        >
+                            Cerrar
+                        </button>
                     </div>
                 </div>
-            </div>
+            )}
+
+            <style>{`
+                .pagos-modal-large {
+                    max-width: 90% !important;
+                    width: 90% !important;
+                    margin: 20px;
+                }
+
+                .pagos-table-container-large {
+                    max-height: 70vh;
+                    overflow-y: auto;
+                }
+
+                .pagos-table {
+                    min-width: 100%;
+                    border-collapse: collapse;
+                }
+
+                .pagos-table th,
+                .pagos-table td {
+                    padding: 12px 15px;
+                    text-align: left;
+                    white-space: nowrap;
+                }
+
+                .pagos-table thead {
+                    position: sticky;
+                    top: 0;
+                    background-color: #53D4FF;
+                    z-index: 1;
+                }
+
+                .pagos-table tbody tr:hover {
+                    background-color: rgba(83, 212, 255, 0.1);
+                }
+
+                .pagos-modal-overlay {
+                    padding: 0;
+                }
+
+                @media (max-width: 1200px) {
+                    .pagos-table-container-large {
+                        overflow-x: auto;
+                    }
+                }
+            `}</style>
         </div>
     );
-    };
-    
-    export default MatriculasPage;
-    
+};
+
+export default MatriculasPage;

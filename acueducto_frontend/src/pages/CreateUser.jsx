@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CreateUser = () => {
     const [formData, setFormData] = useState({
@@ -8,8 +10,6 @@ const CreateUser = () => {
         id_rol: "ROL0001",
         id_estado_empleado: "EMP0001",
     });
-
-    const [message, setMessage] = useState("");
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -27,7 +27,7 @@ const CreateUser = () => {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                mode: "cors", 
+                mode: "cors",
                 credentials: "include",
                 body: JSON.stringify({
                     id_estado_empleado: "1",
@@ -37,25 +37,21 @@ const CreateUser = () => {
 
             const data = await response.json();
             if (response.ok) {
-                notify("Usuario creado exitosamente");
-                setFormData({ nombre: "", nombre_usuario: "", password: "", id_rol: "ROL0001" });
+                toast.success("Usuario creado exitosamente");
+                setFormData({ nombre: "", nombre_usuario: "", password: "", id_rol: "ROL0001", id_estado_empleado: "EMP0001" });
             } else {
-                notify(data.message || "Error al crear el usuario");
+                toast.error(data.message || "Error al crear el usuario");
             }
         } catch (error) {
-            notify("Error de conexión con el servidor");
+            toast.error("Error de conexión con el servidor");
             console.error("Error:", error);
         }
     };
 
     return (
         <div className="loginContainer">
+            <ToastContainer />
             <h1 className="loginTitle">Crear un nuevo usuario</h1>
-            {message && (
-                <div className={`message ${message.includes("exitosamente") ? "success" : "error"}`}>
-                    {message}
-                </div>
-            )}
             <div className="loginForm">
                 <form onSubmit={handleSubmit}>
                     <div className="inputGroup">

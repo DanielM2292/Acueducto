@@ -7,6 +7,18 @@ const MultasPage = () => {
     const [motivoMulta, setMotivoMulta] = useState("");
     const [valorMulta, setValorMulta] = useState("");
     const [multas, setMultas] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+
+    // Función para formatear valores a pesos colombianos
+    const formatearPesos = (valor) => {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(valor);
+    };
 
     const notify = (message, type) => {
         if (type === "success") {
@@ -43,6 +55,10 @@ const MultasPage = () => {
         }
     };
 
+    const handlePay = (multaId) => {
+        notify("Funcionalidad de pago en desarrollo", "info");
+    };
+
     const fetchMultas = async () => {
         try {
             const response = await fetch("http://localhost:9090/multas/listar_todas_multas");
@@ -62,6 +78,14 @@ const MultasPage = () => {
         setNumeroDocumento("");
         setMotivoMulta("");
         setValorMulta("");
+    };
+
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsModalOpen(false);
+            setIsClosing(false);
+        }, 300);
     };
 
     useEffect(() => {
@@ -114,30 +138,56 @@ const MultasPage = () => {
                     <button className="crudBtnCustom" onClick={resetForm}>
                         Limpiar Formulario
                     </button>
+                    <button className="crudBtnCustom" onClick={() => setIsModalOpen(true)}>
+                        Mostrar Multas
+                    </button>
                 </div>
             </div>
 
-            <div className="MultasListCustom">
-                <h2 className="ListMultasTitleCustom">Lista de Multas</h2>
-                <div className="multasTableCustom">
-                    <div className="multasTableHeaderCustom">
-                        <div>ID Multa</div>
-                        <div>Motivo Multa</div>
-                        <div>Valor Multa</div>
-                        <div>Número de Documento</div>
-                    </div>
-                    <div className="multasTableBodyCustom">
-                        {multas.map((item, index) => (
-                            <div key={index} className="multasTableRowCustom">
-                                <div>{item.id_multa}</div>
-                                <div>{item.motivo_multa}</div>
-                                <div>{item.valor_multa}</div>
-                                <div>{item.numero_documento}</div>
-                            </div>
-                        ))}
+            {isModalOpen && (
+                <div className={`pagos-modal-overlay ${isClosing ? 'closing' : ''}`}>
+                    <div className={`pagos-modal ${isClosing ? 'closing' : ''}`}>
+                        <h3 className="pagos-modal-title">Lista de Multas</h3>
+                        <div className="pagos-table-container">
+                            <table className="pagos-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID Multa</th>
+                                        <th>Cliente</th>
+                                        <th>Motivo Multa</th>
+                                        <th>Valor Multa</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {multas.map((item, index) => (
+                                        <tr key={index}>
+                                            <td>{item.id_multa}</td>
+                                            <td>{item.nombre}</td>
+                                            <td>{item.motivo_multa}</td>
+                                            <td>{formatearPesos(item.valor_multa)}</td>
+                                            <td>
+                                                <button 
+                                                    className="pagos-button pagos-button-save"
+                                                    onClick={() => handlePay(item.id_multa)}
+                                                >
+                                                    Pagar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button
+                            className="pagos-button pagos-button-close"
+                            onClick={handleCloseModal}
+                        >
+                            Cerrar
+                        </button>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

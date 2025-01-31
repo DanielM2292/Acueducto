@@ -19,30 +19,49 @@ class AuthServices:
     def create_user(data):
         try:
             mysql = current_app.mysql
-            
+        
             custom_id = Auditoria.generate_custom_id(mysql, 'ADM', 'id_administrador', 'administradores')
             custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-            
+        
             user_name = data.get('nombre')
             user_username = data.get('nombre_usuario')
             user_password = data.get('password')
             estado_empleado = data.get('id_estado_empleado')
             id_rol = data.get('id_rol')
-            current_user = session.get("usuario")
-            # Si no digita los campos requeridos
+
+            # Validación de entrada
             if not user_name or not user_password:
                 return jsonify({'message': 'Se require ingresar usuario y contraseña'}), 400
-            # Verificar si el nombre de usuario ya existe
+
+            # Verificar si el usuario ya existe
             existing_user = User.get_user_by_username(mysql, user_username)
             if existing_user:
                 return jsonify({'message': 'El usuario ya existe'}), 400
-            User.add_user(mysql,custom_id, user_name, user_username, user_password, estado_empleado, id_rol)
-            # Buscar como hacer que en el parametro del usuario pasarle el id del usuario que lo crea, aunque siempre va a crear los usuarios el administrador que es unico 
-            Auditoria.log_audit(mysql, custom_id_auditoria, 'administradores', custom_id, 'INSERT', current_user, 'Se crea usuario por primera vez' )
-            with open(ruta_archivo, 'a') as f:
-                f.write(f'Nombre de usuario: {user_username} - Contraseña: {user_password}\n')
+
+            try:
+                # Crear el usuario
+                User.add_user(mysql, custom_id, user_name, user_username, user_password, estado_empleado, id_rol)
             
-            return jsonify({'message': 'Usuario creado!'}), 201
+                # Registrar auditoría con id_administrador NULL
+                cursor = mysql.connection.cursor()
+                cursor.execute('''
+                    INSERT INTO auditoria (id_auditoria, tabla, id_registro_afectado, accion, id_administrador, fecha, detalles) 
+                    VALUES (%s, %s, %s, %s, NULL, NOW(), %s)
+                ''', (custom_id_auditoria, 'administradores', custom_id, 'INSERT', 'Se crea usuario por primera vez'))
+            
+                # Registrar credenciales
+                with open(ruta_archivo, 'a') as f:
+                    f.write(f'Nombre de usuario: {user_username} - Contraseña: {user_password}\n')
+            
+                mysql.connection.commit()
+                cursor.close()
+            
+                return jsonify({'message': 'Usuario creado exitosamente!'}), 201
+            
+            except Exception as e:
+                mysql.connection.rollback()
+                raise
+            
         except Exception as e:
             return jsonify({"message": f"Error al registrar usuario: {str(e)}"}), 500
     
