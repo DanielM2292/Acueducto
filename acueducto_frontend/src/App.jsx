@@ -13,6 +13,7 @@ import InventarioPage from './pages/InventarioPage';
 import CreateUser from './pages/CreateUser';
 import ChangePassword from './pages/ChangePassword';
 import ListarUser from './pages/ListarUser';
+import WelcomePage from './pages/WelcomePage'; 
 
 const App = () => {
     return (
@@ -24,9 +25,9 @@ const App = () => {
                     element={
                         <div className="appLayout">
                             <Sidebar />
+                            <WelcomePage />
                             <div className="content">
                                 <Routes>
-                                    <Route path="inicio" element={<div className="page-content">Página en blanco</div>} />
                                     <Route path="facturacion" element={<FacturacionPage />} />
                                     <Route path="clientes" element={<ClientesPage />} />
                                     <Route path="multas" element={<MultasPage />} />
@@ -44,10 +45,8 @@ const App = () => {
                     }
                 />
             </Routes>
-
         </Router>
     );
 };
 
 export default App;
-

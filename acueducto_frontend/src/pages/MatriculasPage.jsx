@@ -280,7 +280,6 @@ const MatriculasPage = () => {
                                         <th>Estado Matrícula</th>
                                         <th>Tipo Tarifa</th>
                                         <th>Fecha Creación</th>
-                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>

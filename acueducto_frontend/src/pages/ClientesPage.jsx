@@ -136,12 +136,12 @@ const ClientesPage = () => {
             });
     
             const data = await response.json();
-            console.log("Server response:", data);  // Log the server response
+            console.log("Server response:", data);
     
             if (response.ok) {
                 notify("Cliente actualizado exitosamente", "success");
                 resetForm();
-                await fetchAllClientes();  // Refresh the client list
+                await fetchAllClientes();
             } else {
                 notify(data.message || "Error al actualizar el cliente", "error");
             }
