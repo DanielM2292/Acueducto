@@ -164,17 +164,19 @@ class Clientes:
     @staticmethod
     def verificar_cliente(mysql, numero_documento):
         cursor = mysql.connection.cursor()
-        cursor.execute('SELECT id_cliente FROM clientes WHERE numero_documento = %s', (numero_documento,))
-        cliente = cursor.fetchone()
+        cursor.execute('SELECT id_cliente, id_matricula_cliente FROM clientes WHERE numero_documento = %s', (numero_documento,))
+        cliente = cursor.fetchall()
         cursor.close()
         return cliente
     
     @staticmethod
-    def asociar_matricula_cliente(mysql,id_matricula, id_cliente):
+    def asociar_matricula_cliente_con_cliente(mysql, id_matricula_cliente, id_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE clientes SET id_matricula = %s WHERE id_cliente = %s', (id_matricula, id_cliente))
+        cursor.execute('UPDATE clientes SET id_matricula_cliente = %s WHERE id_cliente = %s',
+                    (id_matricula_cliente, id_cliente))
         mysql.connection.commit()
         cursor.close()
+        
 
 class Facturas:
     # Generar las facturas automaticamente
@@ -258,17 +260,30 @@ class Matriculas:
         return matricula
     
     @staticmethod
-    def agregar_matricula(mysql, id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula):
+    def agregar_matricula(mysql, id_matricula, numero_matricula, valor_matricula, id_estado_matricula, id_tarifa_medidor, id_tarifa_estandar):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO matriculas (id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula, fecha_creacion) VALUES (%s, %s, %s, %s, %s, NOW())', 
-                        (id_matricula, numero_matricula, numero_documento, valor_matricula, id_estado_matricula))
+        cursor.execute('INSERT INTO matriculas (id_matricula, numero_matricula, valor_matricula, id_estado_matricula, id_tarifa_medidor, id_tarifa_estandar) VALUES (%s, %s, %s, %s, %s, %s)', 
+                        (id_matricula, numero_matricula, valor_matricula, id_estado_matricula, id_tarifa_medidor, id_tarifa_estandar))
         mysql.connection.commit()
         cursor.close()
     
     @staticmethod
     def obtener_todas_matriculas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT matriculas.id_matricula, matriculas.numero_matricula, clientes.numero_documento, matriculas.valor_matricula, matriculas.id_estado_matricula, matriculas.fecha_creacion FROM matriculas INNER JOIN clientes ON matriculas.id_cliente = clientes.id_cliente;')
+        cursor.execute('''
+            SELECT 
+                m.id_matricula, 
+                m.numero_matricula, 
+                c.numero_documento, 
+                m.valor_matricula, 
+                m.id_estado_matricula, 
+                m.fecha_creacion
+            FROM 
+                matriculas AS m
+            INNER JOIN 
+                matricula_cliente AS mc ON m.id_matricula = mc.id_matricula
+            INNER JOIN 
+                clientes AS c ON mc.id_cliente = c.id_cliente;''')
         #cursor.execute('SELECT * FROM matriculas')
         matriculas = cursor.fetchall()
         cursor.close()
@@ -285,10 +300,32 @@ class Matriculas:
     @staticmethod
     def buscar_matricula_documento(mysql, numero_documento):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM matriculas WHERE numero_documento = %s', (numero_documento))
+        cursor.execute('''
+            SELECT 
+                m.id_matricula, 
+                m.numero_matricula, 
+                c.numero_documento, 
+                m.valor_matricula, 
+                m.id_estado_matricula, 
+                m.fecha_creacion
+            FROM 
+                matriculas AS m
+            INNER JOIN 
+                matricula_cliente AS mc ON m.id_matricula = mc.id_matricula
+            INNER JOIN 
+                clientes AS c ON mc.id_cliente = c.id_cliente WHERE numero_documento = %s;''',(numero_documento,))
         matricula = cursor.fetchall()
         cursor.close()
         return matricula
+
+class Matricula_cliente:
+    @staticmethod
+    def asociar_matricula_cliente(mysql, id_matricula_cliente, id_matricula, id_cliente):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO matricula_cliente (id_matricula_cliente, id_matricula, id_cliente) VALUES (%s, %s, %s)',
+                    (id_matricula_cliente, id_matricula, id_cliente))
+        mysql.connection.commit()
+        cursor.close()
 
 class Multas:
     @staticmethod

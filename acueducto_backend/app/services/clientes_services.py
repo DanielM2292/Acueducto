@@ -1,6 +1,5 @@
 from flask import jsonify, current_app, session, request
 from app.models import Clientes, Auditoria
-import os
 
 class ClientesServices:
     @staticmethod
@@ -11,17 +10,6 @@ class ClientesServices:
         try:
             data = request.get_json()
             current_user = session.get("id_administrador")
-            
-            # Determinar las tarifas a insertar
-            id_tarifa_estandar = None
-            id_tarifa_medidor = None
-
-            if data.get("id_tarifa") in ["TAE0001"]:
-                id_tarifa_estandar = data.get("id_tarifa")
-            elif data.get("id_tarifa") == "TAM0001":
-                id_tarifa_medidor = data.get("id_tarifa")
-                
-            print('recibe datos para procesar')
             
             cursor = mysql.connection.cursor()
             cursor.execute('INSERT INTO clientes (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente) VALUES (%s, %s, %s, %s, %s, %s, %s)', 
@@ -54,15 +42,6 @@ class ClientesServices:
             data = request.get_json()
             current_user = session.get("id_administrador")
 
-            # Determinar las tarifas a actualizar
-            id_tarifa_estandar = None
-            id_tarifa_medidor = None
-
-            if data.get("id_tarifa") in ["TAREST001", "TAREST002", "TAREST003", "TAREST004"]:
-                id_tarifa_estandar = data.get("id_tarifa")
-            elif data.get("id_tarifa") == "TARMED001":
-                id_tarifa_medidor = data.get("id_tarifa")
-
             Clientes.update_cliente(
                 mysql,
                 id_cliente,
@@ -81,7 +60,7 @@ class ClientesServices:
     def buscar_todos_clientes():
         mysql = current_app.mysql
         try:
-            clientes = Clientes.get_all_clientes(mysql)
+            clientes = Clientes.get_all_clientes(mysql) 
             return jsonify(clientes)
         except Exception as e:
             return jsonify({"message": f"Error al obtener clientes: {str(e)}"}), 500
