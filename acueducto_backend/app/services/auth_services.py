@@ -28,40 +28,18 @@ class AuthServices:
             user_password = data.get('password')
             estado_empleado = data.get('id_estado_empleado')
             id_rol = data.get('id_rol')
-
+            current_user = session.get("usuario")
             # Validación de entrada
             if not user_name or not user_password:
                 return jsonify({'message': 'Se require ingresar usuario y contraseña'}), 400
 
-            # Verificar si el usuario ya existe
-            existing_user = User.get_user_by_username(mysql, user_username)
-            if existing_user:
-                return jsonify({'message': 'El usuario ya existe'}), 400
-
-            try:
-                # Crear el usuario
-                User.add_user(mysql, custom_id, user_name, user_username, user_password, estado_empleado, id_rol)
+            User.add_user(mysql,custom_id, user_name, user_username, user_password, estado_empleado, id_rol)
+            # Buscar como hacer que en el parametro del usuario pasarle el id del usuario que lo crea, aunque siempre va a crear los usuarios el administrador que es unico 
+            Auditoria.log_audit(mysql, custom_id_auditoria, 'administradores', custom_id, 'INSERT', 'ADM0001', 'Se crea usuario por primera vez' )
+            with open(ruta_archivo, 'a') as f:
+                f.write(f'Nombre de usuario: {user_username} - Contraseña: {user_password}\n')
             
-                # Registrar auditoría con id_administrador NULL
-                cursor = mysql.connection.cursor()
-                cursor.execute('''
-                    INSERT INTO auditoria (id_auditoria, tabla, id_registro_afectado, accion, id_administrador, fecha, detalles) 
-                    VALUES (%s, %s, %s, %s, NULL, NOW(), %s)
-                ''', (custom_id_auditoria, 'administradores', custom_id, 'INSERT', 'Se crea usuario por primera vez'))
-            
-                # Registrar credenciales
-                with open(ruta_archivo, 'a') as f:
-                    f.write(f'Nombre de usuario: {user_username} - Contraseña: {user_password}\n')
-            
-                mysql.connection.commit()
-                cursor.close()
-            
-                return jsonify({'message': 'Usuario creado exitosamente!'}), 201
-            
-            except Exception as e:
-                mysql.connection.rollback()
-                raise
-            
+            return jsonify({'message': 'Usuario creado!'}), 201
         except Exception as e:
             return jsonify({"message": f"Error al registrar usuario: {str(e)}"}), 500
     
@@ -75,7 +53,6 @@ class AuthServices:
                 user['id_estado_empleado'] = (
                     'Activo' if user['id_estado_empleado'] == 'EMP0001' else
                     'Inactivo' if user['id_estado_empleado'] == 'EMP0002' else
-                    'Suspendido' if user['id_estado_empleado'] == 'EMP0003' else
                     user['id_estado_empleado']
                 )
                 user['id_rol'] = (

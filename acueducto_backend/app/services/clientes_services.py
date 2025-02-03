@@ -1,34 +1,22 @@
 from flask import jsonify, current_app, session, request
 from app.models import Clientes, Auditoria
-import os
 
 class ClientesServices:
     @staticmethod
-    def agregar_cliente_route():
+    def agregar_cliente_route(data):
         mysql = current_app.mysql
         custom_id_cliente = Auditoria.generate_custom_id(mysql, 'CLI', 'id_cliente', 'clientes')
         custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-        try:
-            data = request.get_json()
+        try:            
+            tipo_documento = data.get("tipo_documento"),
+            numero_documento = data.get("numero_documento"),
+            nombre = data.get("nombre"),
+            telefono = data.get("telefono"),
+            direccion = data.get("direccion"),
+            estado_cliente = data.get("id_estado_cliente")
             current_user = session.get("id_administrador")
-            
-            # Determinar las tarifas a insertar
-            id_tarifa_estandar = None
-            id_tarifa_medidor = None
-
-            if data.get("id_tarifa") in ["TAE0001"]:
-                id_tarifa_estandar = data.get("id_tarifa")
-            elif data.get("id_tarifa") == "TAM0001":
-                id_tarifa_medidor = data.get("id_tarifa")
-                
-            print('recibe datos para procesar')
-            
-            cursor = mysql.connection.cursor()
-            cursor.execute('INSERT INTO clientes (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente) VALUES (%s, %s, %s, %s, %s, %s, %s)', 
-                        (custom_id_cliente, data.get("tipo_documento"), data.get("numero_documento"), data.get("nombre"), data.get("telefono"), data.get("direccion"), data.get("id_estado_cliente")))
-            mysql.connection.commit()
-            Auditoria.log_audit(mysql, custom_id_auditoria, 'clientes', custom_id_cliente, 'INSERT', current_user, f'Se agrega cliente {custom_id_cliente}')
-            cursor.close()
+            Clientes.add_cliente(mysql, custom_id_cliente, tipo_documento,numero_documento, nombre, telefono, direccion, estado_cliente)
+            Auditoria.log_audit(mysql, custom_id_auditoria, 'clientes', custom_id_cliente, 'INSERT', current_user, f'Se agrega cliente {custom_id_cliente}, nombre: {nombre}')
             return jsonify({"message": "Cliente agregado exitosamente", "id_cliente": custom_id_cliente}), 201
         except Exception as e:
             return jsonify({"message": f"Error al agregar cliente: {str(e)}"}), 500
@@ -47,24 +35,21 @@ class ClientesServices:
     
 
     @staticmethod
-    def actualizar_cliente_route():
+    def actualizar_cliente_route(data):
         mysql = current_app.mysql
-    
+        custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         try:
-            id_cliente = request.args.get("id_cliente")
-            data = request.get_json()
+            id_cliente = data.get("id_cliente")
+            tipo_documento = data.get("tipo_documento"),
+            numero_documento = data.get("numero_documento"),
+            nombre = data.get("nombre"),
+            telefono = data.get("telefono"),
+            direccion = data.get("direccion"),
+            estado_cliente = data.get("id_estado_cliente")
             current_user = session.get("id_administrador")
             
-            Clientes.update_cliente (
-                mysql,
-                id_cliente,
-                data.get("tipo_documento"),
-                data.get("numero_documento"),
-                data.get("nombre"),
-                data.get("telefono"),
-                data.get("direccion"),
-                data.get("id_estado_cliente")
-            )
+            Clientes.update_cliente(mysql, tipo_documento, numero_documento, nombre, telefono, direccion, estado_cliente, id_cliente)
+            Auditoria.log_audit(mysql, custom_id_auditoria, "clientes", id_cliente, "UPDATE", current_user, f"Se actualiza datos del cliente {id_cliente}")
             return jsonify({"message": "Cliente actualizado exitosamente"}), 200
         except Exception as e:
             return jsonify({"message": f"Error al actualizar cliente: {str(e)}"}), 500

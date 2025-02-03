@@ -7,7 +7,8 @@ from app.routes import clientes_bp
 def agregar_cliente_route():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
-    return ClientesServices.agregar_cliente_route()
+    data = request.get_json()
+    return ClientesServices.agregar_cliente_route(data)
 
 @clientes_bp.route('/buscar_cliente', methods=["GET", 'OPTIONS'])
 def buscar_cliente():
@@ -19,7 +20,8 @@ def buscar_cliente():
 def actualizar_cliente_route():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
-    return ClientesServices.actualizar_cliente_route()
+    data = request.get_json()
+    return ClientesServices.actualizar_cliente_route(data)
 
 
 @clientes_bp.route('/eliminar_cliente', methods=["DELETE"])
