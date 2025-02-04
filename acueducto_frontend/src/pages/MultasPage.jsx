@@ -37,7 +37,7 @@ const MultasPage = () => {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:9090/matriculas/buscar_matriculas_por_documento?numero_documento=${numeroDocumento}`);
+            const response = await fetch(`http://localhost:9090/multas/buscar_matriculas_por_documento?numero_documento=${numeroDocumento}`);
             const data = await response.json();
             if (response.ok) {
                 if (data.length === 0) {

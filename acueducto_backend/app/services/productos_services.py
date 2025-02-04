@@ -12,16 +12,18 @@ class ProductosServices:
         
         try:
             descripcion_producto = data.get("descripcion_producto")
-            cantidad = data.get("cantidad")
-            valor_producto = data.get("valor_producto")
+            cantidad = int(data.get("cantidad"))
+            valor_producto = int(data.get("valor_producto"))
+            total_productos = cantidad * valor_producto
             current_user = session.get("id_administrador")
             
-            Inventario.add_product(mysql,custom_id_producto, descripcion_producto, cantidad, valor_producto)
+            Inventario.add_product(mysql,custom_id_producto, descripcion_producto, cantidad, valor_producto, total_productos)
             Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", custom_id_producto, "INSERT", current_user, "Se agrega producto al inventario")
             return jsonify({"message": "Producto agregado exitosamente"}), 201
         except Exception as e:
             return jsonify({"message": f"Error al agregar producto: {str(e)}"}), 500
     
+    #QUITAR?
     @staticmethod
     def buscar_producto():
         mysql = current_app.mysql
@@ -41,11 +43,12 @@ class ProductosServices:
         try:
             id_producto = request.args.get("id_producto")
             descripcion_producto = data.get("descripcion_producto")
-            cantidad = data.get("cantidad")
-            valor_producto = data.get("valor_producto")
+            cantidad = int(data.get("cantidad"))
+            valor_producto = int(data.get("valor_producto"))
+            total_producto = cantidad * valor_producto
             current_user = session.get("id_administrador")
             
-            Inventario.update_product_by_id(mysql, id_producto, descripcion_producto, cantidad, valor_producto, current_user)
+            Inventario.update_product_by_id(mysql, id_producto, descripcion_producto, cantidad, valor_producto, total_producto)
             Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", id_producto, "UPDATE", current_user, "Se actualiza producto del inventario")
             return jsonify({"message": "Producto actualizado exitosamente"}), 200
         except Exception as e:
