@@ -45,6 +45,11 @@ const PagosPage = () => {
                     </select>
                     <input
                         type="text"
+                        placeholder="Id Factura"
+                        className="pagos-input"
+                    />
+                    <input
+                        type="text"
                         disabled
                         placeholder="Total"
                         className="pagos-input"

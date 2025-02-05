@@ -18,6 +18,7 @@ import {
   UserPlus,
   Password,
   List,
+  FolderSimpleUser, 
 } from "@phosphor-icons/react";
 import AcueductoLogo from "../imagenes/LogoAcueducto.png";
 
@@ -159,6 +160,12 @@ const Sidebar = () => {
                 <Link to="/app/listar_usuarios" onClick={() => setActiveItems([])}>
                   <List className="iconSidebar" />
                   <span className="text">Listar Usuarios</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/app/ver_historial" onClick={() => setActiveItems([])}>
+                  <FolderSimpleUser  className="iconSidebar" />
+                  <span className="text">Ver Historial de Movimientos</span>
                 </Link>
               </li>
             </ul>

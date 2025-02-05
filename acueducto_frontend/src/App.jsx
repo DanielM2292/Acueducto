@@ -14,6 +14,7 @@ import CreateUser from './pages/CreateUser';
 import ChangePassword from './pages/ChangePassword';
 import ListarUser from './pages/ListarUser';
 import WelcomePage from './pages/WelcomePage'; 
+import VerHistorialPage from './pages/VerHistorialPage';
 
 const App = () => {
     return (
@@ -25,9 +26,9 @@ const App = () => {
                     element={
                         <div className="appLayout">
                             <Sidebar />
-                            <WelcomePage />
                             <div className="content">
                                 <Routes>
+                                    <Route path="welcome" element={<WelcomePage />} />
                                     <Route path="facturacion" element={<FacturacionPage />} />
                                     <Route path="clientes" element={<ClientesPage />} />
                                     <Route path="multas" element={<MultasPage />} />
@@ -39,6 +40,8 @@ const App = () => {
                                     <Route path="crear_usuario" element={<CreateUser />} />
                                     <Route path="cambiar_contraseña" element={<ChangePassword />} />
                                     <Route path="listar_usuarios" element={<ListarUser />} />
+                                    <Route path="ver_historial" element={<VerHistorialPage />} />
+                                    <Route path="*" element={<Navigate to="welcome" />} />
                                 </Routes>
                             </div>
                         </div>

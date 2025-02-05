@@ -161,6 +161,7 @@ const MatriculasPage = () => {
             const data = await response.json();
             if (response.ok) {
                 setMatriculas(data);
+                setIsModalOpen(true);
             } else {
                 notify("Error al obtener todas las matrículas", "error");
             }

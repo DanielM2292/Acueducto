@@ -44,8 +44,39 @@ const ClientesPage = () => {
         }));
     };
 
+    const searchClientes = async () => {
+        if (!formData.nombre.trim()) {
+            notify("Por favor, ingrese un nombre para buscar", "error");
+            return;
+        }
+        try {
+            const response = await fetch(`http://localhost:9090/clientes/buscar_clientes_por_palabra?palabra_clave=${encodeURIComponent(formData.nombre)}`);
+            const data = await response.json();
+            if (response.ok) {
+                setClientes(data);
+                setNoClientsFound(data.length === 0);
+                if (data.length === 0) {
+                    notify("No se encontraron clientes con ese nombre", "error");
+                } else {
+                    notify(`Se encontraron ${data.length} cliente(s)`, "success");
+                }
+            } else {
+                notify("Error al buscar clientes", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión con el servidor", "error");
+            console.error("Error:", error);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Si solo el campo nombre tiene contenido, realizar búsqueda
+        if (formData.nombre && !formData.numero_documento && !formData.telefono && !formData.direccion) {
+            await searchClientes();
+            return;
+        }
+        // Si hay más campos llenos, proceder con la creación del cliente
         try {
             const response = await fetch("http://localhost:9090/clientes/agregar_cliente", {
                 method: "POST",
@@ -68,6 +99,13 @@ const ClientesPage = () => {
         }
     };
 
+    const handleNameKeyDown = async (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            await searchClientes();
+        }
+    };
+
     const resetForm = () => {
         setFormData({
             id_cliente: "",
@@ -80,33 +118,12 @@ const ClientesPage = () => {
         });
     };
 
-    const fetchClienteById = async () => {
-        if (!formData.id_cliente) {
-            notify("Por favor, ingrese un ID de cliente", "error");
-            return;
-        }
-        try {
-            const response = await fetch(`http://localhost:9090/clientes/buscar_cliente?id_cliente=${formData.id_cliente}`);
-            const data = await response.json();
-            if (response.ok) {
-                setFormData(data);
-                notify("Cliente encontrado", "success");
-            } else {
-                notify("Cliente no encontrado", "error");
-            }
-        } catch (error) {
-            notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
-        }
-    };
-
     const handleEdit = async () => {
         if (!formData.id_cliente) {
             notify("Por favor, seleccione un cliente para editar", "error");
             return;
         }
     
-        // Validate required fields
         const requiredFields = ['tipo_documento', 'numero_documento', 'nombre', 'telefono', 'direccion', 'id_estado_cliente'];
         const missingFields = requiredFields.filter(field => !formData[field]);
         
@@ -116,27 +133,15 @@ const ClientesPage = () => {
         }
     
         try {
-            // Log the data being sent
-            console.log("Sending update data:", formData);
-    
             const response = await fetch('http://localhost:9090/clientes/actualizar_cliente', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    id_cliente: formData.id_cliente,
-                    tipo_documento: formData.tipo_documento,
-                    numero_documento: formData.numero_documento,
-                    nombre: formData.nombre,
-                    telefono: formData.telefono,
-                    direccion: formData.direccion,
-                    id_estado_cliente: formData.id_estado_cliente
-                }),
+                body: JSON.stringify(formData),
             });
     
             const data = await response.json();
-            console.log("Server response:", data);
     
             if (response.ok) {
                 notify("Cliente actualizado exitosamente", "success");
@@ -146,7 +151,6 @@ const ClientesPage = () => {
                 notify(data.message || "Error al actualizar el cliente", "error");
             }
         } catch (error) {
-            console.error("Error in handleEdit:", error);
             notify("Error de conexión con el servidor", "error");
         }
     };
@@ -183,20 +187,6 @@ const ClientesPage = () => {
             <form className="FormContainerCustom" onSubmit={handleSubmit}>
                 <div className="inputsRowCustom">
                     <div className="groupCustom">
-                        <input
-                            type="text"
-                            name="id_cliente"
-                            value={formData.id_cliente}
-                            onChange={handleChange}
-                            className="inputCustom"
-                            placeholder="CLI0001"
-                        />
-                        <span className="highlightCustom"></span>
-                        <span className="barCustom"></span>
-                        <label>ID Cliente</label>
-                    </div>
-
-                    <div className="groupCustom">
                         <select
                             name="tipo_documento"
                             value={formData.tipo_documento}
@@ -229,6 +219,7 @@ const ClientesPage = () => {
                             name="nombre"
                             value={formData.nombre}
                             onChange={handleChange}
+                            onKeyDown={handleNameKeyDown}
                             className="inputCustom"
                             required
                         />
@@ -272,9 +263,9 @@ const ClientesPage = () => {
                             onChange={handleChange}
                             className="inputCustom"
                         >
-                            <option value="ESTCLI001">Activo</option>
-                            <option value="ESTCLI002">Inactivo</option>
-                            <option value="ESTCLI003">Suspendido</option>
+                            <option value="ESC0001">Activo</option>
+                            <option value="ESC0002">Inactivo</option>
+                            <option value="ESC0003">Suspendido</option>
                         </select>
                         <label>Estado</label>
                     </div>
@@ -284,8 +275,8 @@ const ClientesPage = () => {
                     <button type="submit" className="crudBtnCustom">
                         Crear Cliente
                     </button>
-                    <button type="button" className="crudBtnCustom" onClick={fetchClienteById}>
-                        Buscar por ID
+                    <button type="button" className="crudBtnCustom" onClick={searchClientes}>
+                        Buscar por Nombre
                     </button>
                     <button type="button" className="crudBtnCustom" onClick={handleEdit}>
                         Actualizar

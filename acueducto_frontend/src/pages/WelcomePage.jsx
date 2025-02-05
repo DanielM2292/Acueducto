@@ -1,19 +1,13 @@
 import React from "react";
-import { LogoAcueducto } from "../imagenes/LogoAcueducto.png"
+import LogoAcueducto from "../imagenes/LogoAcueducto.png";
 
 const WelcomePage = () => {
   return (
     <div className="welcome-container">
       <div className="welcome-content">
         <div className="header">
-          <div className="logo-container">
-            <LogoAcueducto viewBox="0 0 24 24" fill="#2c3e50" className="logo">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </LogoAcueducto>
-          </div>
-          <h1>Sistema de Facturación Acueducto</h1>
-          <p className="tagline">"Gestionando el flujo de recursos con transparencia y eficiencia"</p>
+          <h1>Sistema de Facturación Acueducto y Alcantarillado de Santander de Valencia</h1>
+          <p className="tagline">"AGUA PURA, VIDA SEGURA"</p>
         </div>
 
         <div className="features-grid">
@@ -40,7 +34,7 @@ const WelcomePage = () => {
         </div>
 
         <footer>
-          <p>© 2024 Sistema de Facturación Acueducto. Todos los derechos reservados.</p>
+          <p>© 2024 Sistema de Facturación Acueducto y Alcantarillado de Santander de Valencia. Todos los derechos reservados.</p>
         </footer>
       </div>
 
@@ -51,16 +45,15 @@ const WelcomePage = () => {
           align-items: center;
           height: 100vh;
           width: 100%;
-          background: linear-gradient(135deg, #BCEEFF);
+          background-color: #BCEEFF;
           font-family: Arial, sans-serif;
           margin: 0 auto;
           padding: 0;
         }
 
         .welcome-content {
-          background-color: #53D4FF;
+          background-color: #BCEEFF;
           border-radius: 15px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
           padding: 40px;
           max-width: 900px;
           width: 100%;
@@ -69,17 +62,6 @@ const WelcomePage = () => {
 
         .header {
           margin-bottom: 30px;
-        }
-
-        .logo-container {
-          display: flex;
-          justify-content: center;
-          margin-bottom: 20px;
-        }
-
-        .logo {
-          width: 80px;
-          height: 80px;
         }
 
         h1 {

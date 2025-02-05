@@ -4,13 +4,13 @@ import "react-toastify/dist/ReactToastify.css";
 
 const InventarioPage = () => {
     const [formData, setFormData] = useState({
-        id_producto: "",
         descripcion_producto: "",
         cantidad: "",
         valor_producto: "",
     });
 
     const [productos, setProductos] = useState([]);
+    const [selectedProductId, setSelectedProductId] = useState(null);
 
     const notify = (message, type) => {
         if (type === "success") {
@@ -36,39 +36,15 @@ const InventarioPage = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    descripcion_producto: formData.descripcion_producto,
-                    cantidad: formData.cantidad,
-                    valor_producto: formData.valor_producto,
-                }),
+                body: JSON.stringify(formData),
             });
             const data = await response.json();
             if (response.ok) {
                 notify("Producto agregado exitosamente", "success");
-                setFormData({ id_producto: "", descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setFormData({ descripcion_producto: "", cantidad: "", valor_producto: "" });
                 fetchAllProducts();
             } else {
                 notify(data.message || "Error al agregar el producto", "error");
-            }
-        } catch (error) {
-            notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
-        }
-    };
-
-    const fetchProductById = async () => {
-        try {
-            const response = await fetch(`http://localhost:9090/productos/buscar_producto?id_producto=${formData.id_producto}`);
-            const data = await response.json();
-            if (response.ok) {
-                setFormData({
-                    id_producto: data.id_producto,
-                    descripcion_producto: data.descripcion_producto,
-                    cantidad: data.cantidad,
-                    valor_producto: data.valor_producto,
-                });
-            } else {
-                notify("Error al obtener el producto", "error");
             }
         } catch (error) {
             notify("Error de conexión con el servidor", "error");
@@ -107,8 +83,13 @@ const InventarioPage = () => {
     };
 
     const handleEdit = async () => {
+        if (!selectedProductId) {
+            notify("Por favor, seleccione un producto para editar", "error");
+            return;
+        }
+
         try {
-            const response = await fetch(`http://localhost:9090/productos/actualizar_producto?id_producto=${formData.id_producto}`, {
+            const response = await fetch(`http://localhost:9090/productos/actualizar_producto?id_producto=${selectedProductId}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -118,7 +99,8 @@ const InventarioPage = () => {
             const data = await response.json();
             if (response.ok) {
                 notify("Producto actualizado exitosamente", "success");
-                setFormData({ id_producto: "", descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setFormData({ descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setSelectedProductId(null);
                 fetchAllProducts();
             } else {
                 notify(data.message || "Error al actualizar el producto", "error");
@@ -130,14 +112,20 @@ const InventarioPage = () => {
     };
 
     const handleDelete = async () => {
+        if (!selectedProductId) {
+            notify("Por favor, seleccione un producto para eliminar", "error");
+            return;
+        }
+
         try {
-            const response = await fetch(`http://localhost:9090/productos/eliminar_producto?id_producto=${formData.id_producto}`, {
+            const response = await fetch(`http://localhost:9090/productos/eliminar_producto?id_producto=${selectedProductId}`, {
                 method: "DELETE",
             });
             const data = await response.json();
             if (response.ok) {
                 notify("Producto eliminado exitosamente", "success");
-                setFormData({ id_producto: "", descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setFormData({ descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setSelectedProductId(null);
                 fetchAllProducts();
             } else {
                 notify(data.message || "Error al eliminar el producto", "error");
@@ -157,8 +145,8 @@ const InventarioPage = () => {
     };
 
     const handleRowClick = (product) => {
+        setSelectedProductId(product.id_producto);
         setFormData({
-            id_producto: product.id_producto,
             descripcion_producto: product.descripcion_producto,
             cantidad: product.cantidad,
             valor_producto: product.valor_producto,
@@ -175,19 +163,6 @@ const InventarioPage = () => {
             <h1 className="pagesTitle">Inventario</h1>
             <form className="FormContainer" onSubmit={handleSubmit}>
                 <div className="inputsRow">
-                    <div className="group">
-                        <input
-                            type="text"
-                            name="id_producto"
-                            value={formData.id_producto}
-                            onChange={handleChange}
-                            required
-                            className="input"
-                        />
-                        <span className="highlight"></span>
-                        <span className="bar"></span>
-                        <label>ID Producto</label>
-                    </div>
                     <div className="group">
                         <input
                             type="text"
@@ -250,12 +225,17 @@ const InventarioPage = () => {
                     <div className="productTableBody">
                         {productos.length > 0 ? (
                             productos.map((product) => (
-                                <div key={product.id_producto} className="productTableRow" onClick={() => handleRowClick(product)} style={{ cursor: 'pointer' }}>
+                                <div 
+                                    key={product.id_producto} 
+                                    className={`productTableRow ${selectedProductId === product.id_producto ? 'selected' : ''}`} 
+                                    onClick={() => handleRowClick(product)} 
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <div>{product.id_producto}</div>
                                     <div>{product.descripcion_producto}</div>
                                     <div>{product.cantidad}</div>
                                     <div>{formatCurrency(product.valor_producto)}</div>
-                                    <div>{formatCurrency(product.valor_producto * product.cantidad)}</div>
+                                    <div>{formatCurrency(product.total_productos)}</div>
                                     <div>{new Date(product.fecha_producto).toLocaleDateString()}</div>
                                 </div>
                             ))
@@ -268,4 +248,5 @@ const InventarioPage = () => {
         </div>
     );
 };
+
 export default InventarioPage;

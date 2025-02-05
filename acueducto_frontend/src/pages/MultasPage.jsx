@@ -13,7 +13,6 @@ const MultasPage = () => {
     const [showMatriculas, setShowMatriculas] = useState(false);
     const [selectedMatricula, setSelectedMatricula] = useState(null);
 
-    // Función para formatear valores a pesos colombianos
     const formatearPesos = (valor) => {
         return new Intl.NumberFormat('es-CO', {
             style: 'currency',

@@ -1,126 +1,137 @@
 import React, { useState } from 'react';
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaEdit, FaSearch } from "react-icons/fa";
 
 const IngresosPage = () => {
-    const [idIngreso, setIdIngreso] = useState("");
     const [descripcionIngreso, setDescripcionIngreso] = useState("");
     const [valorIngreso, setValorIngreso] = useState("");
-    const [idMatricula, setIdMatricula] = useState("");
-    const [idMulta, setIdMulta] = useState("");
-    const [idPago, setIdPago] = useState("");
-    const [idProducto, setIdProducto] = useState("");
     const [ingresos, setIngresos] = useState([]);
     const [editMode, setEditMode] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+
+    const notify = (message, type) => {
+        if (type === "success") {
+            toast.success(message);
+        } else {
+            toast.error(message);
+        }
+    };
+
+    const handleListarTodos = async () => {
+        try {
+            const response = await fetch("http://localhost:9090/ingresos/listar_todos_ingresos");
+            const data = await response.json();
+            if (response.ok) {
+                setIngresos(data);
+                setIsModalOpen(true);
+                notify("Ingresos cargados exitosamente", "success");
+            } else {
+                notify("Error al cargar los ingresos", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión con el servidor", "error");
+            console.error("Error:", error);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsModalOpen(false);
+            setIsClosing(false);
+        }, 300);
+    };
 
     return (
-        <div className='IngresosPageCustom'>
+        <div className="ingresos-container">
             <ToastContainer />
-            <h1 className="pagesTitleCustom">Gestión de Ingresos</h1>
-            <div className="formIngresosCustom">
-                <div className="inputsRowCustom">
-                    <div className="groupCustom">
+            <h1 className="ingresos-title">Gestión de Ingresos</h1>
+            
+            <div className="ingresos-form">
+                <div className="ingresos-input-grid">
+                    <div className="ingresos-input-group">
                         <input
                             type="text"
-                            name="descripcion_ingreso"
                             value={descripcionIngreso}
                             onChange={(e) => setDescripcionIngreso(e.target.value)}
-                            className="inputCustom"
+                            className="ingresos-input"
+                            placeholder=" "
                             required
                         />
-                        <label>Descripción del Ingreso</label>
+                        <label className="ingresos-label">Descripción del Ingreso</label>
                     </div>
-                    <div className='groupCustom'>
+                    
+                    <div className="ingresos-input-group">
                         <input 
-                            type='number'
-                            name='valor_ingreso'
+                            type="number"
                             value={valorIngreso}
                             onChange={(e) => setValorIngreso(e.target.value)}
-                            className='inputCustom'
+                            className="ingresos-input"
+                            placeholder=" "
                             required
                         />
-                        <label>Valor del Ingreso</label>
-                    </div>
-                    <div className='groupCustom'>
-                        <input 
-                            type='text'
-                            name='id_matricula'
-                            value={idMatricula}
-                            onChange={(e) => setIdMatricula(e.target.value)}
-                            className='inputCustom'
-                        />
-                        <label>ID Matricula</label>
-                    </div>
-                    <div className='groupCustom'>
-                        <input 
-                            type='text'
-                            name='id_multa'
-                            value={idMulta}
-                            onChange={(e) => setIdMulta(e.target.value)}
-                            className='inputCustom'
-                        />
-                        <label>ID Multa</label>
-                    </div>
-                    <div className='groupCustom'>
-                        <input 
-                            type='text'
-                            name='id_pago'
-                            value={idPago}
-                            onChange={(e) => setIdPago(e.target.value)}
-                            className='inputCustom'
-                        />
-                        <label>ID Pago</label>
-                    </div>
-                    <div className='groupCustom'>
-                        <input 
-                            type='text'
-                            name='id_producto'
-                            value={idProducto}
-                            onChange={(e) => setIdProducto(e.target.value)}
-                            className='inputCustom'
-                        />
-                        <label>ID Producto</label>
-                    </div>
-                    <div className='buttonsCustom'>
-                        <button type='submit' className='crudBtnCustom' >
-                            Crear Ingreso
-                        </button>
-                        <button type='button' className='crudBtnCustom' >
-                            Buscar Ingreso
-                        </button>
-                        <button type='button' className='crudBtnCustom' >
-                            Actualizar Ingreso
-                        </button>
-                        <button type='button' className='crudBtnCustom' >
-                            Limpiar Formulario
-                        </button>
-                        <button type='button' className='crudBtnCustom' >
-                            Listar Todos
-                        </button>
+                        <label className="ingresos-label">Valor del Ingreso</label>
                     </div>
                 </div>
-                <div className="IngresosListCustom">
-                    <h2 className="ListIngresosTitleCustom">Lista de Ingresos</h2>
-                    <div className="ingresosTableCustom">
-                        <div className="ingresosTableHeaderCustom">
-                            <div>ID Ingreso</div>
-                            <div>Descripción</div>
-                            <div>Valor</div>
-                            <div>Fecha</div>
-                        </div>
-                        <div className="ingresosTableBodyCustom">
-                            {ingresos.map((item, index) => (
-                                <div key={index} className="ingresosTableRowCustom">
-                                    <div>{item.id_ingreso}</div>
-                                    <div>{item.descripcion_ingreso}</div>
-                                    <div>{item.valor_ingreso}</div>    
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+
+                <div className="ingresos-buttons">
+                    <button className="ingresos-button ingresos-button-primary">
+                        Crear Ingreso
+                    </button>
+                    <button className="ingresos-button">
+                        Buscar Ingreso
+                    </button>
+                    <button className="ingresos-button">
+                        Actualizar Ingreso
+                    </button>
+                    <button className="ingresos-button">
+                        Limpiar Formulario
+                    </button>
+                    <button 
+                        className="ingresos-button"
+                        onClick={handleListarTodos}
+                    >
+                        Listar Todos
+                    </button>
                 </div>
             </div>
+
+            {isModalOpen && (
+                <div className={`pagos-modal-overlay ${isClosing ? 'closing' : ''}`}>
+                    <div className={`pagos-modal ${isClosing ? 'closing' : ''}`}>
+                        <h3 className="pagos-modal-title">Lista de Ingresos</h3>
+                        <div className="pagos-table-container">
+                            <table className="pagos-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID Ingreso</th>
+                                        <th>Descripción</th>
+                                        <th>Valor</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {ingresos.map((item, index) => (
+                                        <tr key={index}>
+                                            <td>{item.id_ingreso}</td>
+                                            <td>{item.descripcion_ingreso}</td>
+                                            <td>{item.valor_ingreso}</td>
+                                            <td>{new Date(item.fecha).toLocaleDateString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button
+                            className="pagos-button pagos-button-close"
+                            onClick={handleCloseModal}
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
