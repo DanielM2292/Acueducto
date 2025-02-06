@@ -3,20 +3,24 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const IngresosPage = () => {
-    const [descripcionIngreso, setDescripcionIngreso] = useState("");
-    const [valorIngreso, setValorIngreso] = useState("");
+    const [formData, setFormData] = useState({
+        descripcionIngreso: "",
+        valorIngreso: ""
+    });
     const [ingresos, setIngresos] = useState([]);
     const [editMode, setEditMode] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
 
     const notify = (message, type) => {
-        if (type === "success") {
-            toast.success(message);
-        } else {
-            toast.error(message);
-        }
+        toast[type](message);
     };
+
+    const formatCOP = (value) => 
+        new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP'
+        }).format(value);
 
     const handleListarTodos = async () => {
         try {
@@ -30,8 +34,72 @@ const IngresosPage = () => {
                 notify("Error al cargar los ingresos", "error");
             }
         } catch (error) {
-            notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
+            notify("Error de conexión", "error");
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            descripcionIngreso: "",
+            valorIngreso: ""
+        });
+        setEditMode(false);
+    };
+
+    const handleSubmit = async () => {
+        try {
+            const response = await fetch("http://localhost:9090/ingresos/crear_ingreso", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            
+            if (response.ok) {
+                notify("Ingreso creado exitosamente", "success");
+                resetForm();
+            } else {
+                notify("Error al crear el ingreso", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión", "error");
+        }
+    };
+
+    const handleSearch = async () => {
+        try {
+            const response = await fetch(`http://localhost:9090/ingresos/buscar_ingreso/${formData.id_ingreso}`);
+            const data = await response.json();
+            
+            if (response.ok && data) {
+                setFormData({
+                    descripcionIngreso: data.descripcion_ingreso,
+                    valorIngreso: data.valor_ingreso
+                });
+                notify("Ingreso encontrado", "success");
+            } else {
+                notify("Ingreso no encontrado", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión", "error");
+        }
+    };
+
+    const handleUpdate = async () => {
+        try {
+            const response = await fetch(`http://localhost:9090/ingresos/actualizar_ingreso/${formData.id_ingreso}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            
+            if (response.ok) {
+                notify("Ingreso actualizado exitosamente", "success");
+                resetForm();
+            } else {
+                notify("Error al actualizar el ingreso", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión", "error");
         }
     };
 
@@ -53,8 +121,8 @@ const IngresosPage = () => {
                     <div className="ingresos-input-group">
                         <input
                             type="text"
-                            value={descripcionIngreso}
-                            onChange={(e) => setDescripcionIngreso(e.target.value)}
+                            value={formData.descripcionIngreso}
+                            onChange={(e) => setFormData({...formData, descripcionIngreso: e.target.value})}
                             className="ingresos-input"
                             placeholder=" "
                             required
@@ -65,8 +133,8 @@ const IngresosPage = () => {
                     <div className="ingresos-input-group">
                         <input 
                             type="number"
-                            value={valorIngreso}
-                            onChange={(e) => setValorIngreso(e.target.value)}
+                            value={formData.valorIngreso}
+                            onChange={(e) => setFormData({...formData, valorIngreso: e.target.value})}
                             className="ingresos-input"
                             placeholder=" "
                             required
@@ -76,22 +144,29 @@ const IngresosPage = () => {
                 </div>
 
                 <div className="ingresos-buttons">
-                    <button className="ingresos-button ingresos-button-primary">
+                    <button 
+                        onClick={handleSubmit}
+                        className="ingresos-button ingresos-button-primary">
                         Crear Ingreso
                     </button>
-                    <button className="ingresos-button">
+                    <button 
+                        onClick={handleSearch}
+                        className="ingresos-button">
                         Buscar Ingreso
                     </button>
-                    <button className="ingresos-button">
+                    <button 
+                        onClick={handleUpdate}
+                        className="ingresos-button">
                         Actualizar Ingreso
                     </button>
-                    <button className="ingresos-button">
+                    <button 
+                        onClick={resetForm}
+                        className="ingresos-button">
                         Limpiar Formulario
                     </button>
                     <button 
-                        className="ingresos-button"
                         onClick={handleListarTodos}
-                    >
+                        className="ingresos-button">
                         Listar Todos
                     </button>
                 </div>
@@ -112,11 +187,11 @@ const IngresosPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {ingresos.map((item, index) => (
-                                        <tr key={index}>
+                                    {ingresos.map((item) => (
+                                        <tr key={item.id_ingreso}>
                                             <td>{item.id_ingreso}</td>
                                             <td>{item.descripcion_ingreso}</td>
-                                            <td>{item.valor_ingreso}</td>
+                                            <td>{formatCOP(item.valor_ingreso)}</td>
                                             <td>{new Date(item.fecha).toLocaleDateString()}</td>
                                         </tr>
                                     ))}

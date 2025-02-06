@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { FaEdit, FaSearch } from "react-icons/fa";
 
 const EgresosPage = () => {
-    const [descripcionEgreso, setDescripcionEgreso] = useState("");
-    const [cantidadEgreso, setCantidadEgreso] = useState("");
-    const [valorEgreso, setValorEgreso] = useState("");
-    const [idProducto, setIdProducto] = useState("");
+    const [formData, setFormData] = useState({
+        descripcionEgreso: "",
+        cantidadEgreso: "",
+        valorEgreso: "",
+        idProducto: ""
+    });
     const [egresos, setEgresos] = useState([]);
     const [editMode, setEditMode] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
 
     const notify = (message, type) => {
-        if (type === "success") {
-            toast.success(message);
-        } else {
-            toast.error(message);
-        }
+        toast[type](message);
     };
+
+    const formatCOP = (value) => 
+        new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP'
+        }).format(value);
 
     const handleListarTodos = async () => {
         try {
@@ -33,8 +36,76 @@ const EgresosPage = () => {
                 notify("Error al cargar los egresos", "error");
             }
         } catch (error) {
-            notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
+            notify("Error de conexión", "error");
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            descripcionEgreso: "",
+            cantidadEgreso: "",
+            valorEgreso: "",
+            idProducto: ""
+        });
+        setEditMode(false);
+    };
+
+    const handleSubmit = async () => {
+        try {
+            const response = await fetch("http://localhost:9090/egresos/crear_egreso", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            
+            if (response.ok) {
+                notify("Egreso creado exitosamente", "success");
+                resetForm();
+            } else {
+                notify("Error al crear el egreso", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión", "error");
+        }
+    };
+
+    const handleSearch = async () => {
+        try {
+            const response = await fetch(`http://localhost:9090/egresos/buscar_egreso/${formData.idProducto}`);
+            const data = await response.json();
+            
+            if (response.ok && data) {
+                setFormData({
+                    descripcionEgreso: data.descripcion_egreso,
+                    cantidadEgreso: data.cantidad_egreso,
+                    valorEgreso: data.valor_egreso,
+                    idProducto: data.id_producto
+                });
+                notify("Egreso encontrado", "success");
+            } else {
+                notify("Egreso no encontrado", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión", "error");
+        }
+    };
+
+    const handleUpdate = async () => {
+        try {
+            const response = await fetch(`http://localhost:9090/egresos/actualizar_egreso/${formData.idProducto}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            
+            if (response.ok) {
+                notify("Egreso actualizado exitosamente", "success");
+                resetForm();
+            } else {
+                notify("Error al actualizar el egreso", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión", "error");
         }
     };
 
@@ -56,8 +127,8 @@ const EgresosPage = () => {
                     <div className="egresos-input-group">
                         <input
                             type="text"
-                            value={descripcionEgreso}
-                            onChange={(e) => setDescripcionEgreso(e.target.value)}
+                            value={formData.descripcionEgreso}
+                            onChange={(e) => setFormData({...formData, descripcionEgreso: e.target.value})}
                             className="egresos-input"
                             placeholder=" "
                             required
@@ -68,8 +139,8 @@ const EgresosPage = () => {
                     <div className="egresos-input-group">
                         <input 
                             type="number"
-                            value={cantidadEgreso}
-                            onChange={(e) => setCantidadEgreso(e.target.value)}
+                            value={formData.cantidadEgreso}
+                            onChange={(e) => setFormData({...formData, cantidadEgreso: e.target.value})}
                             className="egresos-input"
                             placeholder=" "
                             required
@@ -80,8 +151,8 @@ const EgresosPage = () => {
                     <div className="egresos-input-group">
                         <input 
                             type="number"
-                            value={valorEgreso}
-                            onChange={(e) => setValorEgreso(e.target.value)}
+                            value={formData.valorEgreso}
+                            onChange={(e) => setFormData({...formData, valorEgreso: e.target.value})}
                             className="egresos-input"
                             placeholder=" "
                             required
@@ -92,8 +163,8 @@ const EgresosPage = () => {
                     <div className="egresos-input-group">
                         <input 
                             type="text"
-                            value={idProducto}
-                            onChange={(e) => setIdProducto(e.target.value)}
+                            value={formData.idProducto}
+                            onChange={(e) => setFormData({...formData, idProducto: e.target.value})}
                             className="egresos-input"
                             placeholder=" "
                         />
@@ -102,22 +173,29 @@ const EgresosPage = () => {
                 </div>
 
                 <div className="egresos-buttons">
-                    <button className="egresos-button egresos-button-primary">
+                    <button 
+                        onClick={handleSubmit}
+                        className="egresos-button egresos-button-primary">
                         Crear Egreso
                     </button>
-                    <button className="egresos-button">
+                    <button 
+                        onClick={handleSearch}
+                        className="egresos-button">
                         Buscar Egreso
                     </button>
-                    <button className="egresos-button">
+                    <button 
+                        onClick={handleUpdate}
+                        className="egresos-button">
                         Actualizar Egreso
                     </button>
-                    <button className="egresos-button">
+                    <button 
+                        onClick={resetForm}
+                        className="egresos-button">
                         Limpiar Formulario
                     </button>
                     <button 
-                        className="egresos-button"
                         onClick={handleListarTodos}
-                    >
+                        className="egresos-button">
                         Listar Todos
                     </button>
                 </div>
@@ -140,12 +218,12 @@ const EgresosPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {egresos.map((item, index) => (
-                                        <tr key={index}>
+                                    {egresos.map((item) => (
+                                        <tr key={item.id_egreso}>
                                             <td>{item.id_egreso}</td>
                                             <td>{item.descripcion_egreso}</td>
                                             <td>{item.cantidad_egreso}</td>
-                                            <td>{item.valor_egreso}</td>
+                                            <td>{formatCOP(item.valor_egreso)}</td>
                                             <td>{new Date(item.fecha).toLocaleDateString()}</td>
                                             <td>{item.id_producto}</td>
                                         </tr>

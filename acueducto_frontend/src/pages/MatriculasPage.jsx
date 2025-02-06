@@ -247,19 +247,6 @@ const MatriculasPage = () => {
                 </div>
                 <div className="groupCustom">
                     <select
-                        name="estado_matricula"
-                        value={estadoMatricula}
-                        onChange={(e) => setEstadoMatricula(e.target.value)}
-                        className="inputCustom"
-                        required
-                    >
-                        <option value="ESM0001">Parcial</option>
-                        <option value="ESM0002">Total</option>
-                    </select>
-                    <label>Estado Matrícula</label>
-                </div>
-                <div className="groupCustom">
-                    <select
                         name="tipo_tarifa"
                         value={tipoTarifa}
                         onChange={(e) => setTipoTarifa(e.target.value)}
