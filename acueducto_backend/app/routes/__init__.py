@@ -7,6 +7,8 @@ clientes_bp = Blueprint('clientes', __name__, url_prefix='/clientes')
 productos_bp = Blueprint('productos', __name__, url_prefix='/productos')
 matriculas_bp = Blueprint('matriculas', __name__, url_prefix='/matriculas')
 multas_bp = Blueprint('multas', __name__, url_prefix='/multas')
+ingresos_bp = Blueprint('ingresos', __name__, url_prefix='/ingresos')
+egresos_bp = Blueprint('egresos', __name__, url_prefix='/egresos')
 
 # Aquí puedes importar los módulos para registrar sus rutas con los Blueprints
 from .auth import *
@@ -15,3 +17,5 @@ from .clientes import *
 from .productos import *
 from .matriculas import *
 from .multas import *
+from .ingresos import *
+from .egresos import *

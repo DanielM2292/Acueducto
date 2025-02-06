@@ -140,7 +140,14 @@ class Clientes:
     @staticmethod
     def get_all_clientes(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM clientes')
+        cursor.execute('''
+            SELECT c.id_cliente, c.tipo_documento, c.numero_documento, c.nombre, c.telefono, c.direccion, c.id_estado_cliente, m.id_tarifa_medidor, m.id_tarifa_estandar
+	            FROM
+		            clientes AS c
+                INNER JOIN
+		            matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
+	            INNER JOIN 
+		            matriculas AS m ON mc.id_matricula = m.id_matricula;''')
         clientes = cursor.fetchall()
         cursor.close()
         return clientes
@@ -167,8 +174,8 @@ class Clientes:
     @staticmethod
     def verificar_cliente(mysql, numero_documento):
         cursor = mysql.connection.cursor()
-        cursor.execute('SELECT id_cliente, id_matricula_cliente FROM clientes WHERE numero_documento = %s', (numero_documento,))
-        cliente = cursor.fetchall()
+        cursor.execute('SELECT id_cliente FROM clientes WHERE numero_documento = %s', (numero_documento,))
+        cliente = cursor.fetchone()
         cursor.close()
         return cliente
 
@@ -340,9 +347,6 @@ class Matriculas:
         matricula = cursor.fetchall()
         cursor.close()
         return matricula
-    
-    def obtener_id_matricula(mysql, numero_documento):
-        cursor = mysql.connection.cursor()
 
 class Matricula_cliente:
     @staticmethod
@@ -407,3 +411,21 @@ class Multas:
         cursor.execute('UPDATE multas SET motivo_multa = %s, valor_multa = %s WHERE id_multa = %s', (motivo_multa, valor_multa, id_multa))
         mysql.connection.commit()
         cursor.close()
+        
+class Ingresos:
+    @staticmethod
+    def listar_ingresos(mysql):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM ingresos')
+        ingresos = cursor.fetchall()
+        cursor.close()
+        return ingresos
+
+class Egresos:
+    @staticmethod
+    def listar_egresos(mysql):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM egresos')
+        egresos = cursor.fetchall()
+        cursor.close()
+        return egresos

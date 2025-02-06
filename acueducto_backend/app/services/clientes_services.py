@@ -15,24 +15,16 @@ class ClientesServices:
             direccion = data.get("direccion"),
             estado_cliente = data.get("id_estado_cliente")
             current_user = session.get("id_administrador")
+            
+            cliente = Clientes.verificar_cliente(mysql, numero_documento)
+            if cliente:
+               return jsonify({"error": "El cliente ya existe"}), 409
+            
             Clientes.add_cliente(mysql, custom_id_cliente, tipo_documento,numero_documento, nombre, telefono, direccion, estado_cliente)
             Auditoria.log_audit(mysql, custom_id_auditoria, 'clientes', custom_id_cliente, 'INSERT', current_user, f'Se agrega cliente {custom_id_cliente}, nombre: {nombre}')
             return jsonify({"message": "Cliente agregado exitosamente", "id_cliente": custom_id_cliente}), 201
         except Exception as e:
             return jsonify({"message": f"Error al agregar cliente: {str(e)}"}), 500
-    
-    @staticmethod
-    def buscar_cliente():
-        mysql = current_app.mysql
-        try:
-            id_cliente = request.args.get("id_cliente")
-            cliente = Clientes.get_cliente_by_id(mysql, id_cliente)
-            if cliente:
-                return jsonify(cliente)
-            return jsonify({"message": "Cliente no encontrado"}), 404
-        except Exception as e:
-            return jsonify({"message": f"Error al buscar cliente: {str(e)}"}), 500    
-    
 
     @staticmethod
     def actualizar_cliente_route(data):
@@ -67,7 +59,7 @@ class ClientesServices:
     def buscar_clientes_por_palabra():
         mysql = current_app.mysql
         try:
-            palabra_clave = request.args.get("palabra_clave")
+            palabra_clave = request.args.get('palabra_clave')
             clientes = Clientes.search_clientes_by_keyword(mysql, palabra_clave)
             return jsonify(clientes)
         except Exception as e:

@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from .models import init_db
-from .routes import auth_bp, facturas_bp, clientes_bp, productos_bp, matriculas_bp, multas_bp
+from .routes import auth_bp, facturas_bp, clientes_bp, productos_bp, matriculas_bp, multas_bp, ingresos_bp, egresos_bp
 
 def create_app():
     app = Flask(__name__)
@@ -15,7 +15,9 @@ def create_app():
     app.register_blueprint(clientes_bp)
     app.register_blueprint(productos_bp)
     app.register_blueprint(matriculas_bp)
-    app.register_blueprint(multas_bp)    
+    app.register_blueprint(multas_bp)
+    app.register_blueprint(ingresos_bp)
+    app.register_blueprint(egresos_bp)
     
     app.mysql = mysql
 
