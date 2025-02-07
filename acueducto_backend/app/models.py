@@ -358,17 +358,17 @@ class Matricula_cliente:
         cursor.close()
     
     @staticmethod
-    def asociar_multa_matricula_cliente(mysql, id_multa, id_matricula_cliente):
+    def asociar_multa_matricula_cliente(mysql, id_multa_cliente, id_matricula_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE matricula_cliente SET id_multa = %s WHERE id_matricula_cliente = %s', (id_multa, id_matricula_cliente))
+        cursor.execute('UPDATE matricula_cliente SET id_multa_cliente = %s WHERE id_matricula_cliente = %s', (id_multa_cliente, id_matricula_cliente))
         mysql.connection.commit()
         cursor.close()
     
     @staticmethod
     def verificar_id_matricula_cliente(mysql, id_matricula):
-        cursor = mysql.connection.cursor()
-        cursor.execute('SELECT id_matricula_cliente, id_multa FROM matricula_cliente WHERE id_matricula = %s', (id_matricula,))
-        id_matricula_cliente = cursor.fetchall()
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT id_matricula_cliente, id_cliente FROM matricula_cliente WHERE id_matricula = %s', (id_matricula,))
+        id_matricula_cliente = cursor.fetchone()
         cursor.close()
         return id_matricula_cliente
     
@@ -393,13 +393,17 @@ class Multas:
     def mostrar_multas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT m.id_multa, m.motivo_multa, m.valor_multa, mc.id_matricula, c.nombre
+            SELECT m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre
 	            FROM
 		            multas AS m
+				INNER JOIN
+					multa_clientes AS mcl ON m.id_multa = mcl.id_multa
                 INNER JOIN
-		            matricula_cliente AS mc ON m.id_multa = mc.id_multa
+		            matricula_cliente AS mc ON mcl.id_multa_cliente = mc.id_multa_cliente
 	            INNER JOIN
-		            clientes AS c ON mc.id_cliente = c.id_cliente;
+		            clientes AS c ON mc.id_cliente = c.id_cliente
+				INNER JOIN
+					matriculas AS ma ON mc.id_matricula = ma.id_matricula;
         ''')
         multas = cursor.fetchall()
         cursor.close()
@@ -412,6 +416,15 @@ class Multas:
         mysql.connection.commit()
         cursor.close()
         
+class Multa_clientes:
+    @staticmethod
+    def crear_multa_cliente(mysql, id_multa_cliente, id_multa, id_cliente, id_estado_multa):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO multa_clientes (id_multa_cliente, id_multa, id_cliente, id_estado_multa) VALUES (%s, %s, %s, %s)', 
+                       (id_multa_cliente, id_multa, id_cliente, id_estado_multa))
+        mysql.connection.commit()
+        cursor.close()
+        
 class Ingresos:
     @staticmethod
     def listar_ingresos(mysql):
@@ -420,6 +433,29 @@ class Ingresos:
         ingresos = cursor.fetchall()
         cursor.close()
         return ingresos
+    
+    @staticmethod
+    def crear_ingreso(mysql, id_ingreso, descripcion_ingreso, valor_ingreso):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO ingresos (id_ingreso, descripcion_ingreso, valor_ingreso) VALUES (%s, %s, %s)',
+                       (id_ingreso, descripcion_ingreso, valor_ingreso))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def buscar_ingreso(mysql, palabra):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM ingresos WHERE descripcion_ingreso LIKE %s', ('%'+ palabra + '%',))
+        ingreso = cursor.fetchall()
+        cursor.close()
+        return ingreso
+    
+    @staticmethod
+    def actualizar_ingreso(mysql, id_ingreso, descripcion_ingreso, valor_ingreso):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE ingresos SET descripcion_ingreso = %s, valor_ingreso = %s WHERE id_ingreso = %s', (descripcion_ingreso, valor_ingreso, id_ingreso))
+        mysql.connection.commit()
+        cursor.close()
 
 class Egresos:
     @staticmethod

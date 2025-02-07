@@ -72,7 +72,6 @@ class ProductosServices:
         mysql = current_app.mysql
         try:
             products = Inventario.get_all_products(mysql)
-            print(products)
             return jsonify(products)
         except Exception as e:
             return jsonify({"message": f"Error al obtener productos: {str(e)}"}), 500

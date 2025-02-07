@@ -1,12 +1,13 @@
 from flask import jsonify, current_app, request
 import MySQLdb
-from app.models import Auditoria, Multas, Clientes, Matriculas, Matricula_cliente
+from app.models import Auditoria, Multas, Clientes, Matriculas, Matricula_cliente, Multa_clientes
 
 class MultasServices:
     @staticmethod
     def crear_multa(data):
         mysql = current_app.mysql
         custom_id_multa = Auditoria.generate_custom_id(mysql, 'MUL', 'id_multa', 'multas')
+        custom_id_multa_clientes = Auditoria.generate_custom_id(mysql, 'MUC', 'id_multa_cliente', 'multa_clientes')
         custom_id_multa_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         try:
             motivo_multa = data.get("motivo_multa")
@@ -15,20 +16,24 @@ class MultasServices:
             numero_documento = data.get("numero_documento")
 
             matricula_cliente = Matricula_cliente.verificar_id_matricula_cliente(mysql, id_matricula)
-            id_matricula_cliente, id_multa = matricula_cliente[0]
-            if not id_multa:
-                # Crear la multa
-                Multas.agregar_multa(mysql, custom_id_multa, motivo_multa, valor_multa)
-                Auditoria.log_audit(mysql, custom_id_multa_audi, "multas", custom_id_multa, "INSERT", "ADM0001", f'Se agrega multa a cliente {numero_documento}')
-                custom_id_matricula_cliente_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-                
-                # Asociar la multa al cliente
-                Matricula_cliente.asociar_multa_matricula_cliente(mysql, custom_id_multa, id_matricula_cliente)
-                Auditoria.log_audit(mysql, custom_id_matricula_cliente_audi, "matricula_cliente", id_matricula_cliente, "UPDATE", "ADM0001", f"Se relaciona la multa agregada con la matricula_cliente {id_matricula_cliente}")
-                
-                return jsonify({"message": "Multa creada y asociada exitosamente", "id_multa": custom_id_multa}), 201
-            else:
-                return jsonify({"message": "El cliente ya tiene una multa."}), 409
+            
+            id_matricula_cliente = matricula_cliente['id_matricula_cliente']
+            id_cliente = matricula_cliente['id_cliente']
+            
+            # Crear la multa
+            Multas.agregar_multa(mysql, custom_id_multa, motivo_multa, valor_multa)
+            Auditoria.log_audit(mysql, custom_id_multa_audi, "multas", custom_id_multa, "INSERT", "ADM0001", f'Se agrega multa a cliente {numero_documento}')
+            
+            custom_id_multa_cliente_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
+            
+            # Crea esa relacion de la multa creada con el cliente multa_clientes
+            Multa_clientes.crear_multa_cliente(mysql, custom_id_multa_clientes, custom_id_multa, id_cliente, 'ESM0001')
+            Auditoria.log_audit(mysql, custom_id_multa_cliente_audi, "multa_cliente", custom_id_multa_clientes, "INSERT", "ADM0001", f"Se agrega una multa a la matricula {id_matricula_cliente} del cliente {id_cliente}")
+            
+            # Asociar la multa_cliente con la matricula seleccionada
+            Matricula_cliente.asociar_multa_matricula_cliente(mysql, custom_id_multa_clientes, id_matricula_cliente)
+            
+            return jsonify({"message": "Multa creada y asociada exitosamente", "id_multa": custom_id_multa}), 201
             
         except MySQLdb.Error as e:
             mysql.connection.rollback()
