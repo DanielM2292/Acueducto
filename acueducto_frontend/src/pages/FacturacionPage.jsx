@@ -18,7 +18,7 @@ const FacturacionPage = () => {
         saldoPendiente: '',
         observacion: ''
     });
-    
+
     const [showModal, setShowModal] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
 
@@ -62,12 +62,12 @@ const FacturacionPage = () => {
         const element = document.getElementById('factura');
         const canvas = await html2canvas(element);
         const imgData = canvas.toDataURL('image/png');
-        
+
         const pdf = new jsPDF();
         const imgProps = pdf.getImageProperties(imgData);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
+
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save('factura.pdf');
     };
@@ -318,186 +318,189 @@ const FacturacionPage = () => {
                 <div className={`modal-overlay ${isClosing ? 'closing' : ''}`}>
                     <div className={`modal ${isClosing ? 'closing' : ''}`}>
                         <h3 className="modal-title">Facturas Automáticas</h3>
-                        <div id="factura-automatica" className="factura">
-                            <div className="factura-header">
-                                <div className="logo-section">
-                                    <img
-                                        src={LogoAcueducto}
-                                        alt="Logo Acueducto"
-                                        className="logo"
-                                    />
-                                    <div className="company-info">
-                                        <h2>JUNTA ADMINISTRA DE ACUEDUCTO Y ALCANTARILLADO</h2>
-                                        <p>NIT: 900.306.104-7</p>
-                                        <h3>AGUA PURA, VIDA SEGURA</h3>
+                        <div className="modal-content">
+                            <div id="factura-automatica" className="factura">
+                                <div className="factura-header">
+                                    <div className="logo-section">
+                                        <img
+                                            src={LogoAcueducto}
+                                            alt="Logo Acueducto"
+                                            className="logo"
+                                        />
+                                        <div className="company-info">
+                                            <h2>JUNTA ADMINISTRA DE ACUEDUCTO Y ALCANTARILLADO</h2>
+                                            <p>NIT: 900.306.104-7</p>
+                                            <h3>AGUA PURA, VIDA SEGURA</h3>
+                                        </div>
+                                    </div>
+                                    <div className="factura-numero">
+                                        <p>FACTURA NO: _________</p>
                                     </div>
                                 </div>
-                                <div className="factura-numero">
-                                    <p>FACTURA NO: _________</p>
-                                </div>
-                            </div>
 
-                            <div className="cliente-info">
-                                <div className="info-group">
-                                    <div className="input-group">
-                                        <label>IDENTIFICACIÓN:</label>
-                                        <input
-                                            type="text"
-                                            name="identificacion"
-                                            value={facturaData.identificacion}
-                                            onChange={handleInputChange}
-                                        />
+                                <div className="cliente-info">
+                                    <div className="info-group">
+                                        <div className="input-group">
+                                            <label>IDENTIFICACIÓN:</label>
+                                            <input
+                                                type="text"
+                                                name="identificacion"
+                                                value={facturaData.identificacion}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>USUARIO:</label>
+                                            <input
+                                                type="text"
+                                                name="usuario"
+                                                value={facturaData.usuario}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>FECHA INICIO DE COBRO:</label>
+                                            <input
+                                                type="date"
+                                                name="fechaInicioCobro"
+                                                value={facturaData.fechaInicioCobro}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="input-group">
-                                        <label>USUARIO:</label>
-                                        <input
-                                            type="text"
-                                            name="usuario"
-                                            value={facturaData.usuario}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>FECHA INICIO DE COBRO:</label>
-                                        <input
-                                            type="date"
-                                            name="fechaInicioCobro"
-                                            value={facturaData.fechaInicioCobro}
-                                            onChange={handleInputChange}
-                                        />
+                                    <div className="info-group">
+                                        <div className="input-group">
+                                            <label>BARRIO:</label>
+                                            <input
+                                                type="text"
+                                                name="barrio"
+                                                value={facturaData.barrio}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>TIPO DE TARIFA:</label>
+                                            <input
+                                                type="text"
+                                                name="tipoTarifa"
+                                                value={facturaData.tipoTarifa}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>FECHA DE VENCIMIENTO:</label>
+                                            <input
+                                                type="date"
+                                                name="fechaVencimiento"
+                                                value={facturaData.fechaVencimiento}
+                                                onChange={handleInputChange}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="info-group">
-                                    <div className="input-group">
-                                        <label>BARRIO:</label>
-                                        <input
-                                            type="text"
-                                            name="barrio"
-                                            value={facturaData.barrio}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>TIPO DE TARIFA:</label>
-                                        <input
-                                            type="text"
-                                            name="tipoTarifa"
-                                            value={facturaData.tipoTarifa}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>FECHA DE VENCIMIENTO:</label>
-                                        <input
-                                            type="date"
-                                            name="fechaVencimiento"
-                                            value={facturaData.fechaVencimiento}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className="factura-tabla">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>DESCRIPCIÓN</th>
-                                            <th>PRECIO UNITARIO</th>
-                                            <th>TOTAL</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>PRECIO TARIFA MEDIDOR</td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    name="precioUnitario"
-                                                    value={facturaData.precioUnitario}
-                                                    onChange={handleInputChange}
-                                                />
-                                            </td>
-                                            <td>{formatCurrency(facturaData.precioUnitario || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>MULTAS</td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    name="multas"
-                                                    value={facturaData.multas}
-                                                    onChange={handleInputChange}
-                                                />
-                                            </td>
-                                            <td>{formatCurrency(facturaData.multas || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>SALDO PENDIENTE</td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    name="saldoPendiente"
-                                                    value={facturaData.saldoPendiente}
-                                                    onChange={handleInputChange}
-                                                />
-                                            </td>
-                                            <td>{formatCurrency(facturaData.saldoPendiente || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>OBSERVACIÓN</td>
-                                            <td colSpan="2">
-                                                <input
-                                                    type="text"
-                                                    name="observacion"
-                                                    value={facturaData.observacion}
-                                                    onChange={handleInputChange}
-                                                />
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colSpan="2">TOTAL A PAGAR</td>
-                                            <td>
+                                <div className="factura-tabla">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>DESCRIPCIÓN</th>
+                                                <th>PRECIO UNITARIO</th>
+                                                <th>TOTAL</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>PRECIO TARIFA MEDIDOR</td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        name="precioUnitario"
+                                                        value={facturaData.precioUnitario}
+                                                        onChange={handleInputChange}
+                                                    />
+                                                </td>
+                                                <td>{formatCurrency(facturaData.precioUnitario || 0)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>MULTAS</td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        name="multas"
+                                                        value={facturaData.multas}
+                                                        onChange={handleInputChange}
+                                                    />
+                                                </td>
+                                                <td>{formatCurrency(facturaData.multas || 0)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>SALDO PENDIENTE</td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        name="saldoPendiente"
+                                                        value={facturaData.saldoPendiente}
+                                                        onChange={handleInputChange}
+                                                    />
+                                                </td>
+                                                <td>{formatCurrency(facturaData.saldoPendiente || 0)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>OBSERVACIÓN</td>
+                                                <td colSpan="2">
+                                                    <input
+                                                        type="text"
+                                                        name="observacion"
+                                                        value={facturaData.observacion}
+                                                        onChange={handleInputChange}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colSpan="2">TOTAL A PAGAR</td>
+                                                <td>
+                                                    {formatCurrency((parseFloat(facturaData.precioUnitario || 0) +
+                                                        parseFloat(facturaData.multas || 0) +
+                                                        parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                <div className="comprobante">
+                                    <h4>COMPROBANTE DE PAGO</h4>
+                                    <div className="comprobante-grid">
+                                        <div className="comprobante-item">
+                                            <p className="label">USUARIO</p>
+                                            <p className="value">{facturaData.usuario || '-'}</p>
+                                        </div>
+                                        <div className="comprobante-item">
+                                            <p className="label">IDENTIFICACIÓN</p>
+                                            <p className="value">{facturaData.identificacion || '-'}</p>
+                                        </div>
+                                        <div className="comprobante-item">
+                                            <p className="label">BARRIO</p>
+                                            <p className="value">{facturaData.barrio || '-'}</p>
+                                        </div>
+                                        <div className="comprobante-item">
+                                            <p className="label">TIPO DE TARIFA</p>
+                                            <p className="value">{facturaData.tipoTarifa || '-'}</p>
+                                        </div>
+                                        <div className="comprobante-item">
+                                            <p className="label">TOTAL PAGADO</p>
+                                            <p className="value">
                                                 {formatCurrency((parseFloat(facturaData.precioUnitario || 0) +
                                                     parseFloat(facturaData.multas || 0) +
                                                     parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            <div className="comprobante">
-                                <h4>COMPROBANTE DE PAGO</h4>
-                                <div className="comprobante-grid">
-                                    <div className="comprobante-item">
-                                        <p className="label">USUARIO</p>
-                                        <p className="value">{facturaData.usuario || '-'}</p>
-                                    </div>
-                                    <div className="comprobante-item">
-                                        <p className="label">IDENTIFICACIÓN</p>
-                                        <p className="value">{facturaData.identificacion || '-'}</p>
-                                    </div>
-                                    <div className="comprobante-item">
-                                        <p className="label">BARRIO</p>
-                                        <p className="value">{facturaData.barrio || '-'}</p>
-                                    </div>
-                                    <div className="comprobante-item">
-                                        <p className="label">TIPO DE TARIFA</p>
-                                        <p className="value">{facturaData.tipoTarifa || '-'}</p>
-                                    </div>
-                                    <div className="comprobante-item">
-                                        <p className="label">TOTAL PAGADO</p>
-                                        <p className="value">{formatCurrency((parseFloat(facturaData.precioUnitario || 0) +
-                                            parseFloat(facturaData.multas || 0) +
-                                            parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}</p>
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                         <div className="modal-buttons">
                             <button onClick={crearFactura} className="btn btn-primary">
                                 Guardar Factura
@@ -511,7 +514,7 @@ const FacturacionPage = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )}            
             <style jsx>{`
                 .modal-overlay {
                     position: fixed;
@@ -529,21 +532,62 @@ const FacturacionPage = () => {
                     transition: opacity 0.3s ease, visibility 0.3s ease;
                 }
 
-                .modal-overlay.closing {
-                    opacity: 0;
-                    visibility: hidden;
-                }
-
                 .modal {
                     background-color: white;
                     padding: 20px;
                     border-radius: 8px;
                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                    width: 80%;
-                    max-width: 800px;
+                    width: 70%;
+                    max-width: 700px;
+                    max-height: 80vh;
                     opacity: 1;
                     visibility: visible;
                     transition: opacity 0.3s ease, visibility 0.3s ease;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .modal-title {
+                    margin-bottom: 20px;
+                    font-size: 20px;
+                    font-weight: bold;
+                    text-align: center;
+                    flex-shrink: 0;
+                }
+
+                .modal-content {
+                    overflow-y: auto;
+                    flex-grow: 1;
+                    margin-bottom: 20px;
+                    padding-right: 10px;
+                }
+
+                .modal-buttons {
+                    display: flex;
+                    gap: 10px;
+                    justify-content: flex-end;
+                    padding-top: 10px;
+                    border-top: 1px solid #e0e0e0;
+                    flex-shrink: 0;
+                }
+
+                /* Estilos para el scrollbar */
+                .modal-content::-webkit-scrollbar {
+                    width: 8px;
+                }
+
+                .modal-content::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 4px;
+                }
+
+                .modal-content::-webkit-scrollbar-thumb {
+                    background: #888;
+                    border-radius: 4px;
+                }
+
+                .modal-content::-webkit-scrollbar-thumb:hover {
+                    background: #555;
                 }
 
                 .modal.closing {

@@ -293,7 +293,6 @@ const MatriculasPage = () => {
                                         <th>Número de Documento</th>
                                         <th>Nombre Cliente</th>
                                         <th>Valor Matrícula</th>
-                                        <th>Estado Matrícula</th>
                                         <th>Tipo Tarifa</th>
                                         <th>Fecha Creación</th>
                                     </tr>
@@ -306,7 +305,6 @@ const MatriculasPage = () => {
                                             <td>{item.numero_documento}</td>
                                             <td>{item.nombre}</td>
                                             <td>{formatCurrency(item.valor_matricula)}</td>
-                                            <td>{estadosMatricula[item.id_estado_matricula]}</td>
                                             <td>{tiposTarifa[item.id_tarifa_medidor] || tiposTarifa[item.id_tarifa_estandar]}</td>
                                             <td>{new Date(item.fecha_creacion).toLocaleDateString()}</td>
                                             <td>
