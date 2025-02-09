@@ -9,7 +9,7 @@ const VerHistorialPage = () => {
 
   const fetchAuditoria = async () => {
     try {
-      const response = await fetch("http://localhost:9090/auditoria");
+      const response = await fetch("http://localhost:9090/auditoria/mostar_registros");
       const data = await response.json();
       if (response.ok) {
         setAuditoria(data);

@@ -21,7 +21,7 @@ class MultasServices:
             id_cliente = matricula_cliente['id_cliente']
             
             # Crear la multa
-            Multas.agregar_multa(mysql, custom_id_multa, motivo_multa, valor_multa)
+            Multas.agregar_multa(mysql, custom_id_multa, motivo_multa, valor_multa, valor_multa)
             Auditoria.log_audit(mysql, custom_id_multa_audi, "multas", custom_id_multa, "INSERT", "ADM0001", f'Se agrega multa a cliente {numero_documento}')
             
             custom_id_multa_cliente_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
@@ -71,8 +71,22 @@ class MultasServices:
             valor_multa = data.get("valor_multa")
             
             id_multa = Matricula_cliente.obtener_id_multa(mysql, id_matricula)
-            Multas.update_multa(mysql, motivo_multa, valor_multa, id_multa)
+            Multas.update_multa(mysql, motivo_multa, valor_multa, valor_multa, id_multa)
             Auditoria.log_audit(mysql, custom_id, "multas", id_multa, "UPDATE", "ADM0001", f"Se actualiza el valor y motivo de la multa {id_multa}")
             return jsonify({"message": "Se actualizo el valor y motivo de la multa correctamente"}), 200
         except Exception as e:
             return jsonify({"message": f"Error al actualizar el registro en multas: {str(e)}"})
+    
+    @staticmethod
+    def obtener_multa():
+        mysql = current_app.mysql
+        try:
+            id_multa = request.args.get("id_multa")
+            multa = Multas.buscar_multa(mysql, id_multa)
+            
+            if not multa:
+                return jsonify({'error': 'Multa no encontrada'}), 404
+            return jsonify(multa), 200
+            
+        except Exception as e:
+            return jsonify({"message": f"Error al obtener el id de la multa: {str(e)}"})

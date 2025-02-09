@@ -1,6 +1,5 @@
 from flask import jsonify, current_app, session, request
-from app.models import Inventario, Auditoria
-import os
+from app.models import Inventario, Auditoria, Ingresos
 
 class ProductosServices:
     @staticmethod
@@ -9,6 +8,7 @@ class ProductosServices:
         
         custom_id_producto = Auditoria.generate_custom_id(mysql, 'PRO', 'id_producto', 'inventario')
         custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
+        custom_id_ingreso = Auditoria.generate_custom_id(mysql, 'ING', 'id_ingreso', 'ingresos')
         
         try:
             descripcion_producto = data.get("descripcion_producto")
@@ -18,6 +18,7 @@ class ProductosServices:
             current_user = session.get("id_administrador")
             
             Inventario.add_product(mysql,custom_id_producto, descripcion_producto, cantidad, valor_producto, total_productos)
+            Ingresos.crear_ingreso_producto(mysql, custom_id_ingreso, f'Se agrega producto {descripcion_producto} al inventario', total_productos, custom_id_producto)
             Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", custom_id_producto, "INSERT", current_user, "Se agrega producto al inventario")
             return jsonify({"message": "Producto agregado exitosamente"}), 201
         except Exception as e:
@@ -49,6 +50,9 @@ class ProductosServices:
             current_user = session.get("id_administrador")
             
             Inventario.update_product_by_id(mysql, id_producto, descripcion_producto, cantidad, valor_producto, total_producto)
+            id_ingreso = Ingresos.buscar_ingreso_producto(mysql, id_producto)
+            id_ingreso = id_ingreso['id_ingreso']
+            Ingresos.actualizar_ingreso(mysql, id_ingreso, f'Se agrega producto {descripcion_producto} al inventario', total_producto)
             Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", id_producto, "UPDATE", current_user, "Se actualiza producto del inventario")
             return jsonify({"message": "Producto actualizado exitosamente"}), 200
         except Exception as e:

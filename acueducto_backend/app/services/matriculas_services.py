@@ -13,8 +13,8 @@ class MatriculasServices:
             numero_documento = data.get("numero_documento")
             valor_matricula = data.get("valor_matricula")
             numero_matricula = "123"
-            id_tarifa_estandar = data.get("tarifa_estandar")
-            id_tarifa_medidor = data.get("tarifa_medidor")            
+            tipo_tarifa = data.get("tipo_tarifa")
+            print(tipo_tarifa)
             # Traer todos los clientes con el mismo numero de documento
             cliente = Clientes.verificar_cliente(mysql, numero_documento)
             print(cliente)
@@ -91,3 +91,20 @@ class MatriculasServices:
             return jsonify({"message": "Matrícula no encontrada"}), 404
         except Exception as e:
             return jsonify({"message": f"Error al buscar matrícula: {str(e)}"}), 500
+
+    @staticmethod
+    def obtener_matricula():
+        mysql = current_app.mysql
+        try:
+            print('entra al endpoi matric')
+            id_matricula = request.args.get("id_matricula")
+            print(id_matricula)
+            matricula = Matriculas.buscar_matricula(mysql, id_matricula)
+            
+            print(matricula)
+            if not matricula:
+                return jsonify({'error': 'Matricula no encontrada'}), 404
+            return jsonify(matricula), 200
+            
+        except Exception as e:
+            return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})

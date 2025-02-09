@@ -1,4 +1,4 @@
-from flask import request, current_app, session, jsonify
+from flask import request, jsonify
 from app.models import Inventario, Auditoria
 from app.services import ProductosServices
 from app.routes import productos_bp

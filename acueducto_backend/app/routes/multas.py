@@ -27,3 +27,9 @@ def actualizar_multa():
         return jsonify({'message': 'CORS preflight response'}), 200
     data = request.get_json()
     return MultasServices.actualizar_multa(data)
+
+@multas_bp.route('/obtener_multa', methods=["GET", "OPTIONS"])
+def obtener_multa():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 200
+    return MultasServices.obtener_multa()
