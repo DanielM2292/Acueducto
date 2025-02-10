@@ -99,6 +99,14 @@ class Auditoria:
                     (id_auditoria, table, id_registro_afectado, action, id_administrador, detalles))
         mysql.connection.commit()
         cursor.close()
+        
+    @staticmethod
+    def mostrar_registros(mysql):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM auditoria')
+        clientes = cursor.fetchall()
+        cursor.close()
+        return clientes
 
 
 class Clientes:
@@ -113,11 +121,11 @@ class Clientes:
     
     # Agregar cliente
     @staticmethod
-    def add_cliente(mysql, id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente):
+    def add_cliente(mysql, id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion):
         try:
             cursor = mysql.connection.cursor()
-            cursor.execute('INSERT INTO clientes (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente) VALUES (%s, %s, %s, %s, %s, %s, %s)', 
-                        (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente))
+            cursor.execute('INSERT INTO clientes (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion) VALUES (%s, %s, %s, %s, %s, %s)', 
+                        (id_cliente, tipo_documento, numero_documento, nombre, telefono, direccion))
             cursor.close()
         except Exception as e:
             print(f"Error al agregar cliente: {e}")
@@ -125,11 +133,11 @@ class Clientes:
     
     # Actualizar cliente
     @staticmethod
-    def update_cliente(mysql, tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente, id_cliente):
+    def update_cliente(mysql, tipo_documento, numero_documento, nombre, telefono, direccion, id_cliente):
         try:    
             cursor = mysql.connection.cursor()
-            cursor.execute('UPDATE clientes SET tipo_documento = %s, numero_documento = %s, nombre = %s, telefono = %s, direccion = %s, id_estado_cliente = %s WHERE id_cliente = %s',
-                        (tipo_documento, numero_documento, nombre, telefono, direccion, id_estado_cliente, id_cliente))
+            cursor.execute('UPDATE clientes SET tipo_documento = %s, numero_documento = %s, nombre = %s, telefono = %s, direccion = %s WHERE id_cliente = %s',
+                        (tipo_documento, numero_documento, nombre, telefono, direccion, id_cliente))
             mysql.connection.commit()
             cursor.close()
         except Exception as e:
@@ -141,7 +149,7 @@ class Clientes:
     def get_all_clientes(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT c.id_cliente, c.tipo_documento, c.numero_documento, c.nombre, c.telefono, c.direccion, c.id_estado_cliente, m.id_tarifa_medidor, m.id_tarifa_estandar
+            SELECT c.id_cliente, c.tipo_documento, c.numero_documento, c.nombre, c.telefono, c.direccion, mc.id_estado_cliente, m.tipo_tarifa
 	            FROM
 		            clientes AS c
                 INNER JOIN
@@ -287,8 +295,7 @@ class Matriculas:
                 c.numero_documento,
                 c.nombre,
                 m.valor_matricula,
-                m.id_tarifa_medidor,
-                m.id_tarifa_estandar,
+                m.tipo_tarifa,
                 m.fecha_creacion
             FROM 
                 matriculas AS m
@@ -318,8 +325,7 @@ class Matriculas:
                 c.numero_documento,
                 c.nombre,
                 m.valor_matricula,
-                m.id_tarifa_medidor,
-                m.id_tarifa_estandar,
+                m.tipo_tarifa,
                 m.fecha_creacion
             FROM 
                 matriculas AS m
@@ -331,20 +337,32 @@ class Matriculas:
         cursor.close()
         return matricula
     
+    @staticmethod
     def buscar_matriculas_cliente(mysql, numero_documento):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
             SELECT 
                 m.id_matricula, 
                 m.numero_matricula, 
-                c.direccion
+                c.direccion,
+                ec.descripcion_cliente
             FROM 
                 matriculas AS m
             INNER JOIN 
                 matricula_cliente AS mc ON m.id_matricula = mc.id_matricula
+            INNER JOIN
+				estado_clientes AS ec ON mc.id_estado_cliente = ec.id_estado_cliente
             INNER JOIN 
                 clientes AS c ON mc.id_cliente = c.id_cliente WHERE numero_documento = %s;''', (numero_documento,))
         matricula = cursor.fetchall()
+        cursor.close()
+        return matricula
+    
+    @staticmethod
+    def buscar_matricula(mysql, id_matricula):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM matriculas WHERE id_matricula = %s;', (id_matricula,))
+        matricula = cursor.fetchone()
         cursor.close()
         return matricula
 
@@ -354,13 +372,6 @@ class Matricula_cliente:
         cursor = mysql.connection.cursor()
         cursor.execute('INSERT INTO matricula_cliente (id_matricula_cliente, id_matricula, id_cliente) VALUES (%s, %s, %s)',
                     (id_matricula_cliente, id_matricula, id_cliente))
-        mysql.connection.commit()
-        cursor.close()
-    
-    @staticmethod
-    def asociar_multa_matricula_cliente(mysql, id_multa_cliente, id_matricula_cliente):
-        cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE matricula_cliente SET id_multa_cliente = %s WHERE id_matricula_cliente = %s', (id_multa_cliente, id_matricula_cliente))
         mysql.connection.commit()
         cursor.close()
     
@@ -379,13 +390,21 @@ class Matricula_cliente:
         id_matricula_cliente = cursor.fetchone()
         cursor.close()
         return id_matricula_cliente
+    
+    @staticmethod
+    def actualizar_estado(mysql, id_estado_cliente, id_matricula):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE matricula_cliente SET id_estado_cliente = %s WHERE id_matricula = %s', (id_estado_cliente, id_matricula))
+        id_matricula_cliente = cursor.fetchone()
+        cursor.close()
+        return id_matricula_cliente
 
 class Multas:
     @staticmethod
-    def agregar_multa(mysql, id_multa, motivo_multa, valor_multa):
+    def agregar_multa(mysql, id_multa, motivo_multa, valor_multa, valor_pendiente):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO multas (id_multa, motivo_multa, valor_multa) VALUES (%s, %s, %s)', 
-                        (id_multa, motivo_multa, valor_multa))
+        cursor.execute('INSERT INTO multas (id_multa, motivo_multa, valor_multa, valor_pendiente) VALUES (%s, %s, %s, %s)', 
+                        (id_multa, motivo_multa, valor_multa, valor_pendiente))
         mysql.connection.commit()
         cursor.close()
     
@@ -393,35 +412,60 @@ class Multas:
     def mostrar_multas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre
-	            FROM
-		            multas AS m
-				INNER JOIN
-					multa_clientes AS mcl ON m.id_multa = mcl.id_multa
-                INNER JOIN
-		            matricula_cliente AS mc ON mcl.id_multa_cliente = mc.id_multa_cliente
-	            INNER JOIN
-		            clientes AS c ON mc.id_cliente = c.id_cliente
-				INNER JOIN
-					matriculas AS ma ON mc.id_matricula = ma.id_matricula;
-        ''')
+            SELECT DISTINCT m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre
+            FROM multas AS m
+            INNER JOIN multa_clientes AS mcl ON m.id_multa = mcl.id_multa
+            INNER JOIN clientes AS c ON mcl.id_cliente = c.id_cliente
+            INNER JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
+            INNER JOIN matriculas AS ma ON mc.id_matricula = ma.id_matricula;''')
         multas = cursor.fetchall()
         cursor.close()
         return multas
     
     @staticmethod
-    def update_multa(mysql, motivo_multa, valor_multa, id_multa):
+    def update_multa(mysql, motivo_multa, valor_multa, valor_pendiente, id_multa):
         cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE multas SET motivo_multa = %s, valor_multa = %s WHERE id_multa = %s', (motivo_multa, valor_multa, id_multa))
+        cursor.execute('UPDATE multas SET motivo_multa = %s, valor_multa = %s, valor_pendiente = %s WHERE id_multa = %s', (motivo_multa, valor_multa, valor_pendiente, id_multa))
         mysql.connection.commit()
         cursor.close()
+    
+    @staticmethod
+    def update_multa_pago(mysql, valor_multa, valor_pendiente, id_multa):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE multas SET valor_multa = %s, valor_pendiente = %s WHERE id_multa = %s', (valor_multa, valor_pendiente, id_multa))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def buscar_multa(mysql, id_multa):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM multas WHERE id_multa = %s', (id_multa,))
+        multa = cursor.fetchone()
+        cursor.close()
+        return multa
+    
+    @staticmethod
+    def buscar_todo_multa(mysql, id_multa):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM multas WHERE id_multa = %s', (id_multa,))
+        multa = cursor.fetchone()
+        cursor.close()
+        return multa
         
 class Multa_clientes:
     @staticmethod
-    def crear_multa_cliente(mysql, id_multa_cliente, id_multa, id_cliente, id_estado_multa):
+    def crear_multa_cliente(mysql, id_multa_cliente, id_multa, id_cliente, id_estado_multa, id_matricula_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO multa_clientes (id_multa_cliente, id_multa, id_cliente, id_estado_multa) VALUES (%s, %s, %s, %s)', 
-                       (id_multa_cliente, id_multa, id_cliente, id_estado_multa))
+        cursor.execute('INSERT INTO multa_clientes (id_multa_cliente, id_multa, id_cliente, id_estado_multa, id_matricula_cliente) VALUES (%s, %s, %s, %s, %s)', 
+                       (id_multa_cliente, id_multa, id_cliente, id_estado_multa, id_matricula_cliente))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def actualizar_multa_cliente(mysql, id_multa, id_estado_multa):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE SET id_estado_multa = %s WHERE id_multa = %', 
+                       (id_multa, id_estado_multa))
         mysql.connection.commit()
         cursor.close()
         
@@ -443,6 +487,22 @@ class Ingresos:
         cursor.close()
     
     @staticmethod
+    def crear_ingreso_producto(mysql, id_ingreso, descripcion_ingreso, valor_ingreso, id_producto):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO ingresos (id_ingreso, descripcion_ingreso, valor_ingreso, id_producto) VALUES (%s, %s, %s, %s)',
+                       (id_ingreso, descripcion_ingreso, valor_ingreso, id_producto))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def crear_ingreso_multa(mysql, id_ingreso, descripcion_ingreso, valor_ingreso, id_multa):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO ingresos (id_ingreso, descripcion_ingreso, valor_ingreso, id_multa) VALUES (%s, %s, %s, %s)',
+                       (id_ingreso, descripcion_ingreso, valor_ingreso, id_multa))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
     def buscar_ingreso(mysql, palabra):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM ingresos WHERE descripcion_ingreso LIKE %s', ('%'+ palabra + '%',))
@@ -456,6 +516,14 @@ class Ingresos:
         cursor.execute('UPDATE ingresos SET descripcion_ingreso = %s, valor_ingreso = %s WHERE id_ingreso = %s', (descripcion_ingreso, valor_ingreso, id_ingreso))
         mysql.connection.commit()
         cursor.close()
+    
+    @staticmethod
+    def buscar_ingreso_producto(mysql, id_producto):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT id_ingreso FROM ingresos WHERE id_producto LIKE %s', ('%'+ id_producto + '%',))
+        ingreso = cursor.fetchone()
+        cursor.close()
+        return ingreso
 
 class Egresos:
     @staticmethod
@@ -465,3 +533,45 @@ class Egresos:
         egresos = cursor.fetchall()
         cursor.close()
         return egresos
+    
+    @staticmethod
+    def crear_egreso_general(mysql, id_egreso, descripcion_egreso, cantidad, total_egreso):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO egresos (id_egreso, descripcion_egreso, cantidad, total_egreso) VALUES (%s, %s, %s, %s)',
+                       (id_egreso, descripcion_egreso, cantidad, total_egreso))
+        cursor.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def crear_egreso_producto(mysql, id_egreso, descripcion_egreso, cantidad, total_egreso, id_producto):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO egresos (id_egreso, descripcion_egreso, cantidad, total_egreso, id_producto) VALUES (%s, %s, %s, %s, %s)',
+                       (id_egreso, descripcion_egreso, cantidad, total_egreso, id_producto))
+        cursor.connection.commit()
+        cursor.close()
+        
+    @staticmethod
+    def buscar_egreso(mysql, palabra):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM egresos WHERE descripcion_egreso LIKE %s', ('%'+ palabra + '%',))
+        egreso = cursor.fetchall()
+        cursor.close()
+        return egreso
+    
+    @staticmethod
+    def actualizar_egreso_general(mysql, id_egreso, descripcion_egreso, cantidad, total_egreso):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE egresos SET descripcion_egreso = %s, cantidad = %s, total_egreso = %s WHERE id_egreso = %s',
+                       (descripcion_egreso, cantidad, total_egreso, id_egreso))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def obtener_egreso(mysql, id_egreso):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM egresos WHERE id_egreso LIKE %s', ('%'+ id_egreso + '%',))
+        egreso = cursor.fetchone()
+        cursor.close()
+        return egreso
+    
+    

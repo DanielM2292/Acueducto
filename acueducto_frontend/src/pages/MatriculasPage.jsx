@@ -7,23 +7,12 @@ const MatriculasPage = () => {
     const [idMatricula, setIdMatricula] = useState("");
     const [numeroDocumento, setNumeroDocumento] = useState("");
     const [valorMatricula, setValorMatricula] = useState("");
-    const [estadoMatricula, setEstadoMatricula] = useState("ESM0001");
-    const [tipoTarifa, setTipoTarifa] = useState("TAE0001");
+    const [tipoTarifa, setTipoTarifa] = useState("Estandar");
     const [matriculas, setMatriculas] = useState([]);
     const [editMode, setEditMode] = useState(false);
     const [selectedMatricula, setSelectedMatricula] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-
-    const estadosMatricula = {
-        "ESM0001": "Parcial",
-        "ESM0002": "Total",
-    };
-
-    const tiposTarifa = {
-        "TAE0001": "Estándar",
-        "TAM0001": "Medidor"
-    };
 
     const formatCurrency = (value) => {
         return new Intl.NumberFormat("es-CO", {
@@ -45,20 +34,6 @@ const MatriculasPage = () => {
             notify("Por favor complete todos los campos requeridos", "error");
             return;
         }
-
-        const requestBody = {
-            tarifa_estandar: null,
-            tarifa_medidor: null
-        };
-
-        if (tipoTarifa === "TAE0001") {
-            requestBody.tarifa_estandar = "TAE0001";
-            requestBody.tarifa_medidor = null;
-        } else {
-            requestBody.tarifa_estandar = null;
-            requestBody.tarifa_medidor = "TAM0001";
-        }
-
         try {
             const response = await fetch("http://localhost:9090/matriculas/crear_matricula", {
                 method: "POST",
@@ -67,9 +42,8 @@ const MatriculasPage = () => {
                 },
                 body: JSON.stringify({ 
                     numero_documento: numeroDocumento, 
-                    valor_matricula: valorMatricula, 
-                    id_estado_matricula: estadoMatricula,
-                    ...requestBody
+                    valor_matricula: valorMatricula,
+                    tipo_tarifa: tipoTarifa
                 }),
             });
             const data = await response.json();
@@ -91,20 +65,6 @@ const MatriculasPage = () => {
             notify("Por favor complete todos los campos requeridos", "error");
             return;
         }
-
-        const requestBody = {
-            tarifa_estandar: null,
-            tarifa_medidor: null
-        };
-
-        if (tipoTarifa === "TAE0001") {
-            requestBody.tarifa_estandar = "TAE0001";
-            requestBody.tarifa_medidor = null;
-        } else {
-            requestBody.tarifa_estandar = null;
-            requestBody.tarifa_medidor = "TAM0001";
-        }
-
         try {
             const response = await fetch("http://localhost:9090/matriculas/actualizar_matricula", {
                 method: "PUT",
@@ -115,8 +75,7 @@ const MatriculasPage = () => {
                     id_matricula: selectedMatricula.id_matricula,
                     numero_documento: numeroDocumento,
                     valor_matricula: valorMatricula,
-                    id_estado_matricula: estadoMatricula,
-                    ...requestBody
+                    tipo_tarifa: tipoTarifa
                 }),
             });
             const data = await response.json();
@@ -190,7 +149,6 @@ const MatriculasPage = () => {
         setSelectedMatricula(matricula);
         setNumeroDocumento(matricula.numero_documento);
         setValorMatricula(matricula.valor_matricula);
-        setEstadoMatricula(matricula.id_estado_matricula);
         setTipoTarifa(matricula.tipo_tarifa);
         setEditMode(true);
         setIsModalOpen(false);
@@ -253,8 +211,8 @@ const MatriculasPage = () => {
                         className="inputCustom"
                         required
                     >
-                        <option value="TAE0001">Estándar</option>
-                        <option value="TAM0001">Medidor</option>
+                        <option value="Estandar">Estándar</option>
+                        <option value="Medidor">Medidor</option>
                     </select>
                     <label>Tipo de Tarifa</label>
                 </div>
@@ -293,6 +251,7 @@ const MatriculasPage = () => {
                                         <th>Número de Documento</th>
                                         <th>Nombre Cliente</th>
                                         <th>Valor Matrícula</th>
+                                        <th>Estado Matrícula</th>
                                         <th>Tipo Tarifa</th>
                                         <th>Fecha Creación</th>
                                     </tr>
@@ -305,7 +264,7 @@ const MatriculasPage = () => {
                                             <td>{item.numero_documento}</td>
                                             <td>{item.nombre}</td>
                                             <td>{formatCurrency(item.valor_matricula)}</td>
-                                            <td>{tiposTarifa[item.id_tarifa_medidor] || tiposTarifa[item.id_tarifa_estandar]}</td>
+                                            <td>{tipoTarifa[item.id_tarifa_medidor] || tipoTarifa[item.id_tarifa_estandar]}</td>
                                             <td>{new Date(item.fecha_creacion).toLocaleDateString()}</td>
                                             <td>
                                                 <button 

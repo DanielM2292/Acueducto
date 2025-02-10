@@ -9,12 +9,6 @@ def crear_matricula():
     data = request.get_json()
     return MatriculasServices.crear_matricula(data)
 
-@matriculas_bp.route('/buscar_matricula', methods=["GET", "OPTIONS"])
-def buscar_matricula():
-    if request.method == 'OPTIONS':
-        return jsonify({'message': 'CORS preflight response'}), 200
-    return MatriculasServices.buscar_matricula()
-
 @matriculas_bp.route('/listar_todas_matriculas', methods=["GET", "OPTIONS"])
 def listar_todas_matriculas():
     if request.method == 'OPTIONS':
@@ -33,3 +27,10 @@ def buscar_matricula_por_documento():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
     return MatriculasServices.buscar_matricula_por_documento()
+
+@matriculas_bp.route('/obtener_matricula', methods=["GET", "OPTIONS"])
+def obtener_matricula():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 200
+    return MatriculasServices.obtener_matricula()
+
