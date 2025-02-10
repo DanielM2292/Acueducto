@@ -62,7 +62,7 @@ const EgresosPage = () => {
                 notify("Egreso creado exitosamente", "success");
                 resetForm();
             } else {
-                notify("Error al crear el egreso", "error");
+                notify("Ingrese la cantidad correcta del producto que esta en inventario", "error");
             }
         } catch (error) {
             notify("Error de conexión", "error");
@@ -222,9 +222,9 @@ const EgresosPage = () => {
                                         <tr key={item.id_egreso}>
                                             <td>{item.id_egreso}</td>
                                             <td>{item.descripcion_egreso}</td>
-                                            <td>{item.cantidad_egreso}</td>
-                                            <td>{formatCOP(item.valor_egreso)}</td>
-                                            <td>{new Date(item.fecha).toLocaleDateString()}</td>
+                                            <td>{item.cantidad}</td>
+                                            <td>{formatCOP(item.total_egreso)}</td>
+                                            <td>{new Date(item.fecha_egreso).toLocaleDateString()}</td>
                                             <td>{item.id_producto}</td>
                                         </tr>
                                     ))}

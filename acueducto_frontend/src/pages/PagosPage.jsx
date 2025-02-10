@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const PagosPage = () => {
     const API_BASE_URL = "http://localhost:9090";
-    
+
     const [tipo, setTipo] = useState('Factura');
     const [tarifa, setTarifa] = useState('Estandar');
     const [showHistorial, setShowHistorial] = useState(false);
@@ -10,6 +10,8 @@ const PagosPage = () => {
     const [idReferencia, setIdReferencia] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
+    const [errorMessage, setErrorMessage] = useState(null);
     const [searchTimeout, setSearchTimeout] = useState(null);
     const [historialData, setHistorialData] = useState([]);
     const [paymentData, setPaymentData] = useState({
@@ -83,7 +85,7 @@ const PagosPage = () => {
 
             const response = await fetch(endpoints[type]);
             if (!response.ok) throw new Error('Error al obtener detalles del pago');
-            
+
             const data = await response.json();
             setPaymentData(prev => ({
                 ...prev,
@@ -104,7 +106,7 @@ const PagosPage = () => {
         try {
             const response = await fetch(`${API_BASE_URL}/pagos/listar_historial`);
             if (!response.ok) throw new Error('Error al cargar el historial');
-            
+
             const data = await response.json();
             setHistorialData(data);
         } catch (err) {
@@ -116,6 +118,14 @@ const PagosPage = () => {
     const procesarPago = async () => {
         setLoading(true);
         setError(null);
+        setSuccessMessage(null);
+
+        if (parseFloat(paymentData.aCancelar) > parseFloat(paymentData.pendiente)) {
+            setErrorMessage('El valor a cancelar no puede ser mayor que el valor pendiente.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const endpoints = {
                 'Factura': `${API_BASE_URL}/pagos/registrar_pago`,
@@ -144,7 +154,7 @@ const PagosPage = () => {
             });
 
             if (!response.ok) throw new Error('Error al procesar el pago');
-            
+
             setPaymentData({
                 total: '',
                 pendiente: '',
@@ -156,11 +166,11 @@ const PagosPage = () => {
                 fechaLecturaActual: '',
             });
             setIdReferencia('');
-            
-            alert('Pago procesado exitosamente');
+
+            setSuccessMessage('Pago procesado exitosamente');
             fetchHistorial();
         } catch (err) {
-            setError('Error al procesar el pago');
+            setErrorMessage('Error al procesar el pago');
             console.error(err);
         } finally {
             setLoading(false);
@@ -179,14 +189,6 @@ const PagosPage = () => {
         if (tipo === 'Factura') {
             return (
                 <div className="pagos-form-grid">
-                    <select
-                        value={tarifa}
-                        onChange={(e) => setTarifa(e.target.value)}
-                        className="pagos-select"
-                    >
-                        <option value="Estandar">Estándar</option>
-                        <option value="Medidor">Medidor</option>
-                    </select>
                     <div className="input-with-icon">
                         <input
                             type="text"
@@ -224,65 +226,11 @@ const PagosPage = () => {
                         placeholder="Valor a Cancelar"
                         className="pagos-input"
                     />
-                    {tarifa === 'Medidor' && (
-                        <div className="meter-readings-container">
-                            <div className="input-group">
-                                <label className="input-label">Fecha Lectura Anterior</label>
-                                <input
-                                    type="date"
-                                    name="fechaLecturaAnterior"
-                                    value={paymentData.fechaLecturaAnterior}
-                                    onChange={handleInputChange}
-                                    className="pagos-input"
-                                />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Fecha Lectura Actual</label>
-                                <input
-                                    type="date"
-                                    name="fechaLecturaActual"
-                                    value={paymentData.fechaLecturaActual}
-                                    onChange={handleInputChange}
-                                    className="pagos-input"
-                                />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Lectura Anterior (m³)</label>
-                                <input
-                                    type="number"
-                                    name="lecturaAnterior"
-                                    value={paymentData.lecturaAnterior}
-                                    onChange={handleInputChange}
-                                    placeholder="Ingrese lectura anterior"
-                                    className="pagos-input"
-                                />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Lectura Actual (m³)</label>
-                                <input
-                                    type="number"
-                                    name="lecturaActual"
-                                    value={paymentData.lecturaActual}
-                                    onChange={handleInputChange}
-                                    placeholder="Ingrese lectura actual"
-                                    className="pagos-input"
-                                />
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         } else {
             return (
                 <div className="pagos-form-grid">
-                    <select
-                        value={tipo}
-                        onChange={(e) => setTipo(e.target.value)}
-                        className="pagos-select"
-                    >
-                        <option value="Multa">Multa</option>
-                        <option value="Matricula">Matrícula</option>
-                    </select>
                     <div className="input-with-icon">
                         <input
                             type="text"
@@ -326,6 +274,16 @@ const PagosPage = () => {
 
     return (
         <div className="pagos-container">
+            {successMessage && (
+                <div className="message success">
+                    {successMessage}
+                </div>
+            )}
+            {errorMessage && (
+                <div className="message error">
+                    {errorMessage}
+                </div>
+            )}
             <div className="pagos-card">
                 <h2 className="pagos-title">Pagos</h2>
                 <div className="pagos-form-grid">
@@ -341,7 +299,7 @@ const PagosPage = () => {
                 </div>
                 {renderFields()}
                 <div className="pagos-button-group">
-                    <button 
+                    <button
                         className="pagos-button pagos-button-save"
                         onClick={procesarPago}
                     >
@@ -427,6 +385,26 @@ const PagosPage = () => {
                     border-color: #4299e1;
                     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
                 }
+                .message {
+                    padding: 10px;
+                    margin-bottom: 20px;
+                    border-radius: 4px;
+                    text-align: center;
+                    font-size: 14px;
+                }
+
+                .message.success {
+                    background-color: #d4edda;
+                    color: #155724;
+                    border: 1px solid #c3e6cb;
+                }
+
+                .message.error {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                    border: 1px solid #f5c6cb;
+                }
+
             `}</style>
         </div>
     );

@@ -4,6 +4,10 @@ import "react-toastify/dist/ReactToastify.css";
 
 const ClientesPage = () => {
     const [noClientsFound, setNoClientsFound] = useState(false);
+    const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
+    const [selectedClientEnrollments, setSelectedClientEnrollments] = useState([]);
+    const [selectedClient, setSelectedClient] = useState(null);
+    const [isClosing, setIsClosing] = useState(false);
 
     const [formData, setFormData] = useState({
         id_cliente: "",
@@ -12,7 +16,6 @@ const ClientesPage = () => {
         nombre: "",
         telefono: "",
         direccion: "",
-        id_estado_cliente: "ESC0001"
     });
 
     const [clientes, setClientes] = useState([]);
@@ -21,6 +24,12 @@ const ClientesPage = () => {
         "ESC0001": "Activo",
         "ESC0002": "Inactivo",
         "ESC0003": "Suspendido"
+    };
+
+    const estadosMatricula = {
+        "pendiente": "Pendiente",
+        "activa": "Activa",
+        "cancelada": "Cancelada"
     };
 
     const tarifas = {
@@ -33,6 +42,64 @@ const ClientesPage = () => {
             toast.success(message);
         } else {
             toast.error(message);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setShowEnrollmentsModal(false);
+            setSelectedClientEnrollments([]);
+            setSelectedClient(null);
+            setIsClosing(false);
+        }, 300);
+    };
+
+    const getClientEnrollments = async (clientId) => {
+        try {
+            const client = clientes.find(c => c.id_cliente === clientId);
+            if (!client) {
+                notify("Cliente no encontrado", "error");
+                return;
+            }
+
+            const response = await fetch(`http://localhost:9090/multas/buscar_matriculas_por_documento?numero_documento=${client.numero_documento}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                setSelectedClientEnrollments(data);
+                setShowEnrollmentsModal(true);
+            } else {
+                notify("Error al cargar las matrículas", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión con el servidor", "error");
+            console.error("Error:", error);
+        }
+    };
+
+    const updateEnrollmentStatus = async (enrollmentId, newStatus) => {
+        try {
+            const response = await fetch(`http://localhost:9090/matriculas/actualizar_estado/${enrollmentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ estado: newStatus })
+            });
+
+            if (response.ok) {
+                notify("Estado de matrícula actualizado exitosamente", "success");
+                // Refresh enrollments
+                if (selectedClient) {
+                    getClientEnrollments(selectedClient.id_cliente);
+                }
+            } else {
+                notify("Error al actualizar el estado de la matrícula", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión con el servidor", "error");
+            console.error("Error:", error);
         }
     };
 
@@ -91,7 +158,7 @@ const ClientesPage = () => {
                 resetForm();
                 fetchAllClientes();
             } else {
-                notify(data.message || "Error al agregar el cliente", "error");
+                notify(data.message || "Error, el usuario ya existe", "error");
             }
         } catch (error) {
             notify("Error de conexión con el servidor", "error");
@@ -114,7 +181,6 @@ const ClientesPage = () => {
             nombre: "",
             telefono: "",
             direccion: "",
-            id_estado_cliente: "ESC0001"
         });
     };
 
@@ -123,15 +189,15 @@ const ClientesPage = () => {
             notify("Por favor, seleccione un cliente para editar", "error");
             return;
         }
-    
-        const requiredFields = ['tipo_documento', 'numero_documento', 'nombre', 'telefono', 'direccion', 'id_estado_cliente'];
+
+        const requiredFields = ['tipo_documento', 'numero_documento', 'nombre', 'telefono', 'direccion'];
         const missingFields = requiredFields.filter(field => !formData[field]);
-        
+
         if (missingFields.length > 0) {
             notify(`Campos requeridos faltantes: ${missingFields.join(', ')}`, "error");
             return;
         }
-    
+
         try {
             const response = await fetch('http://localhost:9090/clientes/actualizar_cliente', {
                 method: 'PUT',
@@ -140,9 +206,9 @@ const ClientesPage = () => {
                 },
                 body: JSON.stringify(formData),
             });
-    
+
             const data = await response.json();
-    
+
             if (response.ok) {
                 notify("Cliente actualizado exitosamente", "success");
                 resetForm();
@@ -243,31 +309,29 @@ const ClientesPage = () => {
                     </div>
 
                     <div className="groupCustom">
-                        <input
-                            type="text"
+                        <select
                             name="direccion"
                             value={formData.direccion}
                             onChange={handleChange}
                             className="inputCustom"
                             required
-                        />
-                        <span className="highlightCustom"></span>
-                        <span className="barCustom"></span>
-                        <label>Dirección</label>
-                    </div>
-
-                    <div className="groupCustom">
-                        <select
-                            name="id_estado_cliente"
-                            value={formData.id_estado_cliente}
-                            onChange={handleChange}
-                            className="inputCustom"
                         >
-                            <option value="ESC0001">Activo</option>
-                            <option value="ESC0002">Inactivo</option>
-                            <option value="ESC0003">Suspendido</option>
+                            <option>Selecciona un Barrio</option>
+                            <option>Barrio los Estudiantes</option>
+                            <option>Barrio El Centro</option>
+                            <option>Barrio la Cruz</option>
+                            <option>Barrio Belén</option>
+                            <option>Vereda la Florida</option>
+                            <option>Barrio Señor de las Misericordias</option>
+                            <option>Barrio Real Valencia</option>
+                            <option>Barrio Sagrado corazón de Jesús</option>
+                            <option>Barrio San Francisco</option>
+                            <option>Barrio San Fernando</option>
+                            <option>Vereda la Palma</option>
+                            <option>Barrio San José</option>
+                            <option>Barrio Miraflores</option>
                         </select>
-                        <label>Estado</label>
+                        <label>Dirección</label>
                     </div>
                 </div>
 
@@ -300,8 +364,8 @@ const ClientesPage = () => {
                         <div>Nombre</div>
                         <div>Teléfono</div>
                         <div>Dirección</div>
-                        <div>Estado</div>
                         <div>Tipo Tarifa</div>
+                        <div>Acciones</div>
                     </div>
                     <div className="clientTableBodyCustom">
                         {clientes.map((cliente) => (
@@ -317,13 +381,193 @@ const ClientesPage = () => {
                                 <div>{cliente.nombre}</div>
                                 <div>{cliente.telefono}</div>
                                 <div>{cliente.direccion}</div>
-                                <div>{estadosCliente[cliente.id_estado_cliente]}</div>
                                 <div>{tarifas[cliente.tipo_tarifa] || "No asignada"}</div>
+                                <div>
+                                    <button
+                                        className="crudBtnCustom"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedClient(cliente);
+                                            getClientEnrollments(cliente.id_cliente);
+                                        }}
+                                    >
+                                        Ver Matrículas
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
+
+            {showEnrollmentsModal && (
+                <div className={`pagos-modal-overlay ${isClosing ? 'closing' : ''}`}>
+                    <div className={`pagos-modal ${isClosing ? 'closing' : ''}`}>
+                        <h3 className="pagos-modal-title">Matrículas de {selectedClient?.nombre}</h3>
+                        <div className="pagos-table-container">
+                            <table className="pagos-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID Matrícula</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {selectedClientEnrollments.map((enrollment) => (
+                                        <tr key={enrollment.id_matricula}>
+                                            <td>{enrollment.id_matricula}</td>
+                                            <td>{new Date(enrollment.fecha_creacion).toLocaleDateString()}</td>
+                                            <td>
+                                                <select
+                                                    value={enrollment.estado}
+                                                    onChange={(e) => {
+                                                        updateEnrollmentStatus(
+                                                            enrollment.id_matricula,
+                                                            e.target.value
+                                                        );
+                                                    }}
+                                                    className="statusSelectCustom"
+                                                >
+                                                    {Object.entries(estadosMatricula).map(([value, label]) => (
+                                                        <option key={value} value={value}>
+                                                            {label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="pagos-button pagos-button-save"
+                                                    onClick={() => {
+                                                        updateEnrollmentStatus(
+                                                            enrollment.id_matricula,
+                                                            enrollment.estado
+                                                        );
+                                                    }}
+                                                >
+                                                    Actualizar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button
+                            className="pagos-button pagos-button-close"
+                            onClick={handleCloseModal}
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <style jsx>{`
+                .pagos-modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                    opacity: 1;
+                    transition: opacity 0.3s ease-in-out;
+                }
+
+                .pagos-modal-overlay.closing {
+                    opacity: 0;
+                }
+
+                .pagos-modal {
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 8px;
+                    width: 90%;
+                    max-width: 1000px;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                    transform: scale(1);
+                    transition: transform 0.3s ease-in-out;
+                }
+
+                .pagos-modal.closing {
+                    transform: scale(0.9);
+                }
+
+                .pagos-modal-title {
+                    text-align: center;
+                    margin-bottom: 1.5rem;
+                    color: #333;
+                    font-size: 1.5rem;
+                }
+
+                .pagos-table-container {
+                    overflow-x: auto;
+                }
+
+                .pagos-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 1rem;
+                }
+
+                .pagos-table th,
+                .pagos-table td {
+                    padding: 0.75rem;
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }
+
+                .pagos-table th {
+                    background-color: #f8f9fa;
+                    font-weight: 600;
+                }
+
+                .pagos-button {
+                    padding: 0.5rem 1rem;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: background-color 0.2s;
+                }
+
+                .pagos-button-save {
+                    background-color: #28a745;
+                    color: white;
+                    margin-right: 0.5rem;
+                }
+
+                .pagos-button-save:hover {
+                    background-color: #218838;
+                }
+
+                .pagos-button-close {
+                    background-color: #6c757d;
+                    color: white;
+                    margin-top: 1rem;
+                }
+
+                .pagos-button-close:hover {
+                    background-color: #5a6268;
+                }
+
+                .statusSelectCustom {
+                    padding: 0.375rem 0.75rem;
+                    border: 1px solid #ced4da;
+                    border-radius: 4px;
+                    background-color: white;
+                    width: 100%;
+                    max-width: 200px;
+                }
+            `}</style>
         </div>
     );
 };

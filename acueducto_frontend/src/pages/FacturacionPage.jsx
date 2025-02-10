@@ -8,7 +8,7 @@ const FacturacionPage = () => {
         identificacion: '',
         usuario: '',
         barrio: '',
-        tipoTarifa: '',
+        MatriculaCliente: '',
         fechaInicioCobro: '',
         fechaVencimiento: '',
         lecturaAnterior: '',
@@ -21,6 +21,7 @@ const FacturacionPage = () => {
 
     const [showModal, setShowModal] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
+    const [invoicesGenerated, setInvoicesGenerated] = useState(false); // Track if invoices are generated
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -84,6 +85,7 @@ const FacturacionPage = () => {
 
             if (response.ok) {
                 console.log('Facturas automáticas generadas');
+                setInvoicesGenerated(true); // Set invoices generated to true
             } else {
                 console.error('Error al generar facturas automáticas');
             }
@@ -133,7 +135,7 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="factura-numero">
-                            <p>FACTURA NO: _________</p>
+                            <p>FACTURA NO: {facturaData.idFactura || '-'}</p>
                         </div>
                     </div>
 
@@ -187,11 +189,11 @@ const FacturacionPage = () => {
                                 />
                             </div>
                             <div className="input-group">
-                                <label>TIPO DE TARIFA:</label>
+                                <label>MATRICULA N°:</label>
                                 <input
                                     type="text"
-                                    name="tipoTarifa"
-                                    value={facturaData.tipoTarifa}
+                                    name="MatriculaCliente"
+                                    value={facturaData.MatriculaCliente}
                                     onChange={handleInputChange}
                                 />
                             </div>
@@ -301,8 +303,8 @@ const FacturacionPage = () => {
                                 <p className="value">{facturaData.barrio || '-'}</p>
                             </div>
                             <div className="comprobante-item">
-                                <p className="label">TIPO DE TARIFA</p>
-                                <p className="value">{facturaData.tipoTarifa || '-'}</p>
+                                <p className="label">MATRICULA N°</p>
+                                <p className="value">{facturaData.MatriculaCliente || '-'}</p>
                             </div>
                             <div className="comprobante-item">
                                 <p className="label">TOTAL PAGADO</p>
@@ -334,7 +336,7 @@ const FacturacionPage = () => {
                                         </div>
                                     </div>
                                     <div className="factura-numero">
-                                        <p>FACTURA NO: _________</p>
+                                        <p>FACTURA NO: {facturaData.idFactura || '-'}</p>
                                     </div>
                                 </div>
 
@@ -347,6 +349,7 @@ const FacturacionPage = () => {
                                                 name="identificacion"
                                                 value={facturaData.identificacion}
                                                 onChange={handleInputChange}
+                                                disabled
                                             />
                                         </div>
                                         <div className="input-group">
@@ -356,6 +359,7 @@ const FacturacionPage = () => {
                                                 name="usuario"
                                                 value={facturaData.usuario}
                                                 onChange={handleInputChange}
+                                                disabled
                                             />
                                         </div>
                                         <div className="input-group">
@@ -365,6 +369,7 @@ const FacturacionPage = () => {
                                                 name="fechaInicioCobro"
                                                 value={facturaData.fechaInicioCobro}
                                                 onChange={handleInputChange}
+                                                disabled
                                             />
                                         </div>
                                     </div>
@@ -376,15 +381,17 @@ const FacturacionPage = () => {
                                                 name="barrio"
                                                 value={facturaData.barrio}
                                                 onChange={handleInputChange}
+                                                disabled
                                             />
                                         </div>
                                         <div className="input-group">
-                                            <label>TIPO DE TARIFA:</label>
+                                            <label>MATRICULA N°</label>
                                             <input
                                                 type="text"
-                                                name="tipoTarifa"
-                                                value={facturaData.tipoTarifa}
+                                                name="MatriculaCliente"
+                                                value={facturaData.MatriculaCliente}
                                                 onChange={handleInputChange}
+                                                disabled
                                             />
                                         </div>
                                         <div className="input-group">
@@ -394,6 +401,7 @@ const FacturacionPage = () => {
                                                 name="fechaVencimiento"
                                                 value={facturaData.fechaVencimiento}
                                                 onChange={handleInputChange}
+                                                disabled
                                             />
                                         </div>
                                     </div>
@@ -410,13 +418,14 @@ const FacturacionPage = () => {
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td>PRECIO TARIFA MEDIDOR</td>
+                                                <td>PRECIO TARIFA ESTANDAR</td>
                                                 <td>
                                                     <input
                                                         type="number"
                                                         name="precioUnitario"
                                                         value={facturaData.precioUnitario}
                                                         onChange={handleInputChange}
+                                                        disabled
                                                     />
                                                 </td>
                                                 <td>{formatCurrency(facturaData.precioUnitario || 0)}</td>
@@ -429,6 +438,7 @@ const FacturacionPage = () => {
                                                         name="multas"
                                                         value={facturaData.multas}
                                                         onChange={handleInputChange}
+                                                        disabled
                                                     />
                                                 </td>
                                                 <td>{formatCurrency(facturaData.multas || 0)}</td>
@@ -441,6 +451,7 @@ const FacturacionPage = () => {
                                                         name="saldoPendiente"
                                                         value={facturaData.saldoPendiente}
                                                         onChange={handleInputChange}
+                                                        disabled
                                                     />
                                                 </td>
                                                 <td>{formatCurrency(facturaData.saldoPendiente || 0)}</td>
@@ -453,6 +464,7 @@ const FacturacionPage = () => {
                                                         name="observacion"
                                                         value={facturaData.observacion}
                                                         onChange={handleInputChange}
+                                                        disabled
                                                     />
                                                 </td>
                                             </tr>
@@ -486,8 +498,8 @@ const FacturacionPage = () => {
                                             <p className="value">{facturaData.barrio || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
-                                            <p className="label">TIPO DE TARIFA</p>
-                                            <p className="value">{facturaData.tipoTarifa || '-'}</p>
+                                            <p className="label">MATRICULA N°</p>
+                                            <p className="value">{facturaData.MatriculaCliente || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">TOTAL PAGADO</p>
@@ -502,19 +514,23 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="modal-buttons">
-                            <button onClick={crearFactura} className="btn btn-primary">
-                                Guardar Factura
+                            <button onClick={generarFacturasAutomaticas} className="btn btn-primary">
+                                Generar Facturas Automáticas
                             </button>
-                            <button onClick={exportarPDF} className="btn btn-success">
+                            <button onClick={generarFacturasAutomaticas} className="btn btn-primary">
+                                Guardar Facturas Automáticas
+                            </button>
+                            <button onClick={exportarPDF} className={`btn btn-success ${!invoicesGenerated ? 'disabled' : ''}`}>
                                 Exportar a PDF
                             </button>
                             <button onClick={handleCloseModal} className="btn btn-secondary">
                                 Cerrar
                             </button>
                         </div>
+                        {invoicesGenerated && <p className="success-message">Facturas generadas correctamente.</p>}
                     </div>
                 </div>
-            )}            
+            )}
             <style jsx>{`
                 .modal-overlay {
                     position: fixed;
@@ -571,253 +587,19 @@ const FacturacionPage = () => {
                     flex-shrink: 0;
                 }
 
-                /* Estilos para el scrollbar */
-                .modal-content::-webkit-scrollbar {
-                    width: 8px;
-                }
-
-                .modal-content::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                    border-radius: 4px;
-                }
-
-                .modal-content::-webkit-scrollbar-thumb {
-                    background: #888;
-                    border-radius: 4px;
-                }
-
-                .modal-content::-webkit-scrollbar-thumb:hover {
-                    background: #555;
-                }
-
-                .modal.closing {
-                    opacity: 0;
-                    visibility: hidden;
-                }
-
-                .modal-title {
-                    margin-bottom: 20px;
-                    font-size: 20px;
-                    font-weight: bold;
+                .success-message {
+                    color: green;
                     text-align: center;
+                    margin-top: 10px;
                 }
 
-                .factura {
-                    background-color: white;
-                    padding: 30px;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 8px;
-                    position: relative;
-                    overflow: hidden;
+                /* Additional styles for disabled button */
+                .disabled {
+                    background-color: #bdc3c7;
+                    cursor: not-allowed;
                 }
 
-                .factura-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 30px;
-                    padding-bottom: 20px;
-                    border-bottom: 2px solid #e0e0e0;
-                }
-
-                .logo-section {
-                    display: flex;
-                    align-items: center;
-                    gap: 20px;
-                }
-
-                .logo {
-                    width: 120px;
-                    height: auto;
-                }
-
-                .company-info {
-                    max-width: 400px;
-                }
-
-                .company-info h2 {
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #2c3e50;
-                    margin-bottom: 5px;
-                }
-
-                .company-info p {
-                    color: #7f8c8d;
-                    margin: 5px 0;
-                }
-
-                .company-info h3 {
-                    color: #3498db;
-                    font-size: 16px;
-                    margin-top: 5px;
-                }
-
-                .factura-numero {
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #2c3e50;
-                    padding: 10px 20px;
-                    border: 2px solid #3498db;
-                    border-radius: 5px;
-                }
-
-                .cliente-info {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 20px;
-                    margin-bottom: 30px;
-                }
-
-                .info-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 15px;
-                }
-
-                .input-group {
-                    display: flex;
-                    flex-direction: column;
-                    position: relative;
-                }
-
-                .input-group label {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #2c3e50;
-                    margin-bottom: 5px;
-                }
-
-                .input-group input {
-                    padding: 8px 12px;
-                    border: 1px solid #bdc3c7;
-                    border-radius: 4px;
-                    font-size: 14px;
-                    transition: border-color 0.3s ease;
-                }
-
-                .input-group input:focus {
-                    outline: none;
-                    border-color: #3498db;
-                    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-                }
-
-                .factura-tabla {
-                    margin-bottom: 30px;
-                }
-
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 20px;
-                }
-
-                th {
-                    background-color: #3498db;
-                    color: white;
-                    padding: 12px;
-                    text-align: left;
-                    font-weight: 600;
-                }
-
-                td {
-                    padding: 12px;
-                    border: 1px solid #e0e0e0;
-                }
-
-                tbody tr:nth-child(even) {
-                    background-color: #f9f9f9;
-                }
-
-                tbody input {
-                    width: calc(100% - 16px);
-                    padding: 8px;
-                    border: 1px solid #bdc3c7;
-                    border-radius: 4px;
-                    font-size: 14px;
-                }
-
-                tfoot tr {
-                    background-color: #f5f6fa;
-                    font-weight: bold;
-                }
-
-                tfoot td {
-                    padding: 15px 12px;
-                }
-
-                .comprobante {
-                    margin-top: 40px;
-                    padding-top: 20px;
-                    border-top: 2px dashed #bdc3c7;
-                }
-
-                .comprobante h4 {
-                    text-align: center;
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #2c3e50;
-                    margin-bottom: 20px;
-                    text-transform: uppercase;
-                }
-
-                .comprobante-grid {
-                    display: grid;
-                    grid-template-columns: repeat(5, 1fr);
-                    gap: 15px;
-                    padding: 20px;
-                    background-color: #f8f9fa;
-                    border-radius: 8px;
-                }
-
-                .comprobante-item {
-                    text-align: center;
-                }
-
-                .comprobante-item .label {
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: #7f8c8d;
-                    margin-bottom: 5px;
-                    text-transform: uppercase;
-                }
-
-                .comprobante-item .value {
-                    font-size: 14px;
-                    color: #2c3e50;
-                    font-weight: 500;
-                }
-
-                .button-group {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-top: 20px;
-                }
-
-                .btn {
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 5px;
-                    color: white;
-                    cursor: pointer;
-                    font-size: 14px;
-                }
-
-                .btn-primary {
-                    background-color: #3498db;
-                }
-
-                .btn-success {
-                    background-color: #2ecc71;
-                }
-
-                .btn-secondary {
-                    background-color: #95a5a6;
-                }
-
-                .btn-danger {
-                    background-color: #e74c3c;
-                }
+                /* Existing styles... */
             `}</style>
         </div>
     );

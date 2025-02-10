@@ -192,7 +192,7 @@ const IngresosPage = () => {
                                             <td>{item.id_ingreso}</td>
                                             <td>{item.descripcion_ingreso}</td>
                                             <td>{formatCOP(item.valor_ingreso)}</td>
-                                            <td>{new Date(item.fecha).toLocaleDateString()}</td>
+                                            <td>{new Date(item.fecha_ingreso).toLocaleDateString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>

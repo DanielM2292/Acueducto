@@ -211,8 +211,9 @@ const MatriculasPage = () => {
                         className="inputCustom"
                         required
                     >
-                        <option value="Estandar">Estándar</option>
-                        <option value="Medidor">Medidor</option>
+                        <option>Selecciona un tipo de tarifa</option>
+                        <option value="TAE0001">Estándar</option>
+                        <option value="TAM0001">Medidor</option>
                     </select>
                     <label>Tipo de Tarifa</label>
                 </div>
