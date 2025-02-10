@@ -344,11 +344,14 @@ class Matriculas:
             SELECT 
                 m.id_matricula, 
                 m.numero_matricula, 
-                c.direccion
+                c.direccion,
+                ec.descripcion_cliente
             FROM 
                 matriculas AS m
             INNER JOIN 
                 matricula_cliente AS mc ON m.id_matricula = mc.id_matricula
+            INNER JOIN
+				estado_clientes AS ec ON mc.id_estado_cliente = ec.id_estado_cliente
             INNER JOIN 
                 clientes AS c ON mc.id_cliente = c.id_cliente WHERE numero_documento = %s;''', (numero_documento,))
         matricula = cursor.fetchall()
@@ -369,13 +372,6 @@ class Matricula_cliente:
         cursor = mysql.connection.cursor()
         cursor.execute('INSERT INTO matricula_cliente (id_matricula_cliente, id_matricula, id_cliente) VALUES (%s, %s, %s)',
                     (id_matricula_cliente, id_matricula, id_cliente))
-        mysql.connection.commit()
-        cursor.close()
-    
-    @staticmethod
-    def asociar_multa_matricula_cliente(mysql, id_multa_cliente, id_matricula_cliente):
-        cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE matricula_cliente SET id_multa_cliente = %s WHERE id_matricula_cliente = %s', (id_multa_cliente, id_matricula_cliente))
         mysql.connection.commit()
         cursor.close()
     
@@ -416,18 +412,12 @@ class Multas:
     def mostrar_multas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre
-	            FROM
-		            multas AS m
-				INNER JOIN
-					multa_clientes AS mcl ON m.id_multa = mcl.id_multa
-                INNER JOIN
-		            matricula_cliente AS mc ON mcl.id_multa_cliente = mc.id_multa_cliente
-	            INNER JOIN
-		            clientes AS c ON mc.id_cliente = c.id_cliente
-				INNER JOIN
-					matriculas AS ma ON mc.id_matricula = ma.id_matricula;
-        ''')
+            SELECT DISTINCT m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre
+            FROM multas AS m
+            INNER JOIN multa_clientes AS mcl ON m.id_multa = mcl.id_multa
+            INNER JOIN clientes AS c ON mcl.id_cliente = c.id_cliente
+            INNER JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
+            INNER JOIN matriculas AS ma ON mc.id_matricula = ma.id_matricula;''')
         multas = cursor.fetchall()
         cursor.close()
         return multas
@@ -464,10 +454,10 @@ class Multas:
         
 class Multa_clientes:
     @staticmethod
-    def crear_multa_cliente(mysql, id_multa_cliente, id_multa, id_cliente, id_estado_multa):
+    def crear_multa_cliente(mysql, id_multa_cliente, id_multa, id_cliente, id_estado_multa, id_matricula_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO multa_clientes (id_multa_cliente, id_multa, id_cliente, id_estado_multa) VALUES (%s, %s, %s, %s)', 
-                       (id_multa_cliente, id_multa, id_cliente, id_estado_multa))
+        cursor.execute('INSERT INTO multa_clientes (id_multa_cliente, id_multa, id_cliente, id_estado_multa, id_matricula_cliente) VALUES (%s, %s, %s, %s, %s)', 
+                       (id_multa_cliente, id_multa, id_cliente, id_estado_multa, id_matricula_cliente))
         mysql.connection.commit()
         cursor.close()
     

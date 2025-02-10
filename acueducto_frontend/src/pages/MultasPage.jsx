@@ -212,7 +212,7 @@ const MultasPage = () => {
                                         <tr key={matricula.id_matricula}>
                                             <td>{matricula.numero_matricula}</td>
                                             <td>{matricula.direccion}</td>
-                                            <td>{matricula.estado}</td>
+                                            <td>{matricula.descripcion_cliente}</td>
                                             <td>
                                                 <button
                                                     className="pagos-button pagos-button-save"

@@ -27,11 +27,8 @@ class MultasServices:
             custom_id_multa_cliente_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             
             # Crea esa relacion de la multa creada con el cliente multa_clientes
-            Multa_clientes.crear_multa_cliente(mysql, custom_id_multa_clientes, custom_id_multa, id_cliente, 'ESM0001')
+            Multa_clientes.crear_multa_cliente(mysql, custom_id_multa_clientes, custom_id_multa, id_cliente, 'ESM0001', id_matricula_cliente)
             Auditoria.log_audit(mysql, custom_id_multa_cliente_audi, "multa_cliente", custom_id_multa_clientes, "INSERT", "ADM0001", f"Se agrega una multa a la matricula {id_matricula_cliente} del cliente {id_cliente}")
-            
-            # Asociar la multa_cliente con la matricula seleccionada
-            Matricula_cliente.asociar_multa_matricula_cliente(mysql, custom_id_multa_clientes, id_matricula_cliente)
             
             return jsonify({"message": "Multa creada y asociada exitosamente", "id_multa": custom_id_multa}), 201
             
