@@ -34,7 +34,7 @@ const WelcomePage = () => {
         </div>
 
         <footer>
-          <p>© 2024 Sistema de Facturación Acueducto y Alcantarillado de Santander de Valencia. Todos los derechos reservados.</p>
+          <p>© 2025 Sistema de Facturación Acueducto y Alcantarillado de Santander de Valencia. Todos los derechos reservados.</p>
         </footer>
       </div>
 

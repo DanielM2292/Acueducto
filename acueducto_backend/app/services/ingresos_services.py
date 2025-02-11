@@ -31,17 +31,19 @@ class IngresosServices:
     def buscar_ingreso():
         mysql = current_app.mysql
         try:
-            #palabra = request.args.get("descripcionIngreso")
             data = request.get_json()
             palabra = data.get("buscar_ingreso")
+            if not palabra:
+                return jsonify({"message": "Término de búsqueda requerido"}), 400
+                
             ingreso = Ingresos.buscar_ingreso(mysql, palabra)
             if ingreso:
                 return jsonify(ingreso)
-            return jsonify({"message": "No se encontro ingreso"}), 404
-            
+            return jsonify({"message": "No se encontró ingreso"}), 404
+                
         except Exception as e:
             return jsonify({"message": f"Error al buscar ingreso: {str(e)}"}), 500
-    
+        
     @staticmethod
     def actualizar_ingreso(data):
         mysql = current_app.mysql

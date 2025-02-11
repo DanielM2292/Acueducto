@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import AcueductoLogo from '../imagenes/LogoAcueducto.png';
 
 const LoginPage = () => {
@@ -9,6 +11,7 @@ const LoginPage = () => {
   const [rol, setRol] = useState('ROL0001');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
   const handleLogin = async (event) => {
     event.preventDefault();
 
@@ -32,7 +35,7 @@ const LoginPage = () => {
         console.log(data)
 
         if (realRole !== rol) {
-          alert("El rol seleccionado no coincide con el rol real del usuario. Por favor, selecciona el rol correcto.");
+          toast.error("El rol seleccionado no coincide con tu rol asignado. Por favor, selecciona el rol correcto.");
           return;
         }
         formData.append('rol', rol);
@@ -53,18 +56,29 @@ const LoginPage = () => {
           console.log(data);
           navigate('/app');
         } else {
-          setError('Usuario o contraseña incorrectos 1');
+          const errorData = await loginResponse.json();
+          if (errorData.message?.includes('password')) {
+            toast.error('Contraseña incorrecta');
+          } else {
+            toast.error('Error al iniciar sesión');
+          }
         }
       } else {
-        setError('Usuario o contraseña incorrectos 2');
+        const errorData = await response.json();
+        if (errorData.message?.includes('user')) {
+          toast.error('Usuario no encontrado');
+        } else {
+          toast.error('Error al verificar credenciales');
+        }
       }
     } catch (error) {
-      setError('Usuario o contraseña incorrectos 3');
+      toast.error('Error de conexión con el servidor');
     }
   };
 
   return (
     <div>
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className='logoContainer'>
         <img src={AcueductoLogo} alt='Acueducto Logo' className='logo' />
         <h1 className='textoLogo'>Agua Pura, Vida Segura</h1>
@@ -119,7 +133,6 @@ const LoginPage = () => {
           </button>
           {error && <p className="error-message">{error}</p>}
         </form>
-
       </div>
     </div>
   );

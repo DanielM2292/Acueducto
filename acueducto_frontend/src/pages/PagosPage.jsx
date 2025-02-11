@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const PagosPage = () => {
     const API_BASE_URL = "http://localhost:9090";
@@ -9,11 +11,8 @@ const PagosPage = () => {
     const [isClosing, setIsClosing] = useState(false);
     const [idReferencia, setIdReferencia] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
-    const [errorMessage, setErrorMessage] = useState(null);
-    const [searchTimeout, setSearchTimeout] = useState(null);
     const [historialData, setHistorialData] = useState([]);
+    const [searchTimeout, setSearchTimeout] = useState(null);
     const [paymentData, setPaymentData] = useState({
         total: '',
         pendiente: '',
@@ -24,6 +23,15 @@ const PagosPage = () => {
         fechaLecturaAnterior: '',
         fechaLecturaActual: '',
     });
+
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(value);
+    };
 
     useEffect(() => {
         fetchHistorial();
@@ -75,7 +83,6 @@ const PagosPage = () => {
 
     const fetchPaymentDetails = async (id, type) => {
         setLoading(true);
-        setError(null);
         try {
             const endpoints = {
                 'Factura': `${API_BASE_URL}/facturas/obtener_factura/${id}`,
@@ -95,7 +102,7 @@ const PagosPage = () => {
                 aCancelar: data.aCancelar
             }));
         } catch (err) {
-            setError('Error al cargar los detalles del pago');
+            toast.error('Error al cargar los detalles del pago');
             console.error(err);
         } finally {
             setLoading(false);
@@ -110,18 +117,16 @@ const PagosPage = () => {
             const data = await response.json();
             setHistorialData(data);
         } catch (err) {
-            setError('Error al cargar el historial de pagos');
+            toast.error('Error al cargar el historial de pagos');
             console.error(err);
         }
     };
 
     const procesarPago = async () => {
         setLoading(true);
-        setError(null);
-        setSuccessMessage(null);
 
         if (parseFloat(paymentData.aCancelar) > parseFloat(paymentData.pendiente)) {
-            setErrorMessage('El valor a cancelar no puede ser mayor que el valor pendiente.');
+            toast.error('El valor a cancelar no puede ser mayor que el valor pendiente.');
             setLoading(false);
             return;
         }
@@ -155,6 +160,7 @@ const PagosPage = () => {
 
             if (!response.ok) throw new Error('Error al procesar el pago');
 
+            // Limpiar el formulario
             setPaymentData({
                 total: '',
                 pendiente: '',
@@ -167,10 +173,10 @@ const PagosPage = () => {
             });
             setIdReferencia('');
 
-            setSuccessMessage('Pago procesado exitosamente');
+            toast.success('Pago procesado exitosamente');
             fetchHistorial();
         } catch (err) {
-            setErrorMessage('Error al procesar el pago');
+            toast.error('Error al procesar el pago');
             console.error(err);
         } finally {
             setLoading(false);
@@ -206,14 +212,14 @@ const PagosPage = () => {
                     </div>
                     <input
                         type="text"
-                        value={paymentData.total}
+                        value={paymentData.total ? formatCurrency(paymentData.total) : ''}
                         disabled
                         placeholder="Total"
                         className="pagos-input"
                     />
                     <input
                         type="text"
-                        value={paymentData.pendiente}
+                        value={paymentData.pendiente ? formatCurrency(paymentData.pendiente) : ''}
                         disabled
                         placeholder="Valor Pendiente"
                         className="pagos-input"
@@ -247,14 +253,15 @@ const PagosPage = () => {
                     </div>
                     <input
                         type="text"
-                        value={paymentData.valor_matricula || paymentData.valor_multa}
+                        value={paymentData.valor_matricula || paymentData.valor_multa ? 
+                            formatCurrency(paymentData.valor_matricula || paymentData.valor_multa) : ''}
                         disabled
                         placeholder="Total"
                         className="pagos-input"
                     />
                     <input
                         type="text"
-                        value={paymentData.valor_pendiente}
+                        value={paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''}
                         disabled
                         placeholder="Valor Pendiente"
                         className="pagos-input"
@@ -274,22 +281,38 @@ const PagosPage = () => {
 
     return (
         <div className="pagos-container">
-            {successMessage && (
-                <div className="message success">
-                    {successMessage}
-                </div>
-            )}
-            {errorMessage && (
-                <div className="message error">
-                    {errorMessage}
-                </div>
-            )}
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+            />
             <div className="pagos-card">
                 <h2 className="pagos-title">Pagos</h2>
                 <div className="pagos-form-grid">
                     <select
                         value={tipo}
-                        onChange={(e) => setTipo(e.target.value)}
+                        onChange={(e) => {
+                            setTipo(e.target.value);
+                            // Limpiar el formulario al cambiar el tipo
+                            setPaymentData({
+                                total: '',
+                                pendiente: '',
+                                aCancelar: '',
+                                idFactura: '',
+                                lecturaAnterior: '',
+                                lecturaActual: '',
+                                fechaLecturaAnterior: '',
+                                fechaLecturaActual: '',
+                            });
+                            setIdReferencia('');
+                        }}
                         className="pagos-select"
                     >
                         <option value="Factura">Factura</option>
@@ -302,8 +325,9 @@ const PagosPage = () => {
                     <button
                         className="pagos-button pagos-button-save"
                         onClick={procesarPago}
+                        disabled={loading}
                     >
-                        Guardar Pago
+                        {loading ? 'Procesando...' : 'Guardar Pago'}
                     </button>
                     <button
                         className="pagos-button pagos-button-history"
@@ -326,7 +350,6 @@ const PagosPage = () => {
                                         <th>Tipo</th>
                                         <th>Fecha</th>
                                         <th>Valor</th>
-                                        <th>Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -334,8 +357,8 @@ const PagosPage = () => {
                                         <tr key={item.id}>
                                             <td>{item.id_ingreso}</td>
                                             <td>{item.descripcion_ingreso}</td>
-                                            <td>{item.valor_ingreso}</td>
                                             <td>{item.fecha_ingreso}</td>
+                                            <td>{formatCurrency(item.valor_ingreso)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -350,62 +373,6 @@ const PagosPage = () => {
                     </div>
                 </div>
             )}
-
-            <style jsx>{`
-                .meter-readings-container {
-                    display: grid;
-                    gap: 1rem;
-                    width: 100%;
-                }
-
-                .input-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.5rem;
-                }
-
-                .input-label {
-                    color: #1a1a1a;
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                    position: static;
-                    margin-bottom: 0.25rem;
-                }
-
-                .pagos-input {
-                    width: 100%;
-                    padding: 0.5rem;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 0.375rem;
-                    margin-top: 0;
-                }
-
-                .pagos-input:focus {
-                    outline: none;
-                    border-color: #4299e1;
-                    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-                }
-                .message {
-                    padding: 10px;
-                    margin-bottom: 20px;
-                    border-radius: 4px;
-                    text-align: center;
-                    font-size: 14px;
-                }
-
-                .message.success {
-                    background-color: #d4edda;
-                    color: #155724;
-                    border: 1px solid #c3e6cb;
-                }
-
-                .message.error {
-                    background-color: #f8d7da;
-                    color: #721c24;
-                    border: 1px solid #f5c6cb;
-                }
-
-            `}</style>
         </div>
     );
 };

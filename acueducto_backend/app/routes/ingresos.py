@@ -15,7 +15,7 @@ def crear_ingreso():
     data = request.get_json()
     return IngresosServices.crear_ingreso(data)
 
-@ingresos_bp.route('/buscar_ingreso', methods=['GET', 'OPTIONS'])
+@ingresos_bp.route('/buscar_ingreso', methods=['POST', 'OPTIONS'])
 def buscar_ingreso():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200

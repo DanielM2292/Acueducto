@@ -66,18 +66,35 @@ const IngresosPage = () => {
     };
 
     const handleSearch = async () => {
+        if (!formData.descripcionIngreso.trim()) {
+            notify("Ingrese una descripción para buscar", "warning");
+            return;
+        }
+
         try {
-            const response = await fetch(`http://localhost:9090/ingresos/buscar_ingreso/${formData.id_ingreso}`);
+            // Enviar la búsqueda como datos JSON en el body
+            const response = await fetch("http://localhost:9090/ingresos/buscar_ingreso", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    buscar_ingreso: formData.descripcionIngreso
+                })
+            });
+            
             const data = await response.json();
             
-            if (response.ok && data) {
-                setFormData({
-                    descripcionIngreso: data.descripcion_ingreso,
-                    valorIngreso: data.valor_ingreso
-                });
-                notify("Ingreso encontrado", "success");
+            if (response.ok) {
+                if (Array.isArray(data) && data.length > 0) {
+                    setIngresos(data);
+                    setIsModalOpen(true);
+                    notify("Ingresos encontrados", "success");
+                } else {
+                    notify("No se encontraron ingresos con esa descripción", "info");
+                }
             } else {
-                notify("Ingreso no encontrado", "error");
+                notify(data.message || "Error al buscar ingresos", "error");
             }
         } catch (error) {
             notify("Error de conexión", "error");
@@ -86,7 +103,7 @@ const IngresosPage = () => {
 
     const handleUpdate = async () => {
         try {
-            const response = await fetch(`http://localhost:9090/ingresos/actualizar_ingreso/${formData.id_ingreso}`, {
+            const response = await fetch("http://localhost:9090/ingresos/actualizar_ingreso", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
