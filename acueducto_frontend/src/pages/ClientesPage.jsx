@@ -26,17 +26,6 @@ const ClientesPage = () => {
         "ESC0003": "Suspendido"
     };
 
-    const estadosMatricula = {
-        "pendiente": "Pendiente",
-        "activa": "Activa",
-        "cancelada": "Cancelada"
-    };
-
-    const tarifas = {
-        "estandar": "Tarifa Estándar",
-        "medidor": "Tarifa Medidor"
-    };
-
     const notify = (message, type) => {
         if (type === "success") {
             toast.success(message);
@@ -364,7 +353,6 @@ const ClientesPage = () => {
                         <div>Nombre</div>
                         <div>Teléfono</div>
                         <div>Dirección</div>
-                        <div>Tipo Tarifa</div>
                         <div>Acciones</div>
                     </div>
                     <div className="clientTableBodyCustom">
@@ -381,7 +369,6 @@ const ClientesPage = () => {
                                 <div>{cliente.nombre}</div>
                                 <div>{cliente.telefono}</div>
                                 <div>{cliente.direccion}</div>
-                                <div>{tarifas[cliente.tipo_tarifa] || "No asignada"}</div>
                                 <div>
                                     <button
                                         className="crudBtnCustom"
@@ -430,7 +417,7 @@ const ClientesPage = () => {
                                                     }}
                                                     className="statusSelectCustom"
                                                 >
-                                                    {Object.entries(estadosMatricula).map(([value, label]) => (
+                                                    {Object.entries(estadosCliente).map(([value, label]) => (
                                                         <option key={value} value={value}>
                                                             {label}
                                                         </option>
