@@ -148,14 +148,7 @@ class Clientes:
     @staticmethod
     def get_all_clientes(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('''
-            SELECT c.id_cliente, c.tipo_documento, c.numero_documento, c.nombre, c.telefono, c.direccion, mc.id_estado_cliente, m.tipo_tarifa
-	            FROM
-		            clientes AS c
-                INNER JOIN
-		            matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
-	            INNER JOIN 
-		            matriculas AS m ON mc.id_matricula = m.id_matricula;''')
+        cursor.execute('SELECT * FROM clientes')
         clientes = cursor.fetchall()
         cursor.close()
         return clientes
@@ -277,10 +270,10 @@ class Matriculas:
         return matricula
     
     @staticmethod
-    def agregar_matricula(mysql, id_matricula, numero_matricula, valor_matricula, id_tarifa_medidor, id_tarifa_estandar):
+    def agregar_matricula(mysql, id_matricula, numero_matricula, valor_matricula, tipo_tarifa):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO matriculas (id_matricula, numero_matricula, valor_matricula, id_tarifa_medidor, id_tarifa_estandar) VALUES (%s, %s, %s, %s, %s)', 
-                        (id_matricula, numero_matricula, valor_matricula, id_tarifa_medidor, id_tarifa_estandar))
+        cursor.execute('INSERT INTO matriculas (id_matricula, numero_matricula, valor_matricula, tipo_tarifa) VALUES (%s, %s, %s, %s)', 
+                        (id_matricula, numero_matricula, valor_matricula, tipo_tarifa))
         mysql.connection.commit()
         cursor.close()
 
@@ -296,11 +289,14 @@ class Matriculas:
                 c.nombre,
                 m.valor_matricula,
                 m.tipo_tarifa,
-                m.fecha_creacion
+                m.fecha_creacion,
+                ec.descripcion_cliente
             FROM 
                 matriculas AS m
             INNER JOIN 
                 matricula_cliente AS mc ON m.id_matricula = mc.id_matricula
+            INNER JOIN
+				estado_clientes AS ec ON mc.id_estado_cliente = ec.id_estado_cliente
             INNER JOIN 
                 clientes AS c ON mc.id_cliente = c.id_cliente;''')
         matriculas = cursor.fetchall()
@@ -308,10 +304,10 @@ class Matriculas:
         return matriculas
     
     @staticmethod
-    def actualizar_matricula(mysql, valor_matricula, id_tarifa_medidor, id_tarifa_estandar, id_matricula):
+    def actualizar_matricula(mysql, valor_matricula, tipo_tarifa, id_matricula):
         cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE matriculas SET valor_matricula = %s, id_tarifa_medidor = %s, id_tarifa_estandar = %s WHERE id_matricula = %s', 
-                        (valor_matricula, id_tarifa_medidor, id_tarifa_estandar, id_matricula))
+        cursor.execute('UPDATE matriculas SET valor_matricula = %s, tipo_tarifa = %s WHERE id_matricula = %s', 
+                        (valor_matricula, tipo_tarifa, id_matricula))
         mysql.connection.commit()
         cursor.close()
     
@@ -344,6 +340,7 @@ class Matriculas:
             SELECT 
                 m.id_matricula, 
                 m.numero_matricula, 
+                m.fecha_creacion,
                 c.direccion,
                 ec.descripcion_cliente
             FROM 
@@ -368,10 +365,10 @@ class Matriculas:
 
 class Matricula_cliente:
     @staticmethod
-    def asociar_matricula_cliente(mysql, id_matricula_cliente, id_matricula, id_cliente):
+    def asociar_matricula_cliente(mysql, id_matricula_cliente, id_matricula, id_cliente, id_estado_cliente):
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO matricula_cliente (id_matricula_cliente, id_matricula, id_cliente) VALUES (%s, %s, %s)',
-                    (id_matricula_cliente, id_matricula, id_cliente))
+        cursor.execute('INSERT INTO matricula_cliente (id_matricula_cliente, id_matricula, id_cliente, id_estado_cliente) VALUES (%s, %s, %s, %s)',
+                    (id_matricula_cliente, id_matricula, id_cliente, id_estado_cliente))
         mysql.connection.commit()
         cursor.close()
     

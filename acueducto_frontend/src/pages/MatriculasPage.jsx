@@ -7,7 +7,7 @@ const MatriculasPage = () => {
     const [idMatricula, setIdMatricula] = useState("");
     const [numeroDocumento, setNumeroDocumento] = useState("");
     const [valorMatricula, setValorMatricula] = useState("");
-    const [tipoTarifa, setTipoTarifa] = useState("Estandar");
+    const [tipoTarifa, setTipoTarifa] = useState("");
     const [matriculas, setMatriculas] = useState([]);
     const [editMode, setEditMode] = useState(false);
     const [selectedMatricula, setSelectedMatricula] = useState(null);
@@ -165,7 +165,6 @@ const MatriculasPage = () => {
     const resetForm = () => {
         setNumeroDocumento("");
         setValorMatricula("");
-        setEstadoMatricula("ESM0001");
         setTipoTarifa("estandar");
         setSelectedMatricula(null);
         setEditMode(false);
@@ -212,8 +211,8 @@ const MatriculasPage = () => {
                         required
                     >
                         <option>Selecciona un tipo de tarifa</option>
-                        <option value="TAE0001">Estándar</option>
-                        <option value="TAM0001">Medidor</option>
+                        <option value="Estandar">Estándar</option>
+                        <option value="Medidor">Medidor</option>
                     </select>
                     <label>Tipo de Tarifa</label>
                 </div>
@@ -265,7 +264,8 @@ const MatriculasPage = () => {
                                             <td>{item.numero_documento}</td>
                                             <td>{item.nombre}</td>
                                             <td>{formatCurrency(item.valor_matricula)}</td>
-                                            <td>{tipoTarifa[item.id_tarifa_medidor] || tipoTarifa[item.id_tarifa_estandar]}</td>
+                                            <td>{item.descripcion_cliente}</td>
+                                            <td>{item.tipo_tarifa}</td>
                                             <td>{new Date(item.fecha_creacion).toLocaleDateString()}</td>
                                             <td>
                                                 <button 

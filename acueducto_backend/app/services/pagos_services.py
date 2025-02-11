@@ -26,13 +26,15 @@ class PagosServices:
             valor_pagar = int(valor_pagar)
             
             multa = Multas.buscar_multa(mysql, id_multa)
-            valor_multa = multa['valor_multa']
-            valor_pendiente = multa['valor_pendiente']
+            valor_multa = int(multa['valor_multa'])
+            valor_pendiente = int(multa['valor_pendiente'])
             
-            if valor_pagar > valor_multa:
+            if valor_pagar > valor_multa or valor_pagar > valor_pendiente:
                 return jsonify({'error': 'El valor no es correcto'}), 400
+            
             nuevo_valor = valor_pendiente - valor_pagar
-            if nuevo_valor is 0:
+            
+            if nuevo_valor == 0:
                 Multa_clientes.actualizar_multa_cliente(mysql, id_multa, 'ESM0002')
             
             Multas.update_multa_pago(mysql, valor_multa, nuevo_valor, id_multa)

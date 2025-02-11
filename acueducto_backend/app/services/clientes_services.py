@@ -31,17 +31,15 @@ class ClientesServices:
         custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         try:
             id_cliente = data.get("id_cliente")
+            print(id_cliente)
             tipo_documento = data.get("tipo_documento"),
             numero_documento = data.get("numero_documento"),
             nombre = data.get("nombre"),
             telefono = data.get("telefono"),
             direccion = data.get("direccion"),
-            estado_cliente = data.get("id_estado_cliente")
-            id_matricula = data.get("id_matricula")
             current_user = session.get("id_administrador")
             
             Clientes.update_cliente(mysql, tipo_documento, numero_documento, nombre, telefono, direccion, id_cliente)
-            Matricula_cliente.actualizar_estado(mysql, estado_cliente, id_matricula)
             Auditoria.log_audit(mysql, custom_id_auditoria, "clientes", id_cliente, "UPDATE", current_user, f"Se actualiza datos del cliente {id_cliente}")
             return jsonify({"message": "Cliente actualizado exitosamente"}), 200
         except Exception as e:
