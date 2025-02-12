@@ -133,9 +133,9 @@ const PagosPage = () => {
 
         try {
             const endpoints = {
-                'Factura': `${API_BASE_URL}/pagos/registrar_pago`,
+                'Factura': `${API_BASE_URL}/pagos/registrar_pago_factura`,
                 'Multa': `${API_BASE_URL}/pagos/registrar_pago_multa`,
-                'Matricula': `${API_BASE_URL}/pagos/registrar_pago`
+                'Matricula': `${API_BASE_URL}/pagos/registrar_pago_matricula`
             };
 
             const payloadData = {

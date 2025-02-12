@@ -322,11 +322,14 @@ class Matriculas:
                 c.nombre,
                 m.valor_matricula,
                 m.tipo_tarifa,
+                ec.descripcion_cliente,
                 m.fecha_creacion
             FROM 
                 matriculas AS m
             INNER JOIN 
                 matricula_cliente AS mc ON m.id_matricula = mc.id_matricula
+            INNER JOIN
+				estado_clientes AS ec ON mc.id_estado_cliente = ec.id_estado_cliente
             INNER JOIN 
                 clientes AS c ON mc.id_cliente = c.id_cliente WHERE numero_documento = %s;''', (numero_documento,))
         matricula = cursor.fetchall()
@@ -459,10 +462,10 @@ class Multa_clientes:
         cursor.close()
     
     @staticmethod
-    def actualizar_multa_cliente(mysql, id_multa, id_estado_multa):
+    def actualizar_multa_cliente(mysql, id_estado_multa, id_multa):
         cursor = mysql.connection.cursor()
-        cursor.execute('UPDATE SET id_estado_multa = %s WHERE id_multa = %', 
-                       (id_multa, id_estado_multa))
+        cursor.execute('UPDATE multa_clientes SET id_estado_multa = %s WHERE id_multa = %s',
+                       (id_estado_multa, id_multa))
         mysql.connection.commit()
         cursor.close()
         
@@ -496,6 +499,14 @@ class Ingresos:
         cursor = mysql.connection.cursor()
         cursor.execute('INSERT INTO ingresos (id_ingreso, descripcion_ingreso, valor_ingreso, id_multa) VALUES (%s, %s, %s, %s)',
                        (id_ingreso, descripcion_ingreso, valor_ingreso, id_multa))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def crear_ingreso_matricula(mysql, id_ingreso, descripcion_ingreso, valor_ingreso, id_matricula):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO ingresos (id_ingreso, descripcion_ingreso, valor_ingreso, id_matricula) VALUES (%s, %s, %s, %s)',
+                       (id_ingreso, descripcion_ingreso, valor_ingreso, id_matricula))
         mysql.connection.commit()
         cursor.close()
     

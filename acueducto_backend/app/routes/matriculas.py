@@ -34,9 +34,10 @@ def obtener_matricula():
         return jsonify({'message': 'CORS preflight response'}), 200
     return MatriculasServices.obtener_matricula()
 
-@matriculas_bp.route('/actualizar_estado', methods=["GET", "OPTIONS"])
+@matriculas_bp.route('/actualizar_estado', methods=["PUT", "OPTIONS"])
 def actualizar_estado():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
-    return MatriculasServices.actualizar_estado()
+    data = request.get_json()
+    return MatriculasServices.actualizar_estado(data)
 
