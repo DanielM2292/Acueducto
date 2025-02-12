@@ -14,3 +14,10 @@ def registrar_pago_multa():
         return jsonify({'message': 'CORS preflight response'}), 200
     data = request.get_json()
     return PagosServices.registrar_pago_multa(data)
+
+@pagos_bp.route('/registrar_pago_matricula', methods=["POST", "OPTIONS"])
+def registrar_pago_matricula():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 200
+    data = request.get_json()
+    return PagosServices.registrar_pago_matricula(data)

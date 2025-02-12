@@ -109,12 +109,12 @@ class MatriculasServices:
             return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})
     
     @staticmethod
-    def actualizar_estado():
+    def actualizar_estado(data):
         mysql = current_app.mysql
         try:
             print('entra al endpoi matric')
-            id_matricula = request.args.get("id_matricula")
-            id_estado_cliente = request.args.get("id_estado_cliente")
+            id_matricula = data.get("id_matricula")
+            id_estado_cliente = data.get("estado")
             print(id_estado_cliente)
             print(id_matricula)
             if not id_matricula:
