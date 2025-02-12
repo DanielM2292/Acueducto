@@ -8,6 +8,7 @@ const ClientesPage = () => {
     const [selectedClientEnrollments, setSelectedClientEnrollments] = useState([]);
     const [selectedClient, setSelectedClient] = useState(null);
     const [isClosing, setIsClosing] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
 
     const [formData, setFormData] = useState({
         id_cliente: "",
@@ -44,6 +45,52 @@ const ClientesPage = () => {
         }, 300);
     };
 
+    const updateEnrollmentStatus = async (enrollmentId, newStatus) => {
+        try {
+            setUpdatingStatus(true);
+            const response = await fetch(`http://localhost:9090/matriculas/actualizar_estado`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id_matricula: enrollmentId,
+                    estado: newStatus
+                })
+            });
+
+            if (response.ok) {
+                notify("Estado de matrícula actualizado exitosamente", "success");
+
+                // Actualizar el estado local inmediatamente
+                setSelectedClientEnrollments(prevEnrollments =>
+                    prevEnrollments.map(enrollment =>
+                        enrollment.id_matricula === enrollmentId
+                            ? { ...enrollment, estado: newStatus }
+                            : enrollment
+                    )
+                );
+
+                // Actualizar la lista completa desde el servidor
+                if (selectedClient) {
+                    const updatedResponse = await fetch(`http://localhost:9090/multas/buscar_matriculas_por_documento?numero_documento=${selectedClient.numero_documento}`);
+                    if (updatedResponse.ok) {
+                        const updatedData = await updatedResponse.json();
+                        setSelectedClientEnrollments(updatedData);
+                    }
+                }
+            } else {
+                const errorData = await response.json();
+                notify(errorData.message || "Error al actualizar el estado de la matrícula", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión con el servidor", "error");
+            console.error("Error:", error);
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
+
     const getClientEnrollments = async (clientId) => {
         try {
             const client = clientes.find(c => c.id_cliente === clientId);
@@ -54,37 +101,13 @@ const ClientesPage = () => {
 
             const response = await fetch(`http://localhost:9090/multas/buscar_matriculas_por_documento?numero_documento=${client.numero_documento}`);
             const data = await response.json();
-            
+
             if (response.ok) {
                 setSelectedClientEnrollments(data);
+                setSelectedClient(client);
                 setShowEnrollmentsModal(true);
             } else {
                 notify("Error al cargar las matrículas", "error");
-            }
-        } catch (error) {
-            notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
-        }
-    };
-
-    const updateEnrollmentStatus = async (enrollmentId, newStatus) => {
-        try {
-            const response = await fetch(`http://localhost:9090/matriculas/actualizar_estado/${enrollmentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ estado: newStatus })
-            });
-
-            if (response.ok) {
-                notify("Estado de matrícula actualizado exitosamente", "success");
-                // Refresh enrollments
-                if (selectedClient) {
-                    getClientEnrollments(selectedClient.id_cliente);
-                }
-            } else {
-                notify("Error al actualizar el estado de la matrícula", "error");
             }
         } catch (error) {
             notify("Error de conexión con el servidor", "error");
@@ -127,12 +150,10 @@ const ClientesPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Si solo el campo nombre tiene contenido, realizar búsqueda
         if (formData.nombre && !formData.numero_documento && !formData.telefono && !formData.direccion) {
             await searchClientes();
             return;
         }
-        // Si hay más campos llenos, proceder con la creación del cliente
         try {
             const response = await fetch("http://localhost:9090/clientes/agregar_cliente", {
                 method: "POST",
@@ -296,32 +317,6 @@ const ClientesPage = () => {
                         <span className="barCustom"></span>
                         <label>Teléfono</label>
                     </div>
-
-                    <div className="groupCustom">
-                        <select
-                            name="direccion"
-                            value={formData.direccion}
-                            onChange={handleChange}
-                            className="inputCustom"
-                            required
-                        >
-                            <option>Selecciona un Barrio</option>
-                            <option>Barrio los Estudiantes</option>
-                            <option>Barrio El Centro</option>
-                            <option>Barrio la Cruz</option>
-                            <option>Barrio Belén</option>
-                            <option>Vereda la Florida</option>
-                            <option>Barrio Señor de las Misericordias</option>
-                            <option>Barrio Real Valencia</option>
-                            <option>Barrio Sagrado corazón de Jesús</option>
-                            <option>Barrio San Francisco</option>
-                            <option>Barrio San Fernando</option>
-                            <option>Vereda la Palma</option>
-                            <option>Barrio San José</option>
-                            <option>Barrio Miraflores</option>
-                        </select>
-                        <label>Dirección</label>
-                    </div>
                 </div>
 
                 <div className="buttonsCustom">
@@ -352,7 +347,6 @@ const ClientesPage = () => {
                         <div>Número Documento</div>
                         <div>Nombre</div>
                         <div>Teléfono</div>
-                        <div>Dirección</div>
                         <div>Acciones</div>
                     </div>
                     <div className="clientTableBodyCustom">
@@ -368,7 +362,6 @@ const ClientesPage = () => {
                                 <div>{cliente.numero_documento}</div>
                                 <div>{cliente.nombre}</div>
                                 <div>{cliente.telefono}</div>
-                                <div>{cliente.direccion}</div>
                                 <div>
                                     <button
                                         className="crudBtnCustom"
@@ -410,12 +403,17 @@ const ClientesPage = () => {
                                                 <select
                                                     value={enrollment.estado}
                                                     onChange={(e) => {
-                                                        updateEnrollmentStatus(
-                                                            enrollment.id_matricula,
-                                                            e.target.value
+                                                        const newStatus = e.target.value;
+                                                        setSelectedClientEnrollments(prevEnrollments =>
+                                                            prevEnrollments.map(prev =>
+                                                                prev.id_matricula === enrollment.id_matricula
+                                                                    ? { ...prev, estado: newStatus }
+                                                                    : prev
+                                                            )
                                                         );
                                                     }}
                                                     className="statusSelectCustom"
+                                                    disabled={updatingStatus}
                                                 >
                                                     {Object.entries(estadosCliente).map(([value, label]) => (
                                                         <option key={value} value={value}>
@@ -427,14 +425,13 @@ const ClientesPage = () => {
                                             <td>
                                                 <button
                                                     className="pagos-button pagos-button-save"
-                                                    onClick={() => {
-                                                        updateEnrollmentStatus(
-                                                            enrollment.id_matricula,
-                                                            enrollment.estado
-                                                        );
-                                                    }}
+                                                    onClick={() => updateEnrollmentStatus(
+                                                        enrollment.id_matricula,
+                                                        enrollment.estado
+                                                    )}
+                                                    disabled={updatingStatus}
                                                 >
-                                                    Actualizar
+                                                    {updatingStatus ? 'Actualizando...' : 'Actualizar'}
                                                 </button>
                                             </td>
                                         </tr>
@@ -445,6 +442,7 @@ const ClientesPage = () => {
                         <button
                             className="pagos-button pagos-button-close"
                             onClick={handleCloseModal}
+                            disabled={updatingStatus}
                         >
                             Cerrar
                         </button>
@@ -526,13 +524,18 @@ const ClientesPage = () => {
                     transition: background-color 0.2s;
                 }
 
+                .pagos-button:disabled {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                }
+
                 .pagos-button-save {
                     background-color: #28a745;
                     color: white;
                     margin-right: 0.5rem;
                 }
 
-                .pagos-button-save:hover {
+                .pagos-button-save:hover:not(:disabled) {
                     background-color: #218838;
                 }
 
@@ -542,7 +545,7 @@ const ClientesPage = () => {
                     margin-top: 1rem;
                 }
 
-                .pagos-button-close:hover {
+                .pagos-button-close:hover:not(:disabled) {
                     background-color: #5a6268;
                 }
 
@@ -553,6 +556,11 @@ const ClientesPage = () => {
                     background-color: white;
                     width: 100%;
                     max-width: 200px;
+                }
+
+                .statusSelectCustom:disabled {
+                    background-color: #e9ecef;
+                    cursor: not-allowed;
                 }
             `}</style>
         </div>

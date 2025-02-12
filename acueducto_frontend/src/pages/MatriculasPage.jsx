@@ -8,6 +8,7 @@ const MatriculasPage = () => {
     const [numeroDocumento, setNumeroDocumento] = useState("");
     const [valorMatricula, setValorMatricula] = useState("");
     const [tipoTarifa, setTipoTarifa] = useState("");
+    const [direccion, setDireccion] = useState("");
     const [matriculas, setMatriculas] = useState([]);
     const [editMode, setEditMode] = useState(false);
     const [selectedMatricula, setSelectedMatricula] = useState(null);
@@ -30,7 +31,7 @@ const MatriculasPage = () => {
     };
 
     const handleAddMatricula = async () => {
-        if (!numeroDocumento || !valorMatricula) {
+        if (!numeroDocumento || !valorMatricula || !direccion) {
             notify("Por favor complete todos los campos requeridos", "error");
             return;
         }
@@ -43,7 +44,8 @@ const MatriculasPage = () => {
                 body: JSON.stringify({ 
                     numero_documento: numeroDocumento, 
                     valor_matricula: valorMatricula,
-                    tipo_tarifa: tipoTarifa
+                    tipo_tarifa: tipoTarifa,
+                    direccion: direccion
                 }),
             });
             const data = await response.json();
@@ -61,7 +63,7 @@ const MatriculasPage = () => {
     };
 
     const handleUpdateMatricula = async () => {
-        if (!selectedMatricula || !numeroDocumento || !valorMatricula) {
+        if (!selectedMatricula || !numeroDocumento || !valorMatricula || !direccion) {
             notify("Por favor complete todos los campos requeridos", "error");
             return;
         }
@@ -75,7 +77,8 @@ const MatriculasPage = () => {
                     id_matricula: selectedMatricula.id_matricula,
                     numero_documento: numeroDocumento,
                     valor_matricula: valorMatricula,
-                    tipo_tarifa: tipoTarifa
+                    tipo_tarifa: tipoTarifa,
+                    direccion: direccion
                 }),
             });
             const data = await response.json();
@@ -150,6 +153,7 @@ const MatriculasPage = () => {
         setNumeroDocumento(matricula.numero_documento);
         setValorMatricula(matricula.valor_matricula);
         setTipoTarifa(matricula.tipo_tarifa);
+        setDireccion(matricula.direccion);
         setEditMode(true);
         setIsModalOpen(false);
     };
@@ -166,6 +170,7 @@ const MatriculasPage = () => {
         setNumeroDocumento("");
         setValorMatricula("");
         setTipoTarifa("estandar");
+        setDireccion("");
         setSelectedMatricula(null);
         setEditMode(false);
     };
@@ -202,6 +207,7 @@ const MatriculasPage = () => {
                     />
                     <label>Valor Matrícula</label>
                 </div>
+            
                 <div className="groupCustom">
                     <select
                         name="tipo_tarifa"
@@ -216,6 +222,32 @@ const MatriculasPage = () => {
                     </select>
                     <label>Tipo de Tarifa</label>
                 </div>
+
+                <div className="groupCustom">
+                    <select
+                        name="direccion"
+                        value={direccion}
+                        onChange={(e) => setDireccion(e.target.value)}
+                        className="inputCustom"
+                        required
+                    >
+                        <option value="">Selecciona un Barrio</option>
+                        <option value="Barrio los Estudiantes">Barrio los Estudiantes</option>
+                        <option value="Barrio El Centro">Barrio El Centro</option>
+                        <option value="Barrio la Cruz">Barrio la Cruz</option>
+                        <option value="Barrio Belén">Barrio Belén</option>
+                        <option value="Vereda la Florida">Vereda la Florida</option>
+                        <option value="Barrio Señor de las Misericordias">Barrio Señor de las Misericordias</option>
+                        <option value="Barrio Real Valencia">Barrio Real Valencia</option>
+                        <option value="Barrio Sagrado corazón de Jesús">Barrio Sagrado corazón de Jesús</option>
+                        <option value="Barrio San Francisco">Barrio San Francisco</option>
+                        <option value="Barrio San Fernando">Barrio San Fernando</option>
+                        <option value="Vereda la Palma">Vereda la Palma</option>
+                        <option value="Barrio San José">Barrio San José</option>
+                        <option value="Barrio Miraflores">Barrio Miraflores</option>
+                    </select>
+                </div>
+
                 <div className="buttonsCustom">
                     {!editMode ? (
                         <button className="crudBtnCustom" onClick={handleAddMatricula}>
@@ -253,7 +285,9 @@ const MatriculasPage = () => {
                                         <th>Valor Matrícula</th>
                                         <th>Estado Matrícula</th>
                                         <th>Tipo Tarifa</th>
+                                        <th>Dirección</th>
                                         <th>Fecha Creación</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -266,6 +300,7 @@ const MatriculasPage = () => {
                                             <td>{formatCurrency(item.valor_matricula)}</td>
                                             <td>{item.descripcion_cliente}</td>
                                             <td>{item.tipo_tarifa}</td>
+                                            <td>{item.direccion}</td>
                                             <td>{new Date(item.fecha_creacion).toLocaleDateString()}</td>
                                             <td>
                                                 <button 
