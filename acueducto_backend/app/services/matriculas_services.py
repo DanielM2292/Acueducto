@@ -14,20 +14,22 @@ class MatriculasServices:
             valor_matricula = data.get("valor_matricula")
             numero_matricula = "123"
             tipo_tarifa = data.get("tipo_tarifa")
+            direccion = data.get("direccion")
+            print(direccion)
             
-            # Traer todos los clientes con el mismo numero de documento
+            # Traer cliente con el mismo numero de documento
             id_cliente = Clientes.verificar_cliente(mysql, numero_documento)
             if not id_cliente:
                 return jsonify({'error': 'Cliente no encontrado'}), 404
             
             Matriculas.agregar_matricula(mysql, custom_id_matricula, numero_matricula, valor_matricula, tipo_tarifa)
             Auditoria.log_audit(mysql, custom_id_matricula_audi, "matriculas", custom_id_matricula, "INSERT", "ADM0001",f'Se agrega matricula {custom_id_matricula}')
-                        
+            print('pasa 1')    
             custom_id_matricula_cliente_audi = Auditoria.generate_custom_id(mysql, "AUD", "id_auditoria", "auditoria")
             # Asociar el cliente con la matricula nueva
-            Matricula_cliente.asociar_matricula_cliente(mysql, custom_id_matricula_cliente, custom_id_matricula, id_cliente, 'ESC0001')
+            Matricula_cliente.asociar_matricula_cliente(mysql, custom_id_matricula_cliente, custom_id_matricula, id_cliente, direccion, 'ESC0001')
             Auditoria.log_audit(mysql, custom_id_matricula_cliente_audi, "matricula_cliente", custom_id_matricula_cliente, "INSERT", "ADM0001",f'Se asocia la matricula {custom_id_matricula} al cliente {id_cliente}')
-            
+            print('pasa 2')
             return jsonify({"message": "Matrícula creada y vinculada exitosamente", "id_matricula": custom_id_matricula, "numero_matricula": numero_matricula}), 201              
         except Exception as e:
             print(f"Error al crear y vincular matrícula: {str(e)}") 
@@ -48,7 +50,6 @@ class MatriculasServices:
             
             return jsonify({"message": "Matrícula actualizada exitosamente"}), 200
         except MySQLdb.Error as e:
-            print(f"Error en la base de datos: {str(e)}")
             return jsonify({"message": f"Error en la base de datos: {str(e)}"}), 500
         except Exception as e:
             print(f"Error al actualizar matrícula: {str(e)}")
@@ -75,7 +76,6 @@ class MatriculasServices:
             matriculas = Matriculas.obtener_todas_matriculas(mysql)
             return jsonify(matriculas), 200
         except Exception as e:
-            print('Error al listar matrículas:', e)
             return jsonify({"message": f"Error al listar todas las matrículas: {str(e)}"}), 500
     
     @staticmethod
@@ -95,12 +95,9 @@ class MatriculasServices:
     def obtener_matricula():
         mysql = current_app.mysql
         try:
-            print('entra al endpoi matric')
             id_matricula = request.args.get("id_matricula")
-            print(id_matricula)
             matricula = Matriculas.buscar_matricula(mysql, id_matricula)
-            
-            print(matricula)
+
             if not matricula:
                 return jsonify({'error': 'Matricula no encontrada'}), 404
             return jsonify(matricula), 200
@@ -112,11 +109,9 @@ class MatriculasServices:
     def actualizar_estado(data):
         mysql = current_app.mysql
         try:
-            print('entra al endpoi matric')
             id_matricula = data.get("id_matricula")
             id_estado_cliente = data.get("estado")
-            print(id_estado_cliente)
-            print(id_matricula)
+            
             if not id_matricula:
                 return jsonify({'error': 'Matricula_cliente no encontrado'}), 404
             Matricula_cliente.actualizar_estado(mysql,id_estado_cliente,id_matricula)

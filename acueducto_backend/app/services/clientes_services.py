@@ -12,14 +12,13 @@ class ClientesServices:
             numero_documento = data.get("numero_documento"),
             nombre = data.get("nombre"),
             telefono = data.get("telefono"),
-            direccion = data.get("direccion"),
             current_user = session.get("id_administrador")
             
             cliente = Clientes.verificar_cliente(mysql, numero_documento)
             if cliente:
                return jsonify({"error": "El cliente ya existe"}), 409
             
-            Clientes.add_cliente(mysql, custom_id_cliente, tipo_documento,numero_documento, nombre, telefono, direccion)
+            Clientes.add_cliente(mysql, custom_id_cliente, tipo_documento,numero_documento, nombre, telefono)
             Auditoria.log_audit(mysql, custom_id_auditoria, 'clientes', custom_id_cliente, 'INSERT', current_user, f'Se agrega cliente {custom_id_cliente}, nombre: {nombre}')
             return jsonify({"message": "Cliente agregado exitosamente", "id_cliente": custom_id_cliente}), 201
         except Exception as e:
@@ -36,10 +35,9 @@ class ClientesServices:
             numero_documento = data.get("numero_documento"),
             nombre = data.get("nombre"),
             telefono = data.get("telefono"),
-            direccion = data.get("direccion"),
             current_user = session.get("id_administrador")
             
-            Clientes.update_cliente(mysql, tipo_documento, numero_documento, nombre, telefono, direccion, id_cliente)
+            Clientes.update_cliente(mysql, tipo_documento, numero_documento, nombre, telefono, id_cliente)
             Auditoria.log_audit(mysql, custom_id_auditoria, "clientes", id_cliente, "UPDATE", current_user, f"Se actualiza datos del cliente {id_cliente}")
             return jsonify({"message": "Cliente actualizado exitosamente"}), 200
         except Exception as e:
