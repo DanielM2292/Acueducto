@@ -395,14 +395,14 @@ const FacturacionPage = () => {
                                         <tbody>
                                             {facturas.map((factura, index) => (
                                                 <tr key={index}>
-                                                    <td>{factura.numero_factura}</td>
-                                                    <td>{new Date(factura.fecha_creacion).toLocaleDateString()}</td>
-                                                    <td>{factura.usuario}</td>
-                                                    <td>{factura.identificacion}</td>
-                                                    <td>{factura.barrio}</td>
-                                                    <td>{factura.matricula_cliente}</td>
-                                                    <td>{formatCurrency(factura.valor_total)}</td>
-                                                    <td>{factura.estado}</td>
+                                                    <td>{factura.id_factura}</td>
+                                                    <td>{new Date(factura.fecha_factura).toLocaleDateString()}</td>
+                                                    <td>{factura.nombre}</td>
+                                                    <td>{factura.numero_documento}</td>
+                                                    <td>{factura.direccion}</td>
+                                                    <td>{factura.id_matricula}</td>
+                                                    <td>{formatCurrency(factura.tarifa_definida)}</td>
+                                                    <td>{factura.descripcion_estado_factura}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

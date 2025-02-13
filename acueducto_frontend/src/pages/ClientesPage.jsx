@@ -15,8 +15,7 @@ const ClientesPage = () => {
         tipo_documento: "C.C",
         numero_documento: "",
         nombre: "",
-        telefono: "",
-        direccion: "",
+        telefono: ""
     });
 
     const [clientes, setClientes] = useState([]);
@@ -150,7 +149,7 @@ const ClientesPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (formData.nombre && !formData.numero_documento && !formData.telefono && !formData.direccion) {
+        if (formData.nombre && !formData.numero_documento && !formData.telefono) {
             await searchClientes();
             return;
         }
@@ -189,8 +188,7 @@ const ClientesPage = () => {
             tipo_documento: "C.C",
             numero_documento: "",
             nombre: "",
-            telefono: "",
-            direccion: "",
+            telefono: ""
         });
     };
 
@@ -200,7 +198,7 @@ const ClientesPage = () => {
             return;
         }
 
-        const requiredFields = ['tipo_documento', 'numero_documento', 'nombre', 'telefono', 'direccion'];
+        const requiredFields = ['tipo_documento', 'numero_documento', 'nombre', 'telefono'];
         const missingFields = requiredFields.filter(field => !formData[field]);
 
         if (missingFields.length > 0) {
