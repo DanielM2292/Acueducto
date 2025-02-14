@@ -388,6 +388,7 @@ const ClientesPage = () => {
                                     <tr>
                                         <th>ID Matrícula</th>
                                         <th>Fecha</th>
+                                        <th>Dirección de la Matrícula</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -397,6 +398,7 @@ const ClientesPage = () => {
                                         <tr key={enrollment.id_matricula}>
                                             <td>{enrollment.id_matricula}</td>
                                             <td>{new Date(enrollment.fecha_creacion).toLocaleDateString()}</td>
+                                            <td>{enrollment.direccion}</td>
                                             <td>
                                                 <select
                                                     value={enrollment.estado}
