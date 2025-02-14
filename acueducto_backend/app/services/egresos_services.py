@@ -69,13 +69,16 @@ class EgresosServices:
     def actualizar_egreso(data):
         mysql = current_app.mysql
         try:
+            print('entra aqui')
             descripcion_egreso = data.get('descripcionEgreso')
             cantidad = data.get('cantidadEgreso')
             total_egreso = data.get('valorEgreso')
             id_producto = data.get('idProducto')
-            id_egreso = data.get('id_egreso')
             cantidad = int(cantidad)
-            print('pasa aqui')
+            # Ojo aqui porque seria mejor que se pudiera seleccionar el egreso y ahi actualizar y que aparezca en pantalla el id_egreso
+            id_egreso = Egresos.obtener_id_egreso(mysql, id_producto)
+            id_egreso = id_egreso['id_egreso']
+            print(id_egreso)
             custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             
             if not id_producto:
@@ -83,6 +86,7 @@ class EgresosServices:
                 Auditoria.log_audit(mysql, custom_id, 'egresos', id_egreso, 'UPDATE', 'ADM0001', f'Se actualiza el egreso general {id_egreso}')
                 return jsonify({"message": "Egreso actualizado correctamente"}), 200
             else:
+                print('entra cuando hay id para actualizar')
                 custom_id_aud = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
                 producto_egreso = Egresos.obtener_egreso(mysql, id_egreso)
                 print(producto_egreso)

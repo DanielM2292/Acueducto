@@ -92,7 +92,7 @@ const EgresosPage = () => {
 
     const handleUpdate = async () => {
         try {
-            const response = await fetch(`http://localhost:9090/egresos/actualizar_egreso/${formData.idProducto}`, {
+            const response = await fetch(`http://localhost:9090/egresos/actualizar_egreso`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)

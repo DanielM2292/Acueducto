@@ -27,3 +27,9 @@ def buscar_clientes_por_palabra():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
     return ClientesServices.buscar_clientes_por_palabra()
+
+@clientes_bp.route('/obtener_cliente', methods=["GET", "OPTIONS"])
+def obtener_cliente():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 200
+    return ClientesServices.obtener_cliente()
