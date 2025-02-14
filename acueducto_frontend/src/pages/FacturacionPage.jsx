@@ -28,6 +28,8 @@ const FacturacionPage = () => {
     const [showFacturasModal, setShowFacturasModal] = useState(false);
     const [facturas, setFacturas] = useState([]);
     const [isFacturasClosing, setIsFacturasClosing] = useState(false);
+    const [matriculasTAM, setMatriculasTAM] = useState([]);
+
 
     useEffect(() => {
         obtenerUltimoNumeroFactura();
@@ -45,23 +47,33 @@ const FacturacionPage = () => {
 
     const obtenerDatosCliente = async (identificacion) => {
         try {
+            // Agrega un delay de 1 segundo
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             const response = await fetch(`http://localhost:9090/clientes/obtener_cliente?numero_documento=${identificacion}`);
             if (response.ok) {
                 const cliente = await response.json();
 
-                const responseMatricula = await fetch(`http://localhost:9090/matriculas/obtener_todas_matriculas?numero_documento=${identificacion}`);
-                if (responseMatricula.ok) {
-                    const matricula = await responseMatricula.json();
+                // Agrega otro delay de 1 segundo antes de obtener las matrículas
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
-                    setFacturaData(prev => ({
-                        ...prev,
-                        nombre: cliente.nombre,
-                        MatriculaCliente: cliente.id_matricula,
-                        barrio: matricula.direccion
-                    }));
-                    toast.success('Datos del cliente cargados exitosamente');
+                const responseMatriculas = await fetch(`http://localhost:9090/matriculas/obtener_matriculas_tam?numero_documento=${identificacion}`);
+                if (responseMatriculas.ok) {
+                    const matriculas = await responseMatriculas.json();
+                    setMatriculasTAM(matriculas);
+
+                    if (matriculas.length > 0) {
+                        setFacturaData(prev => ({
+                            ...prev,
+                            nombre: cliente.nombre,
+                            barrio: matriculas[0].direccion
+                        }));
+                        toast.success('Datos del cliente cargados exitosamente');
+                    } else {
+                        toast.warning('El cliente no tiene matrículas con tarifa TAM');
+                    }
                 } else {
-                    toast.error('Error al obtener datos de la matrícula');
+                    toast.error('Error al obtener datos de las matrículas');
                 }
             } else {
                 setFacturaData(prev => ({
@@ -70,10 +82,28 @@ const FacturacionPage = () => {
                     MatriculaCliente: '',
                     barrio: ''
                 }));
+                setMatriculasTAM([]);
                 toast.error('No se encontró el cliente');
             }
         } catch (error) {
             toast.error('Error al obtener datos del cliente');
+            console.error('Error:', error);
+        }
+    };
+
+    const obtenerTarifas = async () => {
+        try {
+            const response = await fetch('http://localhost:9090/tarifas/listar_tarifas');
+            if (response.ok) {
+                const data = await response.json();
+                // Filtra solo las tarifas que comienzan con TAM
+                const tarifasFiltradas = data.filter(tarifa => tarifa.id_tarifa.startsWith('TAM'));
+                setTarifas(tarifasFiltradas);
+            } else {
+                toast.error('Error al obtener las tarifas');
+            }
+        } catch (error) {
+            toast.error('Error de conexión al obtener tarifas');
             console.error('Error:', error);
         }
     };
@@ -159,87 +189,119 @@ const FacturacionPage = () => {
 
     const generarFacturasAutomaticas = async () => {
         try {
-            const response = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-    
-            if (response.ok) {
-                const facturas = await response.json();
-                if (Array.isArray(facturas)) {
-                    setFacturas(facturas);
-                    setInvoicesGenerated(true);
-                    toast.success('Facturas automáticas generadas exitosamente');
-                    await exportarFacturasPDF(facturas);
-                } else {
-                    toast.error('Error: El formato de los datos recibidos no es correcto');
-                }
-            } else {
-                toast.error('Error al generar facturas automáticas');
+            // Obtener todas las matrículas con TAE
+            const responseMatriculas = await fetch('http://localhost:9090/matriculas/obtener_matriculas_tae');
+            if (!responseMatriculas.ok) {
+                throw new Error('Error al obtener matrículas TAE');
             }
-        } catch (error) {
-            toast.error('Error de conexión con el servidor');
-            console.error('Error:', error);
-        }
-    };    
+            const matriculasTAE = await responseMatriculas.json();
 
-    const exportarFacturasPDF = async (facturas) => {
-        if (!Array.isArray(facturas)) {
-            console.error('Error: facturas no es un array');
-            toast.error('Error al exportar el PDF');
-            return;
-        }
+            // Array para almacenar todas las facturas generadas
+            const facturasGeneradas = [];
 
-        try {
-            const pdf = new jsPDF();
-
-            // Obtener el mes y el año actual en formato de texto
-            const obtenerNombreMes = (mes) => {
-                const nombresMeses = [
-                    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-                ];
-                return nombresMeses[mes];
-            };
-
-            const fechaActual = new Date();
-            const nombreMes = obtenerNombreMes(fechaActual.getMonth());
-            const añoActual = fechaActual.getFullYear();
-
-            for (const factura of facturas) {
-                setFacturaData(factura); // Llenar los datos de la factura actual
-
-                // Esperar a que se actualicen los datos antes de capturar la pantalla
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                const element = document.getElementById('factura-automatica');
-                if (!element) {
-                    console.error('Elemento de factura no encontrado');
-                    toast.error('Error al exportar el PDF');
-                    return;
+            // Generar factura para cada matrícula TAE
+            for (const matricula of matriculasTAE) {
+                // Obtener datos del cliente
+                const responseCliente = await fetch(`http://localhost:9090/clientes/obtener_cliente?numero_documento=${matricula.numero_documento}`);
+                if (!responseCliente.ok) {
+                    continue;
                 }
+                const cliente = await responseCliente.json();
 
-                const canvas = await html2canvas(element);
-                const imgData = canvas.toDataURL('image/png');
-                const imgProps = pdf.getImageProperties(imgData);
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                // Obtener tarifa actual
+                const responseTarifa = await fetch(`http://localhost:9090/tarifas/obtener_tarifa?id_tarifa=${matricula.tipo_tarifa}`);
+                if (!responseTarifa.ok) {
+                    continue;
+                }
+                const tarifa = await responseTarifa.json();
 
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.addPage(); // Agregar una nueva página para la siguiente factura
+                // Calcular fechas
+                const fechaActual = new Date();
+                const fechaVencimiento = new Date(fechaActual);
+                fechaVencimiento.setDate(fechaVencimiento.getDate() + 30);
+
+                // Crear objeto de factura
+                const facturaGenerada = {
+                    identificacion: cliente.numero_documento,
+                    nombre: cliente.nombre,
+                    barrio: matricula.direccion,
+                    MatriculaCliente: matricula.id_matricula,
+                    fechaInicioCobro: fechaActual.toISOString().split('T')[0],
+                    fechaVencimiento: fechaVencimiento.toISOString().split('T')[0],
+                    lecturaAnterior: matricula.ultima_lectura || 0,
+                    lecturaActual: matricula.ultima_lectura || 0,
+                    precioUnitario: tarifa.valor_tarifa,
+                    multas: 0,
+                    saldoPendiente: 0,
+                    observacion: 'Factura generada automáticamente'
+                };
+
+                facturasGeneradas.push(facturaGenerada);
             }
 
-            const nombreArchivo = `facturas_automaticas_${nombreMes}_${añoActual}.pdf`;
-            pdf.save(nombreArchivo);
-            toast.success(`PDF exportado exitosamente como ${nombreArchivo}`);
+            // Actualizar estado con las facturas generadas
+            setFacturas(facturasGeneradas);
+            setInvoicesGenerated(true);
+
+            // Generar PDF con todas las facturas
+            await exportarFacturasPDF(facturasGeneradas);
+
+            toast.success(`Se generaron ${facturasGeneradas.length} facturas automáticamente`);
         } catch (error) {
-            toast.error('Error al exportar el PDF');
+            toast.error('Error al generar facturas automáticas');
             console.error('Error:', error);
         }
     };
 
+    const exportarFacturasPDF = async (facturasParaExportar) => {
+        try {
+            const pdf = new jsPDF();
+            let firstPage = true;
+
+            for (const factura of facturasParaExportar) {
+                // Actualizar el estado con los datos de la factura actual
+                setFacturaData(factura);
+
+                // Esperar a que el DOM se actualice
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const element = document.getElementById('factura-automatica');
+                if (!element) {
+                    console.error('Elemento de factura no encontrado');
+                    continue;
+                }
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const imgWidth = pdf.internal.pageSize.getWidth();
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                if (!firstPage) {
+                    pdf.addPage();
+                }
+                firstPage = false;
+
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            }
+
+            // Obtener el mes y año actual para el nombre del archivo
+            const fecha = new Date();
+            const mes = fecha.toLocaleString('es-ES', { month: 'long' });
+            const año = fecha.getFullYear();
+            
+            pdf.save(`facturas_automaticas_${mes}_${año}.pdf`);
+            toast.success('PDF generado exitosamente');
+        } catch (error) {
+            toast.error('Error al generar el PDF');
+            console.error('Error:', error);
+        }
+    };
+    
     const obtenerFacturas = async () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/listar_facturas');
@@ -272,6 +334,11 @@ const FacturacionPage = () => {
             setIsClosing(false);
         }, 300);
     };
+
+    useEffect(() => {
+        obtenerTarifas();
+    }, []);
+
     return (
         <div className="facturacion-container">
             <ToastContainer
@@ -377,13 +444,26 @@ const FacturacionPage = () => {
                             </div>
                             <div className="input-group">
                                 <label>MATRICULA N°:</label>
-                                <input
-                                    type="text"
+                                <select
                                     name="MatriculaCliente"
                                     value={facturaData.MatriculaCliente}
-                                    onChange={handleInputChange}
-                                    readOnly
-                                />
+                                    onChange={(e) => {
+                                        const matriculaSeleccionada = matriculasTAM.find(m => m.id_matricula === e.target.value);
+                                        setFacturaData(prev => ({
+                                            ...prev,
+                                            MatriculaCliente: e.target.value,
+                                            barrio: matriculaSeleccionada ? matriculaSeleccionada.direccion : prev.barrio
+                                        }));
+                                    }}
+                                    className="select-input"
+                                >
+                                    <option value="">Seleccione una matrícula</option>
+                                    {matriculasTAM.map((matricula) => (
+                                        <option key={matricula.id_matricula} value={matricula.id_matricula}>
+                                            Matrícula: {matricula.numero_matricula} - Tarifa: {matricula.tipo_tarifa}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="input-group">
                                 <label>FECHA DE VENCIMIENTO:</label>
@@ -918,6 +998,21 @@ const FacturacionPage = () => {
 
                 .btn-info:hover {
                     background-color: #2980b9;
+                }
+                .select-input {
+                    width: 100%;
+                    padding: 0.5rem;
+                    margin-top: 4px;
+                    border: 1px solid #dee2e6;
+                    border-radius: 0.375rem;
+                    background-color: white;
+                    font-size: 1rem;
+                }
+
+                .select-input:focus {
+                    outline: none;
+                    border-color: #0CB7F2;
+                    box-shadow: 0 0 0 2px rgba(12, 183, 242, 0.2);
                 }
 
                 /* Responsive styles */
