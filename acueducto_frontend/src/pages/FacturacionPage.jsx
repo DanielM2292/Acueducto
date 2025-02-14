@@ -8,7 +8,7 @@ import LogoAcueducto from '../imagenes/LogoAcueducto.png';
 const FacturacionPage = () => {
     const [facturaData, setFacturaData] = useState({
         identificacion: '',
-        usuario: '',
+        nombre: '',
         barrio: '',
         MatriculaCliente: '',
         fechaInicioCobro: '',
@@ -45,17 +45,17 @@ const FacturacionPage = () => {
 
     const obtenerDatosCliente = async (identificacion) => {
         try {
-            const response = await fetch(`http://localhost:9090/clientes/obtener_cliente/${identificacion}`);
+            const response = await fetch(`http://localhost:9090/clientes/obtener_cliente?numero_documento=${identificacion}`);
             if (response.ok) {
                 const cliente = await response.json();
 
-                const responseMatricula = await fetch(`http://localhost:9090/matriculas/obtener_matricula/${cliente.id_matricula}`);
+                const responseMatricula = await fetch(`http://localhost:9090/matriculas/obtener_todas_matriculas?numero_documento=${identificacion}`);
                 if (responseMatricula.ok) {
                     const matricula = await responseMatricula.json();
 
                     setFacturaData(prev => ({
                         ...prev,
-                        usuario: cliente.nombre,
+                        nombre: cliente.nombre,
                         MatriculaCliente: cliente.id_matricula,
                         barrio: matricula.direccion
                     }));
@@ -66,7 +66,7 @@ const FacturacionPage = () => {
             } else {
                 setFacturaData(prev => ({
                     ...prev,
-                    usuario: '',
+                    nombre: '',
                     MatriculaCliente: '',
                     barrio: ''
                 }));
@@ -340,7 +340,7 @@ const FacturacionPage = () => {
                                 <input
                                     type="text"
                                     name="usuario"
-                                    value={facturaData.usuario}
+                                    value={facturaData.nombre}
                                     onChange={handleInputChange}
                                     readOnly
                                 />

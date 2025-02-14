@@ -85,7 +85,7 @@ const PagosPage = () => {
         setLoading(true);
         try {
             const endpoints = {
-                'Factura': `${API_BASE_URL}/facturas/obtener_factura/${id}`,
+                'Factura': `${API_BASE_URL}/facturas/obtener_factura?id_factura=${id}`,
                 'Multa': `${API_BASE_URL}/multas/obtener_multa?id_multa=${id}`,
                 'Matricula': `${API_BASE_URL}/matriculas/obtener_matricula?id_matricula=${id}`
             };

@@ -43,10 +43,12 @@ class MatriculasServices:
             id_matricula = data.get("id_matricula")
             valor_matricula = data.get("valor_matricula")
             tipo_tarifa = data.get("tipo_tarifa")
-            print(tipo_tarifa)
+            direccion = data.get("direccion")
             
             Matriculas.actualizar_matricula(mysql, valor_matricula, tipo_tarifa, id_matricula)
             Auditoria.log_audit(mysql,custom_id,"matriculas", id_matricula, "UPDATE","ADM0001", "Se actualiza el estado de la matricula")
+            
+            Matricula_cliente.actualizar_direccion(mysql, direccion, id_matricula)
             
             return jsonify({"message": "Matrícula actualizada exitosamente"}), 200
         except MySQLdb.Error as e:
@@ -119,3 +121,25 @@ class MatriculasServices:
             
         except Exception as e:
             return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})
+    
+    @staticmethod
+    def obtener_todas_matriculas():
+        mysql = current_app.mysql
+        try:
+            numero_documento = request.args.get("numero_documento")
+            id_cliente = Clientes.verificar_cliente(mysql, numero_documento)
+            resultado = Matricula_cliente.obtener_matriculas(mysql, id_cliente)
+            resultado = resultado[0]
+            if resultado:
+                matriculas = resultado.split(", ")
+            else:
+                matriculas = []
+            print(matriculas)
+            #print(matriculas)
+            if not matriculas:
+                return jsonify({'error': 'Matricula no encontrada'}), 404
+            return jsonify(matriculas), 200
+            
+        except Exception as e:
+            return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})
+    

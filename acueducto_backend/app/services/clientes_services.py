@@ -60,4 +60,19 @@ class ClientesServices:
             clientes = Clientes.search_clientes_by_keyword(mysql, palabra_clave)
             return jsonify(clientes)
         except Exception as e:
-            return jsonify({"message": f"Error al buscar clientes: {str(e)}"}), 500    
+            return jsonify({"message": f"Error al buscar clientes: {str(e)}"}), 500
+    
+    # Para el endpoint que viene desde Facturas
+    @staticmethod
+    def obtener_cliente():
+        mysql = current_app.mysql
+        try:
+            print('entra al end verif')
+            numero_documento = request.args.get('numero_documento')
+            print(numero_documento)
+            cliente = Clientes.obtener_datos(mysql, numero_documento)
+            print(cliente)
+            return jsonify(cliente)
+        except Exception as e:
+            return jsonify({"message": f"Error al buscar clientes: {str(e)}"}), 500
+    

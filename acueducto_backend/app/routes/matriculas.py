@@ -41,3 +41,9 @@ def actualizar_estado():
     data = request.get_json()
     return MatriculasServices.actualizar_estado(data)
 
+@matriculas_bp.route('/obtener_todas_matriculas', methods=["GET", "OPTIONS"])
+def obtener_todas_matriculas():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 200
+    return MatriculasServices.obtener_todas_matriculas()
+
