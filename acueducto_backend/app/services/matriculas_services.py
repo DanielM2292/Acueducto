@@ -126,19 +126,22 @@ class MatriculasServices:
     def obtener_todas_matriculas():
         mysql = current_app.mysql
         try:
+            print('entra a ver matricuals')
             numero_documento = request.args.get("numero_documento")
+            print(numero_documento)
             id_cliente = Clientes.verificar_cliente(mysql, numero_documento)
+            print(id_cliente)
             resultado = Matricula_cliente.obtener_matriculas(mysql, id_cliente)
-            resultado = resultado[0]
+            print(resultado)
+            print(resultado)
             if resultado:
                 matriculas = resultado.split(", ")
             else:
                 matriculas = []
             print(matriculas)
-            #print(matriculas)
-            if not matriculas:
+            if not resultado:
                 return jsonify({'error': 'Matricula no encontrada'}), 404
-            return jsonify(matriculas), 200
+            return jsonify(resultado), 200
             
         except Exception as e:
             return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})

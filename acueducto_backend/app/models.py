@@ -452,7 +452,7 @@ class Matricula_cliente:
         
     @staticmethod
     def obtener_matriculas(mysql, id_cliente):
-        cursor = mysql.connection.cursor()
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
                 SELECT GROUP_CONCAT(id_matricula_cliente SEPARATOR ', ') AS id_matricula_cliente_combinados
                 FROM matricula_cliente WHERE id_cliente = %s;''', (id_cliente,))
