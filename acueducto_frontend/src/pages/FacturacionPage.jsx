@@ -60,6 +60,7 @@ const FacturacionPage = () => {
                 const responseMatriculas = await fetch(`http://localhost:9090/matriculas/obtener_matriculas_tam?numero_documento=${identificacion}`);
                 if (responseMatriculas.ok) {
                     const matriculas = await responseMatriculas.json();
+                    console.log('matriculas recibidas', matriculas)
                     setMatriculasTAM(matriculas);
 
                     if (matriculas.length > 0) {
@@ -459,7 +460,7 @@ const FacturacionPage = () => {
                                 >
                                     <option value="">Seleccione una matrícula</option>
                                     {matriculasTAM.map((matricula) => (
-                                        <option key={matricula.id_matricula} value={matricula.id_matricula}>
+                                        <option key={matricula.id_matricula_cliente_combinados} value={matricula.id_matricula_cliente_combinados}>
                                             Matrícula: {matricula.numero_matricula} - Tarifa: {matricula.tipo_tarifa}
                                         </option>
                                     ))}
