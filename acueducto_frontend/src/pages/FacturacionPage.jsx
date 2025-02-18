@@ -92,6 +92,7 @@ const FacturacionPage = () => {
         }
     };
 
+
     const obtenerTarifas = async () => {
         try {
             const response = await fetch('http://localhost:9090/tarifas/listar_tarifas');
@@ -109,6 +110,41 @@ const FacturacionPage = () => {
         }
     };
 
+    const buscarFactura = async () => {
+        if (!numeroFactura.trim()) {
+            toast.warning("Ingrese un número de factura");
+            return;
+        }
+    
+        try {
+            const response = await fetch(`http://localhost:9090/facturas/buscar_factura?id_factura=${numeroFactura}`);
+            if (response.ok) {
+                const factura = await response.json();
+    
+                // Si la factura es de medidor, mostrar en la pantalla principal
+                if (factura.tipo_tarifa === "Medidor") {
+                    setFacturaData(factura);
+                }
+                // Si la factura es estándar, mostrar en la ventana emergente
+                else if (factura.tipo_tarifa === "Estandar") {
+                    setFacturas([factura]);
+                    setShowFacturasModal(true);
+                }
+    
+                toast.success("Factura encontrada");
+            } else {
+                toast.error("No se encontró la factura");
+            }
+        } catch (error) {
+            toast.error("Error al buscar la factura");
+            console.error("Error:", error);
+        }
+    };
+    
+    useEffect(() => {
+        obtenerUltimoNumeroFactura();
+    }, []);
+    
     const obtenerUltimoNumeroFactura = async () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/ultimo_numero');
@@ -122,7 +158,7 @@ const FacturacionPage = () => {
             toast.error('Error al obtener el último número de factura');
             console.error('Error:', error);
         }
-    };
+    };    
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -294,7 +330,7 @@ const FacturacionPage = () => {
             const fecha = new Date();
             const mes = fecha.toLocaleString('es-ES', { month: 'long' });
             const año = fecha.getFullYear();
-            
+
             pdf.save(`facturas_automaticas_${mes}_${año}.pdf`);
             toast.success('PDF generado exitosamente');
         } catch (error) {
@@ -302,7 +338,7 @@ const FacturacionPage = () => {
             console.error('Error:', error);
         }
     };
-    
+
     const obtenerFacturas = async () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/listar_facturas');
@@ -317,6 +353,36 @@ const FacturacionPage = () => {
         } catch (error) {
             toast.error('Error de conexión con el servidor');
             console.error('Error:', error);
+        }
+    };
+
+    const buscarDatosPorMatricula = async () => {
+        if (!facturaData.numeroMatricula.trim()) {
+            toast.warning("Ingrese un número de matrícula");
+            return;
+        }
+    
+        try {
+            const response = await fetch(`http://localhost:9090/matriculas/buscar_matricula?id_matricula=${facturaData.numeroMatricula}`);
+            if (response.ok) {
+                const data = await response.json();
+                
+                setFacturaData(prev => ({
+                    ...prev,
+                    identificacion: data.numero_documento,
+                    nombre: data.nombre,
+                    barrio: data.direccion,
+                    fechaInicioCobro: data.fecha_creacion,
+                    MatriculaCliente: data.id_matricula
+                }));
+    
+                toast.success("Datos de la matrícula cargados exitosamente");
+            } else {
+                toast.error("No se encontró la matrícula");
+            }
+        } catch (error) {
+            toast.error("Error al buscar la matrícula");
+            console.error("Error:", error);
         }
     };
 
@@ -356,21 +422,23 @@ const FacturacionPage = () => {
             />
             <div className="facturacion-content">
                 <div className="header-buttons">
-                    <h1>Sistema de Facturación</h1>
-                    <div className="button-group">
-                        <button onClick={crearFactura} className="btn btn-primary">
-                            Crear Factura
-                        </button>
-                        <button onClick={exportarPDF} className="btn btn-success">
-                            Exportar a PDF
-                        </button>
-                        <button onClick={abrirModalFacturasAutomaticas} className="btn btn-secondary">
-                            Facturas Automáticas
-                        </button>
-                        <button onClick={obtenerFacturas} className="btn btn-info">
-                            Mostrar Facturas
-                        </button>
-                    </div>
+                    <input
+                        type="text"
+                        value={numeroFactura}
+                        onChange={(e) => setNumeroFactura(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && buscarFactura()}
+                        className="factura-input"
+                        placeholder="Número de Factura"
+                    />
+                    <button onClick={exportarPDF} className="btn btn-success">
+                        Exportar a PDF
+                    </button>
+                    <button onClick={abrirModalFacturasAutomaticas} className="btn btn-secondary">
+                        Facturas Automáticas
+                    </button>
+                    <button onClick={obtenerFacturas} className="btn btn-info">
+                        Mostrar Facturas
+                    </button>
                 </div>
 
                 <div id="factura" className="factura">
@@ -445,26 +513,12 @@ const FacturacionPage = () => {
                             </div>
                             <div className="input-group">
                                 <label>MATRICULA N°:</label>
-                                <select
-                                    name="MatriculaCliente"
-                                    value={facturaData.MatriculaCliente}
-                                    onChange={(e) => {
-                                        const matriculaSeleccionada = matriculasTAM.find(m => m.id_matricula === e.target.value);
-                                        setFacturaData(prev => ({
-                                            ...prev,
-                                            MatriculaCliente: e.target.value,
-                                            barrio: matriculaSeleccionada ? matriculaSeleccionada.direccion : prev.barrio
-                                        }));
-                                    }}
-                                    className="select-input"
-                                >
-                                    <option value="">Seleccione una matrícula</option>
-                                    {matriculasTAM.map((matricula) => (
-                                        <option key={matricula.id_matricula_cliente_combinados} value={matricula.id_matricula_cliente_combinados}>
-                                            Matrícula: {matricula.numero_matricula} - Tarifa: {matricula.tipo_tarifa}
-                                        </option>
-                                    ))}
-                                </select>
+                                <input
+                                    type="number"
+                                    name='numeroMatricula'
+                                    value={facturaData.numeroMatricula}
+                                    onChange={handleInputChange}
+                                />
                             </div>
                             <div className="input-group">
                                 <label>FECHA DE VENCIMIENTO:</label>
@@ -1010,6 +1064,13 @@ const FacturacionPage = () => {
                     font-size: 1rem;
                 }
 
+                .factura-input{
+                    width: 30%;
+                    padding: 0.5rem;
+                    margin-top: 4px;
+                    border: 1px solid #dee2e6;
+                    border-radius: 0.375rem;
+                }
                 .select-input:focus {
                     outline: none;
                     border-color: #0CB7F2;

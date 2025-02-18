@@ -168,6 +168,12 @@ const Sidebar = () => {
                   <span className="text">Ver Historial de Movimientos</span>
                 </Link>
               </li>
+              <li>
+                <Link to="/app/tarifa" onClick={() => setActiveItems([])}>
+                  <Calculator className="iconSidebar" />
+                  <span className="text">Gestionar Tarifas</span>
+                </Link>
+              </li>
             </ul>
           </li>
         </>

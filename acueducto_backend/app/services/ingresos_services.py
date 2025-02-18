@@ -7,6 +7,8 @@ class IngresosServices:
         mysql = current_app.mysql
         try:
             ingresos = Ingresos.listar_ingresos(mysql)
+            for ingreso in ingresos:
+                ingreso['fecha_ingreso'] = ingreso['fecha_ingreso'].isoformat()
             return jsonify(ingresos), 200
         except Exception as e:
             return jsonify({"message": f"Error al listar ingresos: {str(e)}"}), 500

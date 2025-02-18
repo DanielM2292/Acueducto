@@ -7,6 +7,8 @@ class EgresosServices:
         mysql = current_app.mysql
         try:
             egresos = Egresos.listar_egresos(mysql)
+            for egreso in egresos:
+                egreso['fecha_egreso'] = egreso['fecha_egreso'].isoformat()
             return jsonify(egresos), 200
         except Exception as e:
             return jsonify({"message": f"Error al actualizar matrícula: {str(e)}"}), 500
@@ -54,9 +56,7 @@ class EgresosServices:
     def buscar_egreso():
         mysql = current_app.mysql
         try:
-            #palabra = request.args.get("descripcionIngreso")
-            data = request.get_json()
-            palabra = data.get("buscar_egreso")
+            palabra = request.args.get("buscar_egreso")
             egreso = Egresos.buscar_egreso(mysql, palabra)
             if egreso:
                 return jsonify(egreso)

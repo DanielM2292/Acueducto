@@ -15,6 +15,7 @@ import ChangePassword from './pages/ChangePassword';
 import ListarUser from './pages/ListarUser';
 import WelcomePage from './pages/WelcomePage'; 
 import VerHistorialPage from './pages/VerHistorialPage';
+import TarifaPage from './pages/TarifaPage';
 
 const App = () => {
     return (
@@ -41,6 +42,7 @@ const App = () => {
                                     <Route path="cambiar_contraseña" element={<ChangePassword />} />
                                     <Route path="listar_usuarios" element={<ListarUser />} />
                                     <Route path="ver_historial" element={<VerHistorialPage />} />
+                                    <Route path="tarifa" element={<TarifaPage />} />
                                     <Route path="*" element={<Navigate to="welcome" />} />
                                 </Routes>
                             </div>
