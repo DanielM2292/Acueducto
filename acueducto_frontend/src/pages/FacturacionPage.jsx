@@ -10,7 +10,7 @@ const FacturacionPage = () => {
         identificacion: '',
         nombre: '',
         barrio: '',
-        MatriculaCliente: '',
+        numeroMatricula: '',
         fechaInicioCobro: '',
         fechaVencimiento: '',
         lecturaAnterior: '',
@@ -30,85 +30,20 @@ const FacturacionPage = () => {
     const [isFacturasClosing, setIsFacturasClosing] = useState(false);
     const [matriculasTAM, setMatriculasTAM] = useState([]);
 
-
-    useEffect(() => {
-        obtenerUltimoNumeroFactura();
-    }, []);
-
     const abrirModalFacturasAutomaticas = () => {
         setShowModal(true);
     };
 
+    const abrirModalFacturas = () => {
+        setShowFacturasModal(true);
+    };
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+
     useEffect(() => {
-        if (facturaData.identificacion) {
-            obtenerDatosCliente(facturaData.identificacion);
+        if (facturaData.numeroMatricula) {
+            buscarDatosPorMatricula();
         }
-    }, [facturaData.identificacion]);
-
-    const obtenerDatosCliente = async (identificacion) => {
-        try {
-            // Agrega un delay de 1 segundo
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const response = await fetch(`http://localhost:9090/clientes/obtener_cliente?numero_documento=${identificacion}`);
-            if (response.ok) {
-                const cliente = await response.json();
-
-                // Agrega otro delay de 1 segundo antes de obtener las matrículas
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                const responseMatriculas = await fetch(`http://localhost:9090/matriculas/obtener_matriculas_tam?numero_documento=${identificacion}`);
-                if (responseMatriculas.ok) {
-                    const matriculas = await responseMatriculas.json();
-                    console.log('matriculas recibidas', matriculas)
-                    setMatriculasTAM(matriculas);
-
-                    if (matriculas.length > 0) {
-                        setFacturaData(prev => ({
-                            ...prev,
-                            nombre: cliente.nombre,
-                            barrio: matriculas[0].direccion
-                        }));
-                        toast.success('Datos del cliente cargados exitosamente');
-                    } else {
-                        toast.warning('El cliente no tiene matrículas con tarifa TAM');
-                    }
-                } else {
-                    toast.error('Error al obtener datos de las matrículas');
-                }
-            } else {
-                setFacturaData(prev => ({
-                    ...prev,
-                    nombre: '',
-                    MatriculaCliente: '',
-                    barrio: ''
-                }));
-                setMatriculasTAM([]);
-                toast.error('No se encontró el cliente');
-            }
-        } catch (error) {
-            toast.error('Error al obtener datos del cliente');
-            console.error('Error:', error);
-        }
-    };
-
-
-    const obtenerTarifas = async () => {
-        try {
-            const response = await fetch('http://localhost:9090/tarifas/listar_tarifas');
-            if (response.ok) {
-                const data = await response.json();
-                // Filtra solo las tarifas que comienzan con TAM
-                const tarifasFiltradas = data.filter(tarifa => tarifa.id_tarifa.startsWith('TAM'));
-                setTarifas(tarifasFiltradas);
-            } else {
-                toast.error('Error al obtener las tarifas');
-            }
-        } catch (error) {
-            toast.error('Error de conexión al obtener tarifas');
-            console.error('Error:', error);
-        }
-    };
+    }, [facturaData.numeroMatricula]);
 
     const buscarFactura = async () => {
         if (!numeroFactura.trim()) {
@@ -122,13 +57,13 @@ const FacturacionPage = () => {
                 const factura = await response.json();
     
                 // Si la factura es de medidor, mostrar en la pantalla principal
-                if (factura.tipo_tarifa === "Medidor") {
+                if (factura.id_tarifa_medidor !== null) {
                     setFacturaData(factura);
                 }
                 // Si la factura es estándar, mostrar en la ventana emergente
-                else if (factura.tipo_tarifa === "Estandar") {
+                else if (factura.id_tarifa_estandar !== null) {
                     setFacturas([factura]);
-                    setShowFacturasModal(true);
+                    setShowModal(true);
                 }
     
                 toast.success("Factura encontrada");
@@ -141,25 +76,6 @@ const FacturacionPage = () => {
         }
     };
     
-    useEffect(() => {
-        obtenerUltimoNumeroFactura();
-    }, []);
-    
-    const obtenerUltimoNumeroFactura = async () => {
-        try {
-            const response = await fetch('http://localhost:9090/facturas/ultimo_numero');
-            if (response.ok) {
-                const data = await response.json();
-                const ultimoNumero = parseInt(data.ultimo_numero || '0');
-                const siguienteNumero = (ultimoNumero + 1).toString().padStart(4, '0');
-                setNumeroFactura(siguienteNumero);
-            }
-        } catch (error) {
-            toast.error('Error al obtener el último número de factura');
-            console.error('Error:', error);
-        }
-    };    
-
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFacturaData(prev => ({
@@ -178,23 +94,24 @@ const FacturacionPage = () => {
 
     const crearFactura = async () => {
         try {
-            const facturaCompleta = {
-                ...facturaData,
-                numeroFactura
-            };
+            if (!facturaData.numeroMatricula) {
+                toast.warning("No hay matricula seleccionada para crear factura");
+                return;
+            }
 
             const response = await fetch('http://localhost:9090/facturas/crear_factura', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(facturaCompleta)
+                body: JSON.stringify({...facturaData})
             });
 
             if (response.ok) {
                 toast.success('Factura creada exitosamente');
-                const siguienteNumero = (parseInt(numeroFactura) + 1).toString().padStart(4, '0');
-                setNumeroFactura(siguienteNumero);
+                facturaData(prev => ({
+                    ...prev
+                }));
             } else {
                 toast.error('Error al crear la factura');
             }
@@ -262,7 +179,7 @@ const FacturacionPage = () => {
                     identificacion: cliente.numero_documento,
                     nombre: cliente.nombre,
                     barrio: matricula.direccion,
-                    MatriculaCliente: matricula.id_matricula,
+                    numeroMatricula: matricula.numero_matricula,
                     fechaInicioCobro: fechaActual.toISOString().split('T')[0],
                     fechaVencimiento: fechaVencimiento.toISOString().split('T')[0],
                     lecturaAnterior: matricula.ultima_lectura || 0,
@@ -345,7 +262,6 @@ const FacturacionPage = () => {
             if (response.ok) {
                 const data = await response.json();
                 setFacturas(data);
-                setShowFacturasModal(true);
                 toast.success('Facturas cargadas exitosamente');
             } else {
                 toast.error('Error al obtener las facturas');
@@ -361,28 +277,27 @@ const FacturacionPage = () => {
             toast.warning("Ingrese un número de matrícula");
             return;
         }
-    
         try {
-            const response = await fetch(`http://localhost:9090/matriculas/buscar_matricula?id_matricula=${facturaData.numeroMatricula}`);
-            if (response.ok) {
-                const data = await response.json();
-                
-                setFacturaData(prev => ({
-                    ...prev,
-                    identificacion: data.numero_documento,
-                    nombre: data.nombre,
-                    barrio: data.direccion,
-                    fechaInicioCobro: data.fecha_creacion,
-                    MatriculaCliente: data.id_matricula
-                }));
-    
-                toast.success("Datos de la matrícula cargados exitosamente");
-            } else {
-                toast.error("No se encontró la matrícula");
+            const response = await fetch(`http://localhost:9090/matriculas/buscar_numero_matricula?numero_matricula=${facturaData.numeroMatricula}`);
+            if (!response.ok) throw new Error("No se encontró la matrícula");
+            const data = await response.json();
+
+            if (!data || typeof data !== "object") {
+                toast.warning("No hay datos para esta matrícula");
+                return;
             }
+            setFacturaData(prev => ({
+                ...prev,
+                identificacion: data.numero_documento,
+                nombre: data.nombre,
+                barrio: data.direccion,
+                fechaInicioCobro: data.fecha_creacion,
+                numeroMatricula: data.numero_matricula,
+                multas: data.total_multas,
+            }));
+            toast.success("Datos de la matrícula cargados exitosamente");
         } catch (error) {
             toast.error("Error al buscar la matrícula");
-            console.error("Error:", error);
         }
     };
 
@@ -403,7 +318,7 @@ const FacturacionPage = () => {
     };
 
     useEffect(() => {
-        obtenerTarifas();
+        obtenerFacturas();
     }, []);
 
     return (
@@ -430,13 +345,16 @@ const FacturacionPage = () => {
                         className="factura-input"
                         placeholder="Número de Factura"
                     />
+                    <button onClick={crearFactura} className="btn btn-success">
+                        Grabar
+                    </button>
                     <button onClick={exportarPDF} className="btn btn-success">
                         Exportar a PDF
                     </button>
                     <button onClick={abrirModalFacturasAutomaticas} className="btn btn-secondary">
                         Facturas Automáticas
                     </button>
-                    <button onClick={obtenerFacturas} className="btn btn-info">
+                    <button onClick={abrirModalFacturas} className="btn btn-info">
                         Mostrar Facturas
                     </button>
                 </div>
@@ -497,6 +415,7 @@ const FacturacionPage = () => {
                                     name="lecturaAnterior"
                                     value={facturaData.lecturaAnterior}
                                     onChange={handleInputChange}
+                                    readOnly
                                 />
                             </div>
                         </div>
@@ -514,7 +433,7 @@ const FacturacionPage = () => {
                             <div className="input-group">
                                 <label>MATRICULA N°:</label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     name='numeroMatricula'
                                     value={facturaData.numeroMatricula}
                                     onChange={handleInputChange}
@@ -615,7 +534,7 @@ const FacturacionPage = () => {
                         <div className="comprobante-grid">
                             <div className="comprobante-item">
                                 <p className="label">USUARIO</p>
-                                <p className="value">{facturaData.usuario || '-'}</p>
+                                <p className="value">{facturaData.nombre || '-'}</p>
                             </div>
                             <div className="comprobante-item">
                                 <p className="label">IDENTIFICACIÓN</p>
@@ -627,7 +546,7 @@ const FacturacionPage = () => {
                             </div>
                             <div className="comprobante-item">
                                 <p className="label">MATRICULA N°</p>
-                                <p className="value">{facturaData.MatriculaCliente || '-'}</p>
+                                <p className="value">{facturaData.numeroMatricula || '-'}</p>
                             </div>
                             <div className="comprobante-item">
                                 <p className="label">TOTAL PAGADO</p>
@@ -751,7 +670,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="MatriculaCliente"
-                                                value={facturaData.MatriculaCliente}
+                                                value={facturaData.numeroMatricula}
                                                 readOnly
                                             />
                                         </div>
@@ -843,7 +762,7 @@ const FacturacionPage = () => {
                                     <div className="comprobante-grid">
                                         <div className="comprobante-item">
                                             <p className="label">USUARIO</p>
-                                            <p className="value">{facturaData.usuario || '-'}</p>
+                                            <p className="value">{facturaData.nombre || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">IDENTIFICACIÓN</p>
@@ -855,7 +774,7 @@ const FacturacionPage = () => {
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">MATRICULA N°</p>
-                                            <p className="value">{facturaData.MatriculaCliente || '-'}</p>
+                                            <p className="value">{facturaData.numeroMatricula || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">TOTAL PAGADO</p>
@@ -870,6 +789,9 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="modal-buttons">
+                        <button onClick={exportarPDF} className="btn btn-primary">
+                                Exportar Factura Automática
+                            </button>
                             <button onClick={generarFacturasAutomaticas} className="btn btn-primary">
                                 Generar Facturas Automáticas
                             </button>

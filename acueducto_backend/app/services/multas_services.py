@@ -50,7 +50,6 @@ class MultasServices:
     
     @staticmethod
     def buscar_matriculas_por_documento():
-        print('entra aqui')
         mysql = current_app.mysql
         try:
             numero_documento = request.args.get("numero_documento")

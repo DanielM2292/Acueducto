@@ -8,6 +8,7 @@ from .ingresos_services import IngresosServices
 from .egresos_services import EgresosServices
 from .historial_services import HistorialServices
 from .pagos_services import PagosServices
+from .gestion_services import GestionServices
 
 # Exponemos los servicios para facilitar su importación en otros módulos
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     'IngresosServices',
     'EgresosServices',
     'HistorialServices',
-    'PagosServices'
+    'PagosServices',
+    'GestionServices'
 ]

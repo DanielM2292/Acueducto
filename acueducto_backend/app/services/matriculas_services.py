@@ -1,5 +1,5 @@
 from flask import jsonify, current_app, request
-from app.models import Auditoria, Matriculas, Clientes, Matricula_cliente
+from app.models import Auditoria, Matriculas, Clientes, Matricula_cliente, Multa_clientes, Facturas
 import MySQLdb
 
 class MatriculasServices:
@@ -12,10 +12,9 @@ class MatriculasServices:
         try:
             numero_documento = data.get("numero_documento")
             valor_matricula = data.get("valor_matricula")
-            numero_matricula = "123"
+            numero_matricula = Matriculas.nuevo_numero_matricula(mysql)
             tipo_tarifa = data.get("tipo_tarifa")
             direccion = data.get("direccion")
-            print(direccion)
             
             # Traer cliente con el mismo numero de documento
             id_cliente = Clientes.verificar_cliente(mysql, numero_documento)
@@ -24,15 +23,14 @@ class MatriculasServices:
             
             Matriculas.agregar_matricula(mysql, custom_id_matricula, numero_matricula, valor_matricula, tipo_tarifa)
             Auditoria.log_audit(mysql, custom_id_matricula_audi, "matriculas", custom_id_matricula, "INSERT", "ADM0001",f'Se agrega matricula {custom_id_matricula}')
-            print('pasa 1')    
+
             custom_id_matricula_cliente_audi = Auditoria.generate_custom_id(mysql, "AUD", "id_auditoria", "auditoria")
             # Asociar el cliente con la matricula nueva
             Matricula_cliente.asociar_matricula_cliente(mysql, custom_id_matricula_cliente, custom_id_matricula, id_cliente, direccion, 'ESC0001')
             Auditoria.log_audit(mysql, custom_id_matricula_cliente_audi, "matricula_cliente", custom_id_matricula_cliente, "INSERT", "ADM0001",f'Se asocia la matricula {custom_id_matricula} al cliente {id_cliente}')
-            print('pasa 2')
+
             return jsonify({"message": "Matrícula creada y vinculada exitosamente", "id_matricula": custom_id_matricula, "numero_matricula": numero_matricula}), 201              
         except Exception as e:
-            print(f"Error al crear y vincular matrícula: {str(e)}") 
             return jsonify({"message": f"Error al crear y vincular matrícula: {str(e)}"}), 500
 
     @staticmethod
@@ -46,7 +44,7 @@ class MatriculasServices:
             direccion = data.get("direccion")
             
             Matriculas.actualizar_matricula(mysql, valor_matricula, tipo_tarifa, id_matricula)
-            Auditoria.log_audit(mysql,custom_id,"matriculas", id_matricula, "UPDATE","ADM0001", "Se actualiza el estado de la matricula")
+            Auditoria.log_audit(mysql,custom_id,"matriculas", id_matricula, "UPDATE","ADM0001", "Se actualiza matricula matricula")
             
             Matricula_cliente.actualizar_direccion(mysql, direccion, id_matricula)
             
@@ -123,25 +121,21 @@ class MatriculasServices:
             return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})
     
     @staticmethod
-    def obtener_todas_matriculas():
+    def buscar_numero_matricula():
         mysql = current_app.mysql
         try:
-            print('entra a ver matricuals')
-            numero_documento = request.args.get("numero_documento")
-            print(numero_documento)
-            id_cliente = Clientes.verificar_cliente(mysql, numero_documento)
-            print(id_cliente)
-            resultado = Matricula_cliente.obtener_matriculas(mysql, id_cliente)
-            print(resultado)
-            print(resultado)
-            if resultado:
-                matriculas = resultado.split(", ")
-            else:
-                matriculas = []
-            print(matriculas)
-            if not resultado:
-                return jsonify({'error': 'Matricula no encontrada'}), 404
-            return jsonify(resultado), 200
+            numero_matricula = request.args.get("numero_matricula")
+            lectura_anterior = Facturas.get_ultima_lectura(mysql, numero_matricula)
+            print(lectura_anterior)
+            datos_cliente = Matricula_cliente.obtener_datos_factura(mysql, numero_matricula)
+            print(datos_cliente)
+            id_matricula_cliente = datos_cliente['id_matricula_cliente']
+            multas = Multa_clientes.obtener_multas(mysql, id_matricula_cliente)
+            print(multas)
+            datos_cliente.update(multas)
+            datos_cliente.update({'numero_matricula': numero_matricula})
+            print(datos_cliente)
+            return jsonify(datos_cliente), 200
             
         except Exception as e:
             return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})

@@ -50,14 +50,20 @@ class IngresosServices:
     def actualizar_ingreso(data):
         mysql = current_app.mysql
         try:
-            id_ingreso = data.get('id_ingreso')
+            id_ingreso = data.get('idIngreso')
             descripcion_ingreso = data.get('descripcionIngreso')
             valor_ingreso = data.get('valorIngreso')
             custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-            print(id_ingreso, descripcion_ingreso, valor_ingreso)
-            Ingresos.actualizar_ingreso(mysql, id_ingreso, descripcion_ingreso, valor_ingreso)
-            Auditoria.log_audit(mysql, custom_id, 'ingresos', id_ingreso, 'UPDATE', 'ADM0001', f'Se actualiza el ingreso {id_ingreso}')
             
-            return jsonify({"message": "Ingreso actualizado correctamente"}), 200
+            otro_ingreso = Ingresos.verificar_ingreso(mysql, id_ingreso)
+            
+            if otro_ingreso == {'id_matricula': None, 'id_factura': None, 'id_producto': None, 'id_multa': None}:
+                Ingresos.actualizar_ingreso(mysql, id_ingreso, descripcion_ingreso, valor_ingreso)
+                Auditoria.log_audit(mysql, custom_id, 'ingresos', id_ingreso, 'UPDATE', 'ADM0001', f'Se actualiza el ingreso {id_ingreso}')
+            
+                return jsonify({"message": "Ingreso actualizado correctamente"}), 200
+            else:
+                return jsonify({"message": "No se puede actualizar el registro debido a restricciones de tipo"}), 409
+            
         except Exception as e:
             return jsonify({"message": f"Error al actualizar ingreso: {str(e)}"}), 500
