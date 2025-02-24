@@ -56,7 +56,7 @@ const TarifaPage = () => {
     const handleBackupDatabase = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch("http://localhost:9090/backup", {
+            const response = await fetch("http://localhost:9090/gestion/backup", {
                 method: "POST"
             });
 

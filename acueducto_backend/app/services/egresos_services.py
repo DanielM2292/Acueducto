@@ -75,7 +75,7 @@ class EgresosServices:
             total_egreso = data.get('valorEgreso')
             id_producto = data.get('idProducto')
             cantidad = int(cantidad)
-            # Ojo aqui porque seria mejor que se pudiera seleccionar el egreso y ahi actualizar y que aparezca en pantalla el id_egreso
+            
             id_egreso = Egresos.obtener_id_egreso(mysql, id_producto)
             id_egreso = id_egreso['id_egreso']
             print(id_egreso)
