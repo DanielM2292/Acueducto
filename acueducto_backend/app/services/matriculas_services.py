@@ -151,16 +151,21 @@ class MatriculasServices:
     def buscar_numero_matricula():
         mysql = current_app.mysql
         try:
+            print('entra al end y busca poara facturas')
             numero_matricula = request.args.get("numero_matricula")
+            print(numero_matricula)
             datos_cliente = Matricula_cliente.obtener_datos_factura(mysql, numero_matricula)
+            print(datos_cliente)
             id_matricula_cliente = datos_cliente['id_matricula_cliente']
             lectura_anterior = Facturas.get_ultima_lectura(mysql, id_matricula_cliente)
             multas = Multa_clientes.obtener_multas(mysql, id_matricula_cliente)
             
             datos_cliente.update(multas)
+            print(datos_cliente)
             datos_cliente.update(lectura_anterior)
+            print(datos_cliente)
             datos_cliente.update({'numero_matricula': numero_matricula})
-            
+            print(datos_cliente)
             return jsonify(datos_cliente), 200
             
         except Exception as e:

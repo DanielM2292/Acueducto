@@ -306,7 +306,7 @@ const MultasPage = () => {
                                             <td>{item.motivo_multa}</td>
                                             <td>{formatearPesos(item.valor_multa)}</td>
                                             <td className={`estado-multa estado-${item.id_estado_multa === 'ESM0001' ? 'pendiente' : 'cancelada'}`}>
-                                                {item.descripcion_estado} {/* Ahora muestra la descripción real del estado */}
+                                                {item.descripcion_multa} {/* Ahora muestra la descripción real del estado */}
                                             </td>
 
                                         </tr>

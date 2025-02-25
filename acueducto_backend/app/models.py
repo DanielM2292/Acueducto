@@ -610,13 +610,14 @@ class Multas:
     def mostrar_multas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre
+            SELECT m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre, esm.descripcion_multa
             FROM multas AS m
             INNER JOIN multa_clientes AS mcl ON m.id_multa = mcl.id_multa
+            INNER JOIN estado_multas AS esm ON mcl.id_estado_multa = esm.id_estado_multa
             INNER JOIN matricula_cliente AS mc ON mcl.id_matricula_cliente = mc.id_matricula_cliente
             INNER JOIN matriculas AS ma ON mc.id_matricula = ma.id_matricula
             INNER JOIN clientes as c ON mcl.id_cliente = c.id_cliente
-            GROUP BY m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre;''')
+            GROUP BY m.id_multa, m.motivo_multa, m.valor_multa, ma.numero_matricula, c.nombre, esm.descripcion_multa;''')
         multas = cursor.fetchall()
         cursor.close()
         return multas
@@ -749,6 +750,14 @@ class Ingresos:
     def verificar_ingreso(mysql, id_ingreso):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT id_matricula, id_factura, id_producto, id_multa FROM ingresos WHERE id_ingreso LIKE %s', ('%'+ id_ingreso + '%',))
+        ingreso = cursor.fetchone()
+        cursor.close()
+        return ingreso
+    
+    @staticmethod
+    def buscar_ingreso_matricula(mysql, id_matricula):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT id_matricula FROM ingresos WHERE id_matricula LIKE %s', ('%'+ id_matricula + '%',))
         ingreso = cursor.fetchone()
         cursor.close()
         return ingreso
