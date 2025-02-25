@@ -111,15 +111,42 @@ class MatriculasServices:
         try:
             id_matricula = data.get("id_matricula")
             id_estado_cliente = data.get("estado")
-            
-            if not id_matricula:
-                return jsonify({'error': 'Matricula_cliente no encontrado'}), 404
-            Matricula_cliente.actualizar_estado(mysql,id_estado_cliente,id_matricula)
-            return jsonify({"message": "Estado de la matricula del cliente actualizada correctamente"}), 200
-            
+
+            print(f"Solicitud de actualización - Matrícula: {id_matricula}, Nuevo Estado: {id_estado_cliente}")  # Debug
+
+            if not id_matricula or not id_estado_cliente:
+                return jsonify({'error': 'Datos incompletos para actualizar'}), 400
+
+            # Comprobar si el estado existe en la tabla estado_clientes
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute("SELECT COUNT(*) AS count FROM estado_clientes WHERE id_estado_cliente = %s", (id_estado_cliente,))
+            estado_existente = cursor.fetchone()
+            cursor.close()
+
+            print(f"Estado encontrado en DB: {estado_existente}")  # Debug
+
+            if estado_existente["count"] == 0:
+                return jsonify({'error': f'Estado {id_estado_cliente} inválido'}), 400
+
+            # ACTUALIZAR ESTADO EN LA BASE DE DATOS
+            cursor = mysql.connection.cursor()
+            query = "UPDATE matricula_cliente SET id_estado_cliente = %s WHERE id_matricula = %s"
+            values = (id_estado_cliente, id_matricula)
+
+            print(f"Ejecutando SQL: {query} con valores {values}")  # Debug
+
+            cursor.execute(query, values)
+            mysql.connection.commit()
+            cursor.close()
+
+            print(f"Estado actualizado correctamente a {id_estado_cliente}")  # Debug
+
+            return jsonify({"message": "Estado de la matrícula actualizado correctamente"}), 200
+
         except Exception as e:
-            return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})
-    
+            print(f"Error al actualizar el estado de la matrícula: {str(e)}")  # Debug
+            return jsonify({"message": f"Error al actualizar el estado: {str(e)}"}), 500
+   
     @staticmethod
     def buscar_numero_matricula():
         mysql = current_app.mysql

@@ -77,20 +77,27 @@ class User:
         cursor.close()
 
 class Auditoria:
-    # Generar prefijos para las tablas de la base de datos
     @staticmethod
     def generate_custom_id(mysql, prefix, column_name, table_name):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute(f"SELECT MAX({column_name}) AS last_id FROM {table_name}")
-        result = cursor.fetchone()
-        cursor.close()
         
-        if result['last_id']:
-            last_id = int(result['last_id'][len(prefix):])
-            new_id = f"{prefix}{last_id + 1:04}"
-        else:
-            new_id = f"{prefix}0001"
-        return new_id
+        while True:  # Bucle para asegurar que el ID es único
+            cursor.execute(f"SELECT MAX({column_name}) AS last_id FROM {table_name}")
+            result = cursor.fetchone()
+            
+            if result['last_id']:
+                last_id = int(result['last_id'][len(prefix):])  # Extraer el número del ID
+                new_id = f"{prefix}{last_id + 1:04}"
+            else:
+                new_id = f"{prefix}0001"
+
+            # Verificar si el ID ya existe
+            cursor.execute(f"SELECT COUNT(*) AS count FROM {table_name} WHERE {column_name} = %s", (new_id,))
+            exists = cursor.fetchone()
+
+            if exists["count"] == 0:
+                cursor.close()
+                return new_id  # Si no existe, usar este ID
 
     @staticmethod
     def log_audit(mysql, id_auditoria, table, id_registro_afectado, action, id_administrador, detalles):
@@ -466,7 +473,7 @@ class Matriculas:
                 c.nombre,
                 m.valor_matricula,
                 m.tipo_tarifa,
-                ec.descripcion_cliente,
+                ec.descripcion_cliente AS estado,
                 m.fecha_creacion,
                 mc.direccion
             FROM 
@@ -474,11 +481,14 @@ class Matriculas:
             INNER JOIN 
                 matricula_cliente AS mc ON m.id_matricula = mc.id_matricula
             INNER JOIN
-				estado_clientes AS ec ON mc.id_estado_cliente = ec.id_estado_cliente
+                estado_clientes AS ec ON mc.id_estado_cliente = ec.id_estado_cliente
             INNER JOIN 
-                clientes AS c ON mc.id_cliente = c.id_cliente WHERE numero_documento = %s;''', (numero_documento,))
+                clientes AS c ON mc.id_cliente = c.id_cliente 
+            WHERE c.numero_documento = %s;''', (numero_documento,))
+
         matricula = cursor.fetchall()
         cursor.close()
+        print("Resultado de la consulta:", matricula)  # <-- Debug
         return matricula
     
     @staticmethod

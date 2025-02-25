@@ -68,6 +68,16 @@ const ClientesPage = () => {
     const updateEnrollmentStatus = async (enrollmentId, newStatus) => {
         try {
             setUpdatingStatus(true);
+
+            // Validar que se seleccionó un estado válido
+            if (!newStatus) {
+                notify("Por favor selecciona un estado antes de actualizar", "error");
+                setUpdatingStatus(false);
+                return;
+            }
+
+            console.log(`Intentando actualizar matrícula ${enrollmentId} a estado ${newStatus}`); // <-- Debug
+
             const response = await fetch(`http://localhost:9090/matriculas/actualizar_estado`, {
                 method: 'PUT',
                 headers: {
@@ -75,33 +85,27 @@ const ClientesPage = () => {
                 },
                 body: JSON.stringify({
                     id_matricula: enrollmentId,
-                    estado: newStatus
+                    estado: newStatus  // Enviamos el código correcto (ESC0001, ESC0002, ESC0003)
                 })
             });
+
+            const responseData = await response.json();
+            console.log("Respuesta del servidor:", responseData); // <-- Debug
 
             if (response.ok) {
                 notify("Estado de matrícula actualizado exitosamente", "success");
 
-                // Actualizar el estado local inmediatamente
                 setSelectedClientEnrollments(prevEnrollments =>
                     prevEnrollments.map(enrollment =>
                         enrollment.id_matricula === enrollmentId
-                            ? { ...enrollment, estado: newStatus }
+                            ? { ...enrollment, estado_real: newStatus }
                             : enrollment
                     )
                 );
 
-                // Actualizar la lista completa desde el servidor
-                if (selectedClient) {
-                    const updatedResponse = await fetch(`http://localhost:9090/multas/buscar_matriculas_por_documento?numero_documento=${selectedClient.numero_documento}`);
-                    if (updatedResponse.ok) {
-                        const updatedData = await updatedResponse.json();
-                        setSelectedClientEnrollments(updatedData);
-                    }
-                }
+                console.log(`Estado en UI actualizado a: ${newStatus}`);  // <-- Debug
             } else {
-                const errorData = await response.json();
-                notify(errorData.message || "Error al actualizar el estado de la matrícula", "error");
+                notify(responseData.error || "Error al actualizar el estado de la matrícula", "error");
             }
         } catch (error) {
             notify("Error de conexión con el servidor", "error");
@@ -119,19 +123,32 @@ const ClientesPage = () => {
                 return;
             }
 
-            const response = await fetch(`http://localhost:9090/multas/buscar_matriculas_por_documento?numero_documento=${client.numero_documento}`);
+            const response = await fetch(`http://localhost:9090/matriculas/buscar_matriculas_por_documento?numero_documento=${client.numero_documento}`);
             const data = await response.json();
 
-            if (response.ok) {
-                setSelectedClientEnrollments(data);
-                setSelectedClient(client);
-                setShowEnrollmentsModal(true);
-            } else {
-                notify("Error al cargar las matrículas", "error");
+            console.log("Respuesta del servidor:", data); // Debug
+
+            if (!response.ok) {
+                notify(data.message || "Error al cargar las matrículas", "error");
+                return;
             }
+
+            if (!Array.isArray(data) || data.length === 0) {
+                notify("No se encontraron matrículas para este cliente.", "error");
+                return;
+            }
+
+            // Asignar el estado real basado en estado_clientes
+            setSelectedClientEnrollments(data.map(enrollment => ({
+                ...enrollment,
+                estado_real: enrollment.estado_real || "Desconocido"  // Manejo de valores nulos
+            })));
+
+            setSelectedClient(client);
+            setShowEnrollmentsModal(true);
         } catch (error) {
             notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
+            console.error("Error al obtener matrículas:", error);
         }
     };
 
@@ -410,7 +427,7 @@ const ClientesPage = () => {
                                         <th>ID Matrícula</th>
                                         <th>Fecha</th>
                                         <th>Dirección de la Matrícula</th>
-                                        <th>Estado Real</th>
+                                        <th>Estado Real</th> {/* Nueva columna */}
                                         <th>Actualizar Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -421,16 +438,16 @@ const ClientesPage = () => {
                                             <td>{enrollment.id_matricula}</td>
                                             <td>{new Date(enrollment.fecha_creacion).toLocaleDateString()}</td>
                                             <td>{enrollment.direccion}</td>
-                                            <td>{estadosMatricula[enrollment.estado]}</td>
+                                            <td>{enrollment.estado_real || "Desconocido"}</td> {/* Mostrar estado real */}
                                             <td>
                                                 <select
-                                                    value={enrollment.estado}
+                                                    value={enrollment.estado_real || ""}
                                                     onChange={(e) => {
                                                         const newStatus = e.target.value;
                                                         setSelectedClientEnrollments(prevEnrollments =>
                                                             prevEnrollments.map(prev =>
                                                                 prev.id_matricula === enrollment.id_matricula
-                                                                    ? { ...prev, estado: newStatus }
+                                                                    ? { ...prev, estado_real: newStatus }
                                                                     : prev
                                                             )
                                                         );
@@ -438,19 +455,20 @@ const ClientesPage = () => {
                                                     className="statusSelectCustom"
                                                     disabled={updatingStatus}
                                                 >
-                                                    {Object.entries(estadosCliente).map(([value, label]) => (
-                                                        <option key={value} value={value}>
-                                                            {label}
-                                                        </option>
-                                                    ))}
+                                                    <option value="">Selecciona un Estado</option> {/* Opción por defecto */}
+                                                    <option value="ESC0001">Activo</option>
+                                                    <option value="ESC0002">Inactivo</option>
+                                                    <option value="ESC0003">Suspendido</option>
                                                 </select>
                                             </td>
+
+
                                             <td>
                                                 <button
                                                     className="pagos-button pagos-button-save"
                                                     onClick={() => updateEnrollmentStatus(
                                                         enrollment.id_matricula,
-                                                        enrollment.estado
+                                                        enrollment.estado_real
                                                     )}
                                                     disabled={updatingStatus}
                                                 >

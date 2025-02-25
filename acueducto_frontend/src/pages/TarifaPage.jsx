@@ -3,24 +3,34 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const TarifaPage = () => {
-    const [tipoTarifa, setTipoTarifa] = useState('estandar'); // Estado para seleccionar entre tarifa estándar y medidor
-    const [isLoading, setIsLoading] = useState(false); // Estado para el loading
-
-    // Estados para tarifa estándar
+    const [tipoTarifa, setTipoTarifa] = useState('estandar');
+    const [isLoading, setIsLoading] = useState(false);
     const [tarifaDefinida, setTarifaDefinida] = useState('');
     const [fechaInicioEstandar, setFechaInicioEstandar] = useState('');
     const [fechaFinEstandar, setFechaFinEstandar] = useState('');
-
-    // Estados para tarifa medidor
     const [limiteMedidor, setLimiteMedidor] = useState('');
     const [valorHastaLimite, setValorHastaLimite] = useState('');
     const [valorMetroCubico, setValorMetroCubico] = useState('');
-
-    // Estados para controlar los inputs activos
-    const [focusedInput, setFocusedInput] = useState(null);
+    const [fechaInicioMedidor, setFechaInicioMedidor] = useState('');
+    const [fechaFinMedidor, setFechaFinMedidor] = useState('');
+    const [focusedInput, setFocusedInput] = useState('');
 
     const notify = (message, type) => {
         toast[type](message);
+    };
+
+    const resetForm = () => {
+        if (tipoTarifa === 'estandar') {
+            setTarifaDefinida('');
+            setFechaInicioEstandar('');
+            setFechaFinEstandar('');
+        } else {
+            setLimiteMedidor('');
+            setValorHastaLimite('');
+            setValorMetroCubico('');
+            setFechaInicioMedidor('');
+            setFechaFinMedidor('');
+        }
     };
 
     const handleFetchTarifas = async () => {
@@ -42,6 +52,8 @@ const TarifaPage = () => {
                     setLimiteMedidor(data.limite_medidor || '');
                     setValorHastaLimite(data.valor_limite || '');
                     setValorMetroCubico(data.valor_metro3 || '');
+                    setFechaInicioMedidor(data.fecha_inicio_tarifa || '');
+                    setFechaFinMedidor(data.fecha_final_tarifa || '');
                 } else {
                     notify("Error al cargar la tarifa de medidor", "error");
                 }
@@ -79,6 +91,7 @@ const TarifaPage = () => {
 
                 if (response.ok) {
                     notify("Tarifa estándar actualizada exitosamente", "success");
+                    resetForm();
                 } else {
                     notify("Error al actualizar la tarifa estándar", "error");
                 }
@@ -110,12 +123,15 @@ const TarifaPage = () => {
                     body: JSON.stringify({
                         limiteMedidor: parseFloat(limiteMedidor),
                         valorHastaLimite: parseFloat(valorHastaLimite),
-                        valorMetroCubico: parseFloat(valorMetroCubico)
+                        valorMetroCubico: parseFloat(valorMetroCubico),
+                        fechaInicio: fechaInicioMedidor,
+                        fechaFin: fechaFinMedidor
                     })
                 });
 
                 if (response.ok) {
                     notify("Tarifa de medidor actualizada exitosamente", "success");
+                    resetForm();
                 } else {
                     notify("Error al actualizar la tarifa de medidor", "error");
                 }
@@ -125,28 +141,8 @@ const TarifaPage = () => {
         }
     };
 
-    // Volviendo a la lógica original para el backup
-    const handleBackupDatabase = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch("http://localhost:9090/gestion/backup", {
-                method: "POST"
-            });
-
-            if (response.ok) {
-                notify("Copia de seguridad creada exitosamente", "success");
-            } else {
-                notify("Error al crear la copia de seguridad", "error");
-            }
-        } catch (error) {
-            notify("Error de conexión", "error");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     useEffect(() => {
-        handleFetchTarifas(); // Cargar la tarifa actual al montar el componente o cambiar tipo
+        handleFetchTarifas();
     }, [tipoTarifa]);
 
     return (
@@ -168,7 +164,6 @@ const TarifaPage = () => {
 
             <div className="tarifa-form">
                 {tipoTarifa === 'estandar' ? (
-                    // Formulario para tarifa estándar
                     <>
                         <div className={`floating-input-group ${tarifaDefinida || focusedInput === 'tarifaDefinida' ? 'active' : ''}`}>
                             <input
@@ -186,25 +181,29 @@ const TarifaPage = () => {
                         </div>
 
                         <div className="fecha-group">
-                            <input
-                                id="fechaInicioEstandar"
-                                type="date"
-                                value={fechaInicioEstandar}
-                                onChange={(e) => setFechaInicioEstandar(e.target.value)}
-                                className="fecha-input"
-                                required
-                            />
+                            <div className="fecha-field">
+                                <input
+                                    id="fechaInicioEstandar"
+                                    type="date"
+                                    value={fechaInicioEstandar}
+                                    onChange={(e) => setFechaInicioEstandar(e.target.value)}
+                                    className="fecha-input"
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <div className="fecha-group">
-                            <input
-                                id="fechaFinEstandar"
-                                type="date"
-                                value={fechaFinEstandar}
-                                onChange={(e) => setFechaFinEstandar(e.target.value)}
-                                className="fecha-input"
-                                required
-                            />
+                            <div className="fecha-field">
+                                <input
+                                    id="fechaFinEstandar"
+                                    type="date"
+                                    value={fechaFinEstandar}
+                                    onChange={(e) => setFechaFinEstandar(e.target.value)}
+                                    className="fecha-input"
+                                    required
+                                />
+                            </div>
                         </div>
                     </>
                 ) : (
@@ -253,6 +252,32 @@ const TarifaPage = () => {
                             />
                             <label htmlFor="valorMetroCubico" className="floating-label">Valor Metro Cúbico</label>
                         </div>
+                        
+                        <div className="fecha-group">
+                            <div className="fecha-field">
+                                <input
+                                    id="fechaInicioMedidor"
+                                    type="date"
+                                    value={fechaInicioMedidor}
+                                    onChange={(e) => setFechaInicioMedidor(e.target.value)}
+                                    className="fecha-input"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="fecha-group">
+                            <div className="fecha-field">
+                                <input
+                                    id="fechaFinMedidor"
+                                    type="date"
+                                    value={fechaFinMedidor}
+                                    onChange={(e) => setFechaFinMedidor(e.target.value)}
+                                    className="fecha-input"
+                                    required
+                                />
+                            </div>
+                        </div>
                     </>
                 )}
 
@@ -261,12 +286,6 @@ const TarifaPage = () => {
                         onClick={handleUpdateTarifa}
                         className="tarifa-button tarifa-button-primary">
                         Cambiar Tarifa
-                    </button>
-                    <button 
-                        onClick={handleBackupDatabase}
-                        className="tarifa-button tarifa-button-secondary"
-                        disabled={isLoading}>
-                        {isLoading ? "Creando copia..." : "Crear Copia de Seguridad"}
                     </button>
                 </div>
             </div>
@@ -289,13 +308,6 @@ const TarifaPage = () => {
                     margin-bottom: 20px;
                 }
 
-                .tarifa-label {
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 500;
-                    color: #555;
-                }
-
                 .tarifa-select {
                     width: 100%;
                     padding: 10px;
@@ -312,7 +324,6 @@ const TarifaPage = () => {
                     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
                 }
 
-                /* Estilos para inputs flotantes */
                 .floating-input-group {
                     position: relative;
                     margin-bottom: 20px;
@@ -353,16 +364,13 @@ const TarifaPage = () => {
                     color: #4a90e2;
                 }
 
-                /* Estilos para fecha */
                 .fecha-group {
                     margin-bottom: 20px;
                 }
 
-                .fecha-label {
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 500;
-                    color: #555;
+                .fecha-field {
+                    display: flex;
+                    flex-direction: column;
                 }
 
                 .fecha-input {
@@ -404,11 +412,6 @@ const TarifaPage = () => {
                     color: white;
                 }
 
-                .tarifa-button-secondary {
-                    background-color: #5cb85c;
-                    color: white;
-                }
-
                 .tarifa-button:hover {
                     opacity: 0.9;
                     transform: translateY(-2px);
@@ -416,12 +419,6 @@ const TarifaPage = () => {
 
                 .tarifa-button:active {
                     transform: translateY(0);
-                }
-
-                .tarifa-button:disabled {
-                    background-color: #cccccc;
-                    cursor: not-allowed;
-                    transform: none;
                 }
             `}</style>
         </div>
