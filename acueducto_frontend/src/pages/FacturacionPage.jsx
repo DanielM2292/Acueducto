@@ -188,8 +188,9 @@ const FacturacionPage = () => {
     };
     const generarFacturasAutomaticas = async () => {
         try {
-            // Obtener todas las matrículas con TAE
-            const responseMatriculas = await fetch('http://localhost:9090/matriculas/obtener_matriculas_tae');
+            const responseMatriculas = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas',{
+                method: 'POST'
+            });
             if (!responseMatriculas.ok) {
                 throw new Error('Error al obtener matrículas TAE');
             }
@@ -338,6 +339,7 @@ const FacturacionPage = () => {
                 barrio: data.direccion,
                 fechaInicioCobro: data.fecha_creacion,
                 numeroMatricula: data.numero_matricula,
+                lecturaAnterior: data.lectura_anterior,
                 multas: data.total_multas,
             }));
             toast.success("Datos de la matrícula cargados exitosamente");

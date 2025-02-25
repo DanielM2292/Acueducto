@@ -1,11 +1,15 @@
 from flask import jsonify, current_app, request
 from datetime import datetime
-from app.models import Clientes, Facturas, Auditoria, Matriculas, Valores_medidor, Tarifa_medidores
+from app.models import Clientes, Facturas, Auditoria, Matriculas, Valores_medidor, Tarifa_medidores, Tarifas_estandar, Estandar_factura
 
 class FacturasServices:
     @staticmethod
     def generarFacturasAutomaticas():
         mysql = current_app.mysql
+        
+        datos_estandar = Tarifas_estandar.obtener_datos_estandar(mysql)
+        valor_pendiente = datos_estandar['tarifa_definida']
+        id_tarifa_estandar = datos_estandar['id_tarifa_estandar']
         
         fecha_actual = datetime.now()
         mes_siguiente = fecha_actual.month + 1
@@ -19,15 +23,33 @@ class FacturasServices:
         
         id_matricula_cliente = Clientes.get_clientes_facturas_estandar(mysql)
         if id_matricula_cliente:
+            facturas_generadas = [] 
             for matricula_cliente in id_matricula_cliente:  # Iterar sobre cada cliente
                 id_matricula_cliente = matricula_cliente['id_matricula_cliente']
+                
                 id_cliente = matricula_cliente['id_cliente']
                 custom_id = Auditoria.generate_custom_id(mysql, 'FAC', 'id_factura', 'facturas')
+                custom_id_estandar_factura = Auditoria.generate_custom_id(mysql, 'EFA', 'id_estandar_factura', 'estandar_factura')
                 custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-                Facturas.generar_facturas(mysql, custom_id, fecha_vencimiento, id_cliente, 'ESF0001', id_matricula_cliente, 'TAE0001')
+                #custom_id_auditoria_estan = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
+                
+                Estandar_factura.crear_factura_estandar(mysql, custom_id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, 1)
+                #Auditoria.log_audit(mysql, custom_id_auditoria_estan, 'estandar_factura', custom_id_estandar_factura, 'INSERT', 'ADM0001', f'Se relaciona factura estandar con matricula_cliente {id_matricula_cliente} y ultima tarifa estandar creada' )
+                
+                Facturas.generar_facturas(mysql, custom_id, fecha_vencimiento, id_cliente, 'ESF0001', valor_pendiente, id_matricula_cliente, custom_id_estandar_factura)
                 Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', 'ADM0001', f'Factura generada para el cliente {id_matricula_cliente}' )
                 
-            return jsonify({'message': 'Facturas generadas'}), 200
+                factura_info = {
+                "id_factura": custom_id,
+                "fecha_vencimiento": fecha_vencimiento.strftime("%Y-%m-%d"),
+                "id_cliente": id_cliente,
+                "valor_pendiente": valor_pendiente,
+                "id_matricula_cliente": id_matricula_cliente,
+                "id_estandar_factura": custom_id_estandar_factura
+            }
+            facturas_generadas.append(factura_info)
+                
+            return jsonify({'message': 'Facturas generadas', 'facturas': facturas_generadas}), 200
         else:
             return jsonify({'message': 'No existen clientes'}), 404
     

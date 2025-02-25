@@ -109,42 +109,42 @@ class AuthServices:
         else:
             return jsonify({"message": "Usuario o contraseña incorrectos bac 1"}), 400
     
-def changuePassword():
-    mysql = current_app.mysql
-    if "user" not in session:
-        return jsonify({'message': 'Unauthorized'}), 401  # Asegurar que hay una sesión activa
-    
-    try:
-        data = request.get_json()  # Obtener datos en formato JSON
-        password = data.get('password')
-        new_password = data.get('new_password')
-
-        user = User.get_user_by_username(mysql, session["user"])
-
-        if user and User.check_password(user['password'], password):
-            # Hashear la nueva contraseña
-            hashed_password = hashlib.sha256(new_password.encode()).hexdigest()
-            
-            # Actualizar la contraseña en la base de datos
-            User.changue_password(mysql, hashed_password, session['user'])
-
-            print('✅ Contraseña Actualizada')
-            return jsonify({"message": "Contraseña actualizada exitosamente"}), 200
-        else:
-            print('❌ Error al cambiar contraseña: Contraseña antigua incorrecta')
-            return jsonify({"message": "Error al cambiar contraseña: Contraseña antigua incorrecta"}), 400
-    except Exception as e:
-        print(f"❌ Error inesperado: {str(e)}")
-        return jsonify({"message": f"Error al cambiar contraseña: {str(e)}"}), 500
-   
-    def verify_role():
+    def changuePassword():
         mysql = current_app.mysql
-    
-        user = request.form.get("email")
-        password = request.form.get("password")
-        user_data = User.get_user_by_username(mysql, user)
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401  # Asegurar que hay una sesión activa
+        
+        try:
+            data = request.get_json()  # Obtener datos en formato JSON
+            password = data.get('password')
+            new_password = data.get('new_password')
 
-        if user_data and User.check_password(user_data['password'], password):
-            return jsonify({"rol": user_data['id_rol']}), 200 
-        else:
-            return jsonify({"message": "Usuario o contraseña incorrectos back 2"}), 400    
+            user = User.get_user_by_username(mysql, session["user"])
+
+            if user and User.check_password(user['password'], password):
+                # Hashear la nueva contraseña
+                hashed_password = hashlib.sha256(new_password.encode()).hexdigest()
+                
+                # Actualizar la contraseña en la base de datos
+                User.changue_password(mysql, hashed_password, session['user'])
+
+                print('✅ Contraseña Actualizada')
+                return jsonify({"message": "Contraseña actualizada exitosamente"}), 200
+            else:
+                print('❌ Error al cambiar contraseña: Contraseña antigua incorrecta')
+                return jsonify({"message": "Error al cambiar contraseña: Contraseña antigua incorrecta"}), 400
+        except Exception as e:
+            print(f"❌ Error inesperado: {str(e)}")
+            return jsonify({"message": f"Error al cambiar contraseña: {str(e)}"}), 500
+    
+    def verify_role():
+            mysql = current_app.mysql
+        
+            user = request.form.get("email")
+            password = request.form.get("password")
+            user_data = User.get_user_by_username(mysql, user)
+
+            if user_data and User.check_password(user_data['password'], password):
+                return jsonify({"rol": user_data['id_rol']}), 200 
+            else:
+                return jsonify({"message": "Usuario o contraseña incorrectos back 2"}), 400    
