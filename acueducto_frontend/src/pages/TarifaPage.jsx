@@ -15,8 +15,6 @@ const TarifaPage = () => {
     const [limiteMedidor, setLimiteMedidor] = useState('');
     const [valorHastaLimite, setValorHastaLimite] = useState('');
     const [valorMetroCubico, setValorMetroCubico] = useState('');
-    const [fechaInicioMedidor, setFechaInicioMedidor] = useState('');
-    const [fechaFinMedidor, setFechaFinMedidor] = useState('');
 
     // Estados para controlar los inputs activos
     const [focusedInput, setFocusedInput] = useState(null);
@@ -28,24 +26,22 @@ const TarifaPage = () => {
     const handleFetchTarifas = async () => {
         try {
             if (tipoTarifa === 'estandar') {
-                const response = await fetch("http://localhost:9090/tarifa/estandar");
+                const response = await fetch("http://localhost:9090/gestion/estandar");
                 const data = await response.json();
                 if (response.ok) {
-                    setTarifaDefinida(data.tarifaDefinida || '');
-                    setFechaInicioEstandar(data.fechaInicio || '');
-                    setFechaFinEstandar(data.fechaFin || '');
+                    setTarifaDefinida(data.tarifa_definida || '');
+                    setFechaInicioEstandar(data.fecha_inicio_tarifa || '');
+                    setFechaFinEstandar(data.fecha_final_tarifa || '');
                 } else {
                     notify("Error al cargar la tarifa estándar", "error");
                 }
             } else {
-                const response = await fetch("http://localhost:9090/tarifa/medidor");
+                const response = await fetch("http://localhost:9090/gestion/medidor");
                 const data = await response.json();
                 if (response.ok) {
-                    setLimiteMedidor(data.limiteMedidor || '');
-                    setValorHastaLimite(data.valorHastaLimite || '');
-                    setValorMetroCubico(data.valorMetroCubico || '');
-                    setFechaInicioMedidor(data.fechaInicio || '');
-                    setFechaFinMedidor(data.fechaFin || '');
+                    setLimiteMedidor(data.limite_medidor || '');
+                    setValorHastaLimite(data.valor_limite || '');
+                    setValorMetroCubico(data.valor_metro3 || '');
                 } else {
                     notify("Error al cargar la tarifa de medidor", "error");
                 }
@@ -71,7 +67,7 @@ const TarifaPage = () => {
             }
 
             try {
-                const response = await fetch("http://localhost:9090/tarifa/actualizar-estandar", {
+                const response = await fetch("http://localhost:9090/gestion/actualizar_estandar", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -108,15 +104,13 @@ const TarifaPage = () => {
             }
 
             try {
-                const response = await fetch("http://localhost:9090/tarifa/actualizar-medidor", {
+                const response = await fetch("http://localhost:9090/gestion/actualizar_medidor", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         limiteMedidor: parseFloat(limiteMedidor),
                         valorHastaLimite: parseFloat(valorHastaLimite),
-                        valorMetroCubico: parseFloat(valorMetroCubico),
-                        fechaInicio: fechaInicioMedidor,
-                        fechaFin: fechaFinMedidor
+                        valorMetroCubico: parseFloat(valorMetroCubico)
                     })
                 });
 
@@ -258,28 +252,6 @@ const TarifaPage = () => {
                                 required
                             />
                             <label htmlFor="valorMetroCubico" className="floating-label">Valor Metro Cúbico</label>
-                        </div>
-
-                        <div className="fecha-group">
-                            <input
-                                id="fechaInicioMedidor"
-                                type="date"
-                                value={fechaInicioMedidor}
-                                onChange={(e) => setFechaInicioMedidor(e.target.value)}
-                                className="fecha-input"
-                                required
-                            />
-                        </div>
-
-                        <div className="fecha-group">
-                            <input
-                                id="fechaFinMedidor"
-                                type="date"
-                                value={fechaFinMedidor}
-                                onChange={(e) => setFechaFinMedidor(e.target.value)}
-                                className="fecha-input"
-                                required
-                            />
                         </div>
                     </>
                 )}
