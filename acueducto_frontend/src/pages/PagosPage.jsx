@@ -6,6 +6,7 @@ const PagosPage = () => {
     const API_BASE_URL = "http://localhost:9090";
 
     const [tipo, setTipo] = useState('Factura');
+    const [tipoPago, setTipoPago] = useState('');
     const [tarifa, setTarifa] = useState('Estandar');
     const [showHistorial, setShowHistorial] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -22,6 +23,7 @@ const PagosPage = () => {
         lecturaActual: '',
         fechaLecturaAnterior: '',
         fechaLecturaActual: '',
+        estado: '',
     });
 
     const formatCurrency = (value) => {
@@ -61,7 +63,8 @@ const PagosPage = () => {
                 ...prev,
                 total: '',
                 pendiente: '',
-                aCancelar: ''
+                aCancelar: '',
+                estado: ''
             }));
             return;
         }
@@ -94,12 +97,18 @@ const PagosPage = () => {
             if (!response.ok) throw new Error('Error al obtener detalles del pago');
 
             const data = await response.json();
+            
+            if (data.estado === 'PAGADO') {
+                toast.warning('Este item ya se encuentra cancelado');
+            }
+
             setPaymentData(prev => ({
                 ...prev,
                 valor_matricula: data.valor_matricula,
                 valor_multa: data.valor_multa,
                 valor_pendiente: data.valor_pendiente,
-                aCancelar: data.aCancelar
+                aCancelar: data.estado === 'PAGADO' ? '' : data.aCancelar,
+                estado: data.estado
             }));
         } catch (err) {
             toast.error('Error al cargar los detalles del pago');
@@ -125,6 +134,18 @@ const PagosPage = () => {
     const procesarPago = async () => {
         setLoading(true);
 
+        if (paymentData.estado === 'PAGADO') {
+            toast.error('Este item ya se encuentra cancelado');
+            setLoading(false);
+            return;
+        }
+
+        if (tipo === 'Factura' && !tipoPago) {
+            toast.error('Por favor seleccione un tipo de pago');
+            setLoading(false);
+            return;
+        }
+
         if (parseFloat(paymentData.aCancelar) > parseFloat(paymentData.pendiente)) {
             toast.error('El valor a cancelar no puede ser mayor que el valor pendiente.');
             setLoading(false);
@@ -140,6 +161,7 @@ const PagosPage = () => {
 
             const payloadData = {
                 tipo,
+                ...(tipo === 'Factura' && { tipoPago }),
                 id: tipo === 'Factura' ? paymentData.idFactura : idReferencia,
                 valor: paymentData.aCancelar,
                 ...(tipo === 'Factura' && tarifa === 'Medidor' && {
@@ -170,8 +192,10 @@ const PagosPage = () => {
                 lecturaActual: '',
                 fechaLecturaAnterior: '',
                 fechaLecturaActual: '',
+                estado: '',
             });
             setIdReferencia('');
+            setTipoPago('');
 
             toast.success('Pago procesado exitosamente');
             fetchHistorial();
@@ -210,6 +234,17 @@ const PagosPage = () => {
                             </span>
                         )}
                     </div>
+                    <select
+                        value={tipoPago}
+                        onChange={(e) => setTipoPago(e.target.value)}
+                        className="pagos-select"
+                        disabled={paymentData.estado === 'PAGADO'}
+                    >
+                        <option value="">Seleccione el tipo de pago (por tiempo)</option>
+                        <option value="Mensual">Mensual</option>
+                        <option value="Semestral">Semestral</option>
+                        <option value="Anual">Anual</option>
+                    </select>
                     <input
                         type="text"
                         value={paymentData.total ? formatCurrency(paymentData.total) : ''}
@@ -219,7 +254,7 @@ const PagosPage = () => {
                     />
                     <input
                         type="text"
-                        value={paymentData.pendiente ? formatCurrency(paymentData.pendiente) : ''}
+                        value={paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''}
                         disabled
                         placeholder="Valor Pendiente"
                         className="pagos-input"
@@ -230,8 +265,14 @@ const PagosPage = () => {
                         value={paymentData.aCancelar}
                         onChange={handleInputChange}
                         placeholder="Valor a Cancelar"
-                        className="pagos-input"
+                        className={`pagos-input ${paymentData.estado === 'PAGADO' ? 'disabled' : ''}`}
+                        disabled={paymentData.estado === 'PAGADO'}
                     />
+                    {paymentData.estado === 'PAGADO' && (
+                        <div className="pagos-status-message">
+                            Este item ya se encuentra cancelado
+                        </div>
+                    )}
                 </div>
             );
         } else {
@@ -272,8 +313,14 @@ const PagosPage = () => {
                         value={paymentData.aCancelar}
                         onChange={handleInputChange}
                         placeholder="Valor a Cancelar"
-                        className="pagos-input"
+                        className={`pagos-input ${paymentData.estado === 'PAGADO' ? 'disabled' : ''}`}
+                        disabled={paymentData.estado === 'PAGADO'}
                     />
+                    {paymentData.estado === 'PAGADO' && (
+                        <div className="pagos-status-message">
+                            Este item ya se encuentra cancelado
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -300,7 +347,6 @@ const PagosPage = () => {
                         value={tipo}
                         onChange={(e) => {
                             setTipo(e.target.value);
-                            // Limpiar el formulario al cambiar el tipo
                             setPaymentData({
                                 total: '',
                                 pendiente: '',
@@ -310,8 +356,10 @@ const PagosPage = () => {
                                 lecturaActual: '',
                                 fechaLecturaAnterior: '',
                                 fechaLecturaActual: '',
+                                estado: '',
                             });
                             setIdReferencia('');
+                            setTipoPago('');
                         }}
                         className="pagos-select"
                     >
@@ -325,7 +373,7 @@ const PagosPage = () => {
                     <button
                         className="pagos-button pagos-button-save"
                         onClick={procesarPago}
-                        disabled={loading}
+                        disabled={loading || paymentData.estado === 'PAGADO'}
                     >
                         {loading ? 'Procesando...' : 'Guardar Pago'}
                     </button>
@@ -348,6 +396,7 @@ const PagosPage = () => {
                                     <tr>
                                         <th>ID</th>
                                         <th>Tipo</th>
+                                        <th>Tipo Pago</th>
                                         <th>Fecha</th>
                                         <th>Valor</th>
                                     </tr>
@@ -357,6 +406,7 @@ const PagosPage = () => {
                                         <tr key={item.id}>
                                             <td>{item.id_ingreso}</td>
                                             <td>{item.descripcion_ingreso}</td>
+                                            <td>{item.tipo_pago || '-'}</td>
                                             <td>{item.fecha_ingreso}</td>
                                             <td>{formatCurrency(item.valor_ingreso)}</td>
                                         </tr>
@@ -373,6 +423,22 @@ const PagosPage = () => {
                     </div>
                 </div>
             )}
+
+            <style jsx>{`
+                .pagos-status-message {
+                    color: #e74c3c;
+                    font-weight: bold;
+                    margin-top: 8px;
+                    text-align: center;
+                    grid-column: 1 / -1;
+                }
+                
+                .pagos-input.disabled {
+                    background-color: #f5f5f5;
+                    cursor: not-allowed;
+                    opacity: 0.7;
+                }
+            `}</style>
         </div>
     );
 };

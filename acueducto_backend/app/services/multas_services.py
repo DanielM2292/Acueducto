@@ -87,3 +87,27 @@ class MultasServices:
             
         except Exception as e:
             return jsonify({"message": f"Error al obtener el id de la multa: {str(e)}"})
+        
+    @staticmethod
+    def obtener_multas_por_matricula(numero_matricula):
+        mysql = current_app.mysql
+        try:
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute("""
+                SELECT 
+                    m.id_multa, 
+                    m.motivo_multa, 
+                    m.valor_multa, 
+                    mc.id_estado_multa, 
+                    em.descripcion_estado 
+                FROM multas AS m
+                INNER JOIN multa_clientes AS mc ON m.id_multa = mc.id_multa
+                INNER JOIN estado_multas AS em ON mc.id_estado_multa = em.id_estado_multa
+                WHERE mc.id_matricula_cliente = %s
+            """, (numero_matricula,))
+            multas = cursor.fetchall()
+            cursor.close()
+
+            return jsonify(multas), 200
+        except Exception as e:
+            return jsonify({"message": f"Error al obtener multas de la matrícula: {str(e)}"}), 500

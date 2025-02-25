@@ -33,3 +33,10 @@ def obtener_multa():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
     return MultasServices.obtener_multa()
+
+@multas_bp.route('/obtener_multas_por_matricula', methods=["GET", "OPTIONS"])
+def obtener_multas_por_matricula():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 200
+    numero_matricula = request.args.get("numero_matricula")
+    return MultasServices.obtener_multas_por_matricula(numero_matricula)

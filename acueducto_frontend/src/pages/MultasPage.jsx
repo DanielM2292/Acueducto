@@ -13,6 +13,37 @@ const MultasPage = () => {
     const [showMatriculas, setShowMatriculas] = useState(false);
     const [selectedMatricula, setSelectedMatricula] = useState(null);
 
+    const obtenerMultasPorMatricula = async () => {
+        if (!facturaData.numeroMatricula) {
+            toast.warning("No hay matrícula seleccionada para consultar multas.");
+            return;
+        }
+    
+        try {
+            console.log("Consultando multas para matrícula:", facturaData.numeroMatricula);
+    
+            const response = await fetch(`http://localhost:9090/multas/obtener_multas_por_matricula?numero_matricula=${facturaData.numeroMatricula}`);
+            
+            if (!response.ok) {
+                throw new Error("Error en la respuesta del servidor");
+            }
+    
+            const data = await response.json();
+    
+            if (!Array.isArray(data)) {
+                throw new Error("La respuesta del servidor no es un array");
+            }
+    
+            console.log("Datos de multas recibidos:", data);
+    
+            setMultas(data);  // Guardamos las multas en el estado para el modal
+    
+        } catch (error) {
+            console.error("Error al obtener multas:", error);
+            toast.error(`Error al obtener multas: ${error.message}`);
+        }
+    };
+    
     const formatearPesos = (valor) => {
         return new Intl.NumberFormat('es-CO', {
             style: 'currency',
@@ -27,6 +58,17 @@ const MultasPage = () => {
             toast.success(message);
         } else {
             toast.error(message);
+        }
+    };
+
+    const getEstadoMulta = (idEstado) => {
+        switch (idEstado) {
+            case 'ESM0001':
+                return 'Pendiente';
+            case 'ESM0002':
+                return 'Cancelada';
+            default:
+                return 'Desconocido';
         }
     };
 
@@ -65,17 +107,17 @@ const MultasPage = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ 
-                    numero_documento: numeroDocumento, 
-                    motivo_multa: motivoMulta, 
+                body: JSON.stringify({
+                    numero_documento: numeroDocumento,
+                    motivo_multa: motivoMulta,
                     valor_multa: valorMulta,
-                    id_matricula: selectedMatricula.id_matricula 
+                    id_matricula: selectedMatricula.id_matricula
                 }),
             });
             const data = await response.json();
             if (response.ok) {
                 notify("Multa creada y asociada exitosamente", "success");
-                fetchMultas(); 
+                fetchMultas();
                 resetForm();
             } else {
                 notify(data.message || "Error al agregar la multa", "error");
@@ -177,8 +219,8 @@ const MultasPage = () => {
                     <label>Valor de la Multa</label>
                 </div>
                 <div className="buttonsCustom">
-                    <button 
-                        className="crudBtnCustom" 
+                    <button
+                        className="crudBtnCustom"
                         onClick={handleAddMulta}
                         disabled={!selectedMatricula}
                     >
@@ -252,6 +294,7 @@ const MultasPage = () => {
                                         <th>Matrícula</th>
                                         <th>Motivo Multa</th>
                                         <th>Valor Multa</th>
+                                        <th>Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -262,6 +305,10 @@ const MultasPage = () => {
                                             <td>{item.numero_matricula}</td>
                                             <td>{item.motivo_multa}</td>
                                             <td>{formatearPesos(item.valor_multa)}</td>
+                                            <td className={`estado-multa estado-${item.id_estado_multa === 'ESM0001' ? 'pendiente' : 'cancelada'}`}>
+                                                {item.descripcion_estado} {/* Ahora muestra la descripción real del estado */}
+                                            </td>
+
                                         </tr>
                                     ))}
                                 </tbody>
@@ -295,6 +342,22 @@ const MultasPage = () => {
                 .crudBtnCustom:disabled {
                     background-image: linear-gradient(30deg, #cccccc, #eeeeee);
                     cursor: not-allowed;
+                }
+                .estado-multa {
+                    font-weight: bold;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    text-align: center;
+                }
+
+                .estado-pendiente {
+                    background-color: #fff3cd;
+                    color: #856404;
+                }
+
+                .estado-cancelada {
+                    background-color: #d4edda;
+                    color: #155724;
                 }
             `}</style>
         </div>

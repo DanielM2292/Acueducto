@@ -9,6 +9,27 @@ const ClientesPage = () => {
     const [selectedClient, setSelectedClient] = useState(null);
     const [isClosing, setIsClosing] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [estadosMatricula, setEstadosMatricula] = useState([]);
+
+    // Obtener los estados de matrícula desde el backend
+    const obtenerEstadosMatricula = async () => {
+        try {
+            const response = await fetch("http://localhost:9090/matriculas/obtener_estados");
+            const data = await response.json();
+            if (response.ok) {
+                setEstadosMatricula(data);
+            } else {
+                console.error("Error al obtener los estados de matrícula.");
+            }
+        } catch (error) {
+            console.error("Error de conexión al obtener estados de matrícula:", error);
+        }
+    };
+
+    // Cargar los estados al iniciar la página
+    useEffect(() => {
+        obtenerEstadosMatricula();
+    }, []);
 
     const [formData, setFormData] = useState({
         id_cliente: "",
@@ -389,7 +410,8 @@ const ClientesPage = () => {
                                         <th>ID Matrícula</th>
                                         <th>Fecha</th>
                                         <th>Dirección de la Matrícula</th>
-                                        <th>Estado</th>
+                                        <th>Estado Real</th>
+                                        <th>Actualizar Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -399,6 +421,7 @@ const ClientesPage = () => {
                                             <td>{enrollment.id_matricula}</td>
                                             <td>{new Date(enrollment.fecha_creacion).toLocaleDateString()}</td>
                                             <td>{enrollment.direccion}</td>
+                                            <td>{estadosMatricula[enrollment.estado]}</td>
                                             <td>
                                                 <select
                                                     value={enrollment.estado}

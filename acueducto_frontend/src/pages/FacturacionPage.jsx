@@ -5,6 +5,10 @@ import "react-toastify/dist/ReactToastify.css";
 import html2canvas from 'html2canvas';
 import LogoAcueducto from '../imagenes/LogoAcueducto.png';
 
+const TARIFA_BASE = 7000;
+const LIMITE_BASE = 20;
+const PRECIO_ADICIONAL_POR_METRO = 500;
+
 const FacturacionPage = () => {
     const [facturaData, setFacturaData] = useState({
         identificacion: '',
@@ -24,11 +28,11 @@ const FacturacionPage = () => {
     const [showModal, setShowModal] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [invoicesGenerated, setInvoicesGenerated] = useState(false);
-    const [numeroFactura, setNumeroFactura] = useState('0001');
     const [showFacturasModal, setShowFacturasModal] = useState(false);
     const [facturas, setFacturas] = useState([]);
     const [isFacturasClosing, setIsFacturasClosing] = useState(false);
     const [matriculasTAM, setMatriculasTAM] = useState([]);
+    const [numeroFactura, setNumeroFactura] = useState(1);
 
     const abrirModalFacturasAutomaticas = () => {
         setShowModal(true);
@@ -37,7 +41,6 @@ const FacturacionPage = () => {
     const abrirModalFacturas = () => {
         setShowFacturasModal(true);
     };
-    // await new Promise(resolve => setTimeout(resolve, 1000));
 
     useEffect(() => {
         if (facturaData.numeroMatricula) {
@@ -46,16 +49,16 @@ const FacturacionPage = () => {
     }, [facturaData.numeroMatricula]);
 
     const buscarFactura = async () => {
-        if (!numeroFactura.trim()) {
+        if (!numeroFactura) {
             toast.warning("Ingrese un número de factura");
             return;
         }
-    
+
         try {
             const response = await fetch(`http://localhost:9090/facturas/buscar_factura?id_factura=${numeroFactura}`);
             if (response.ok) {
                 const factura = await response.json();
-    
+
                 // Si la factura es de medidor, mostrar en la pantalla principal
                 if (factura.id_tarifa_medidor !== null) {
                     setFacturaData(factura);
@@ -65,7 +68,7 @@ const FacturacionPage = () => {
                     setFacturas([factura]);
                     setShowModal(true);
                 }
-    
+
                 toast.success("Factura encontrada");
             } else {
                 toast.error("No se encontró la factura");
@@ -75,49 +78,72 @@ const FacturacionPage = () => {
             console.error("Error:", error);
         }
     };
-    
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFacturaData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        const numericValue = parseFloat(value) || 0;
+
+        setFacturaData(prev => {
+            let updatedData = { ...prev, [name]: value };
+
+            if (name === "lecturaActual") {
+                updatedData.precioUnitario = calcularValores(numericValue);
+            }
+
+            return updatedData;
+        });
+    };
+
+    const calcularValores = (lecturaActual) => {
+        const lecturaAnterior = parseFloat(facturaData.lecturaAnterior || 0);
+        const consumo = lecturaActual - lecturaAnterior;
+
+        let precioUnitario = TARIFA_BASE;
+
+        if (consumo > LIMITE_BASE) {
+            const exceso = consumo - LIMITE_BASE;
+            precioUnitario += exceso * PRECIO_ADICIONAL_POR_METRO;
+        }
+
+        return precioUnitario;
     };
 
     const formatCurrency = (value) => {
         return new Intl.NumberFormat("es-CO", {
             style: "currency",
             currency: "COP",
-            minimumFractionDigits: 2
+            minimumFractionDigits: 0
         }).format(value);
     };
 
     const crearFactura = async () => {
-        try {
-            if (!facturaData.numeroMatricula) {
-                toast.warning("No hay matricula seleccionada para crear factura");
-                return;
-            }
+        if (!facturaData.numeroMatricula) {
+            toast.warning("No hay matrícula seleccionada para crear factura");
+            return;
+        }
 
+        const { saldoPendiente } = calcularValores();
+        const nuevaFactura = {
+            ...facturaData,
+            saldoPendiente,
+            numeroFactura
+        };
+
+        try {
             const response = await fetch('http://localhost:9090/facturas/crear_factura', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({...facturaData})
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(nuevaFactura)
             });
 
             if (response.ok) {
                 toast.success('Factura creada exitosamente');
-                facturaData(prev => ({
-                    ...prev
-                }));
+                setFacturaData(nuevaFactura);
             } else {
                 toast.error('Error al crear la factura');
             }
         } catch (error) {
             toast.error('Error de conexión con el servidor');
-            console.error('Error:', error);
         }
     };
 
@@ -128,19 +154,38 @@ const FacturacionPage = () => {
             const imgData = canvas.toDataURL('image/png');
 
             const pdf = new jsPDF();
-            const imgProps = pdf.getImageProperties(imgData);
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save('factura.pdf');
+
+            const fecha = new Date();
+            const mes = fecha.toLocaleString('es-ES', { month: 'long' });
+            const numeroMatricula = facturaData.numeroMatricula || 'sin_matricula';
+
+            pdf.save(`factura Matricula N°${numeroMatricula} del mes de ${mes}.pdf`);
             toast.success('PDF exportado exitosamente');
+
+            // Reiniciar el formulario después de la exportación
+            setFacturaData({
+                identificacion: '',
+                nombre: '',
+                barrio: '',
+                numeroMatricula: '',
+                fechaInicioCobro: '',
+                fechaVencimiento: '',
+                lecturaAnterior: '',
+                lecturaActual: '',
+                precioUnitario: TARIFA_BASE,
+                multas: '',
+                saldoPendiente: '',
+                observacion: ''
+            });
+
         } catch (error) {
             toast.error('Error al exportar el PDF');
-            console.error('Error:', error);
         }
     };
-
     const generarFacturasAutomaticas = async () => {
         try {
             // Obtener todas las matrículas con TAE
@@ -345,12 +390,8 @@ const FacturacionPage = () => {
                         className="factura-input"
                         placeholder="Número de Factura"
                     />
-                    <button onClick={crearFactura} className="btn btn-success">
-                        Grabar
-                    </button>
-                    <button onClick={exportarPDF} className="btn btn-success">
-                        Exportar a PDF
-                    </button>
+                    <button onClick={crearFactura} className="btn btn-success">Grabar</button>
+                    <button onClick={exportarPDF} className="btn btn-success">Exportar a PDF</button>
                     <button onClick={abrirModalFacturasAutomaticas} className="btn btn-secondary">
                         Facturas Automáticas
                     </button>
@@ -472,12 +513,14 @@ const FacturacionPage = () => {
                                 <tr>
                                     <td>PRECIO TARIFA MEDIDOR</td>
                                     <td>
-                                        <input
-                                            type="number"
-                                            name="precioUnitario"
-                                            value={facturaData.precioUnitario}
-                                            onChange={handleInputChange}
-                                        />
+                                        <div className="input-group">
+                                            <input
+                                                type="number"
+                                                name="precioUnitario"
+                                                value={facturaData.precioUnitario}
+                                                readOnly
+                                            />
+                                        </div>
                                     </td>
                                     <td>{formatCurrency(facturaData.precioUnitario || 0)}</td>
                                 </tr>
@@ -489,6 +532,7 @@ const FacturacionPage = () => {
                                             name="multas"
                                             value={facturaData.multas}
                                             onChange={handleInputChange}
+                                            readOnly
                                         />
                                     </td>
                                     <td>{formatCurrency(facturaData.multas || 0)}</td>
@@ -789,7 +833,7 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="modal-buttons">
-                        <button onClick={exportarPDF} className="btn btn-primary">
+                            <button onClick={exportarPDF} className="btn btn-primary">
                                 Exportar Factura Automática
                             </button>
                             <button onClick={generarFacturasAutomaticas} className="btn btn-primary">
