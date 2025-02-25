@@ -60,16 +60,21 @@ class PagosServices:
             id_matricula = data.get("id")
             valor_pagar = data.get("valor")
             valor_pagar = int(valor_pagar)
+            
+            ingreso_matricula = Ingresos.buscar_ingreso_matricula(mysql, id_matricula)
+            
+            if not ingreso_matricula:
+                matricula = Matriculas.buscar_matricula(mysql, id_matricula)
+                valor_matricula = int(matricula['valor_matricula'])
+                            
+                if valor_pagar != valor_matricula:
+                    return jsonify({'error': 'El valor no es correcto'}), 400
+                Ingresos.crear_ingreso_matricula(mysql, custom_id_ingreso, f'Se ingresa pago de matricula {id_matricula}', valor_pagar, id_matricula)
+                Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de matricula {id_matricula}')
 
-            matricula = Matriculas.buscar_matricula(mysql, id_matricula)
-            valor_matricula = int(matricula['valor_matricula'])
-                        
-            if valor_pagar != valor_matricula:
-                return jsonify({'error': 'El valor no es correcto'}), 400
-            Ingresos.crear_ingreso_matricula(mysql, custom_id_ingreso, f'Se ingresa pago de matricula {id_matricula}', valor_pagar, id_matricula)
-            Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de matricula {id_matricula}')
-
-            return jsonify({"message": "Pago realizado correctamente"}), 200
+                return jsonify({"message": "Pago realizado correctamente"}), 200
+            else:
+                return jsonify({'error': 'Ya se registro un pago para esta matricula'}), 400
         except Exception as e:
             mysql.connection.rollback()
             return jsonify({"message": f"Error al procesar el pago de la matricula: {str(e)}"}), 500
