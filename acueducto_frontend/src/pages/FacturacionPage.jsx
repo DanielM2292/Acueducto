@@ -181,121 +181,173 @@ const FacturacionPage = () => {
             toast.error('Error al exportar el PDF');
         }
     };
+    // Método mejorado para generar facturas automáticas
     const generarFacturasAutomaticas = async () => {
         try {
-            const responseMatriculas = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas', {
+            const response = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas', {
                 method: 'POST'
             });
-            if (!responseMatriculas.ok) {
-                throw new Error('Error al obtener matrículas TAE');
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error del backend:', errorData.message);
+                throw new Error('Error al generar facturas');
             }
-            const matriculasTAE = await responseMatriculas.json();
-
-            // Array para almacenar todas las facturas generadas
-            const facturasGeneradas = [];
-
-            // Generar factura para cada matrícula TAE
-            for (const matricula of matriculasTAE) {
-                // Obtener datos del cliente
-                const responseCliente = await fetch(`http://localhost:9090/clientes/obtener_cliente?numero_documento=${matricula.numero_documento}`);
-                if (!responseCliente.ok) {
-                    continue;
-                }
-                const cliente = await responseCliente.json();
-
-                // Obtener tarifa actual
-                const responseTarifa = await fetch(`http://localhost:9090/tarifas/obtener_tarifa?id_tarifa=${matricula.tipo_tarifa}`);
-                if (!responseTarifa.ok) {
-                    continue;
-                }
-                const tarifa = await responseTarifa.json();
-
-                // Calcular fechas
-                const fechaActual = new Date();
-                const fechaVencimiento = new Date(fechaActual);
-                fechaVencimiento.setDate(fechaVencimiento.getDate() + 30);
-
-                // Crear objeto de factura
-                const facturaGenerada = {
-                    identificacion: cliente.numero_documento,
-                    nombre: cliente.nombre,
-                    barrio: matricula.direccion,
-                    numeroMatricula: matricula.numero_matricula,
-                    fechaInicioCobro: fechaActual.toISOString().split('T')[0],
-                    fechaVencimiento: fechaVencimiento.toISOString().split('T')[0],
-                    lecturaAnterior: matricula.ultima_lectura || 0,
-                    lecturaActual: matricula.ultima_lectura || 0,
-                    precioUnitario: tarifa.valor_tarifa,
-                    multas: 0,
-                    saldoPendiente: 0,
-                    observacion: 'Factura generada automáticamente'
-                };
-
-                facturasGeneradas.push(facturaGenerada);
+    
+            const { facturas } = await response.json();
+            console.log(facturas)
+            if (!facturas || facturas.length === 0) {
+                toast.info('No hay facturas para generar');
+                return;
             }
-
-            // Actualizar estado con las facturas generadas
-            setFacturas(facturasGeneradas);
+    
+            // Llenar los inputs con los datos de la primera factura
+            const primeraFactura = facturas[0];
+            setFacturaData({
+                identificacion: primeraFactura.numero_documento,
+                nombre: primeraFactura.nombre,
+                barrio: primeraFactura.direccion,
+                numeroMatricula: primeraFactura.id_matricula_cliente,
+                fechaVencimiento: primeraFactura.fecha_vencimiento,
+                valorPendiente: primeraFactura.valor_pendiente,
+                // Agrega otros campos según sea necesario
+            });
+    
+            setFacturas(facturas);
             setInvoicesGenerated(true);
-
-            // Generar PDF con todas las facturas
-            await exportarFacturasPDF(facturasGeneradas);
-
-            toast.success(`Se generaron ${facturasGeneradas.length} facturas automáticamente`);
+            
+            // Generar el PDF con todas las facturas
+            await exportarFacturasPDF(facturas);
+            toast.success(`Se generaron ${facturas.length} facturas automáticamente`);
         } catch (error) {
             toast.error('Error al generar facturas automáticas');
             console.error('Error:', error);
         }
     };
+// Método mejorado para exportar múltiples facturas a PDF
+const exportarFacturasPDF = async (facturasParaExportar) => {
+    try {
+        const pdf = new jsPDF();
+        let firstPage = true;
 
-    const exportarFacturasPDF = async (facturasParaExportar) => {
-        try {
-            const pdf = new jsPDF();
-            let firstPage = true;
+        // Crear un elemento oculto para renderizar cada factura
+        const hiddenDiv = document.createElement('div');
+        hiddenDiv.id = 'factura-temp';
+        hiddenDiv.style.position = 'absolute';
+        hiddenDiv.style.left = '-9999px';
+        document.body.appendChild(hiddenDiv);
 
-            for (const factura of facturasParaExportar) {
-                // Actualizar el estado con los datos de la factura actual
-                setFacturaData(factura);
+        for (let i = 0; i < facturasParaExportar.length; i++) {
+            const factura = facturasParaExportar[i];
 
-                // Esperar a que el DOM se actualice
-                await new Promise(resolve => setTimeout(resolve, 100));
+            // Renderizar la factura en el div oculto
+            hiddenDiv.innerHTML = `
+                <div id="factura-automatica" class="factura">
+                    <div class="factura-header">
+                        <div class="logo-section">
+                            <img src="${LogoAcueducto}" alt="Logo Acueducto" class="logo" />
+                            <div class="company-info">
+                                <h2>JUNTA ADMINISTRA DE ACUEDUCTO Y ALCANTARILLADO</h2>
+                                <p>NIT: 900.306.104-7</p>
+                                <h3>AGUA PURA, VIDA SEGURA</h3>
+                            </div>
+                        </div>
+                        <div class="factura-numero">
+                            <p>FACTURA N°: ${factura.id_factura}</p>
+                        </div>
+                    </div>
+                    <div class="cliente-info">
+                        <div class="info-group">
+                            <div class="input-group">
+                                <label>IDENTIFICACIÓN:</label>
+                                <input type="text" value="${factura.numero_documento}" readonly />
+                            </div>
+                            <div class="input-group">
+                                <label>USUARIO:</label>
+                                <input type="text" value="${factura.nombre}" readonly />
+                            </div>
+                            <div class="input-group">
+                                <label>FECHA VENCIMIENTO:</label>
+                                <input type="text" value="${factura.fecha_vencimiento}" readonly />
+                            </div>
+                        </div>
+                        <div class="info-group">
+                            <div class="input-group">
+                                <label>BARRIO:</label>
+                                <input type="text" value="${factura.direccion}" readonly />
+                            </div>
+                            <div class="input-group">
+                                <label>MATRICULA N°:</label>
+                                <input type="text" value="${factura.id_matricula_cliente}" readonly />
+                            </div>
+                            <div class="input-group">
+                                <label>VALOR PENDIENTE:</label>
+                                <input type="text" value="${factura.valor_pendiente}" readonly />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="factura-tabla">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>DESCRIPCIÓN</th>
+                                    <th>PRECIO UNITARIO</th>
+                                    <th>TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Factura</td>
+                                    <td>${factura.valor_pendiente}</td>
+                                    <td>${factura.valor_pendiente}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
 
-                const element = document.getElementById('factura-automatica');
-                if (!element) {
-                    console.error('Elemento de factura no encontrado');
-                    continue;
-                }
+            // Esperar un momento para que el DOM se actualice
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    logging: false,
-                    useCORS: true
-                });
-
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const imgWidth = pdf.internal.pageSize.getWidth();
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                if (!firstPage) {
-                    pdf.addPage();
-                }
-                firstPage = false;
-
-                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            const element = document.getElementById('factura-automatica');
+            if (!element) {
+                console.error('Elemento de factura no encontrado');
+                continue;
             }
 
-            // Obtener el mes y año actual para el nombre del archivo
-            const fecha = new Date();
-            const mes = fecha.toLocaleString('es-ES', { month: 'long' });
-            const año = fecha.getFullYear();
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                logging: false,
+                useCORS: true
+            });
 
-            pdf.save(`facturas_automaticas_${mes}_${año}.pdf`);
-            toast.success('PDF generado exitosamente');
-        } catch (error) {
-            toast.error('Error al generar el PDF');
-            console.error('Error:', error);
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            const imgWidth = pdf.internal.pageSize.getWidth();
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            if (!firstPage) {
+                pdf.addPage(); // Agregar una nueva página para cada factura
+            }
+            firstPage = false;
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
         }
-    };
+
+        // Eliminar el div temporal
+        document.body.removeChild(hiddenDiv);
+
+        // Guardar el PDF
+        const fecha = new Date();
+        const mes = fecha.toLocaleString('es-ES', { month: 'long' });
+        const año = fecha.getFullYear();
+        pdf.save(`facturas_automaticas_${mes}_${año}.pdf`);
+        toast.success('PDF generado exitosamente');
+    } catch (error) {
+        toast.error('Error al generar el PDF');
+        console.error('Error:', error);
+    }
+};
 
     const obtenerFacturas = async () => {
         try {
@@ -841,7 +893,7 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="modal-buttons">
-                            <button onClick={exportarPDF} className="btn btn-primary">
+                            <button onClick={exportarFacturasPDF} className="btn btn-primary">
                                 Exportar Factura Automática
                             </button>
                             <button onClick={generarFacturasAutomaticas} className="btn btn-primary">

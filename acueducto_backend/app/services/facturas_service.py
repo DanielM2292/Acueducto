@@ -31,28 +31,28 @@ class FacturasServices:
                 custom_id = Auditoria.generate_custom_id(mysql, 'FAC', 'id_factura', 'facturas')
                 custom_id_estandar_factura = Auditoria.generate_custom_id(mysql, 'EFA', 'id_estandar_factura', 'estandar_factura')
                 custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-                #custom_id_auditoria_estan = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
                 
                 Estandar_factura.crear_factura_estandar(mysql, custom_id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, 1)
-                #Auditoria.log_audit(mysql, custom_id_auditoria_estan, 'estandar_factura', custom_id_estandar_factura, 'INSERT', 'ADM0001', f'Se relaciona factura estandar con matricula_cliente {id_matricula_cliente} y ultima tarifa estandar creada' )
                 
                 Facturas.generar_facturas(mysql, custom_id, fecha_vencimiento, id_cliente, 'ESF0001', valor_pendiente, id_matricula_cliente, custom_id_estandar_factura)
-                Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', 'ADM0001', f'Factura generada para el cliente {id_matricula_cliente}' )
+                Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', 'ADM0001', f'Factura generada para el cliente {id_matricula_cliente}')
                 
                 factura_info = {
-                "id_factura": custom_id,
-                "fecha_vencimiento": fecha_vencimiento.strftime("%Y-%m-%d"),
-                "id_cliente": id_cliente,
-                "valor_pendiente": valor_pendiente,
-                "id_matricula_cliente": id_matricula_cliente,
-                "id_estandar_factura": custom_id_estandar_factura
-            }
-            facturas_generadas.append(factura_info)
-                
+                    "id_factura": custom_id,
+                    "fecha_vencimiento": fecha_vencimiento.strftime("%Y-%m-%d"),
+                    "id_cliente": id_cliente,
+                    "valor_pendiente": valor_pendiente,
+                    "id_matricula_cliente": id_matricula_cliente,
+                    "id_estandar_factura": custom_id_estandar_factura
+                }
+                facturas_generadas.append(factura_info)
+
+            # Mover el return fuera del bucle for
+            print(facturas_generadas)  # Para depuración
             return jsonify({'message': 'Facturas generadas', 'facturas': facturas_generadas}), 200
         else:
             return jsonify({'message': 'No existen clientes'}), 404
-    
+        
     @staticmethod
     def listar_facturas():
         mysql = current_app.mysql
