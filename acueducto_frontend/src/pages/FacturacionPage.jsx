@@ -33,6 +33,7 @@ const FacturacionPage = () => {
     const [isFacturasClosing, setIsFacturasClosing] = useState(false);
     const [matriculasTAM, setMatriculasTAM] = useState([]);
     const [numeroFactura, setNumeroFactura] = useState(1);
+    const [numeroMatriculaInput, setNumeroMatriculaInput] = useState("");
 
     const abrirModalFacturasAutomaticas = () => {
         setShowModal(true);
@@ -43,10 +44,10 @@ const FacturacionPage = () => {
     };
 
     useEffect(() => {
-        if (facturaData.numeroMatricula) {
-            buscarDatosPorMatricula();
+        if (numeroMatriculaInput.length >= 4) {
+            buscarDatosPorMatricula(numeroMatriculaInput);
         }
-    }, [facturaData.numeroMatricula]);
+    }, [numeroMatriculaInput]); // Se ejecuta cuando cambia numeroMatriculaInput
 
     const buscarFactura = async () => {
         if (!numeroFactura) {
@@ -81,17 +82,11 @@ const FacturacionPage = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        const numericValue = parseFloat(value) || 0;
 
-        setFacturaData(prev => {
-            let updatedData = { ...prev, [name]: value };
-
-            if (name === "lecturaActual") {
-                updatedData.precioUnitario = calcularValores(numericValue);
-            }
-
-            return updatedData;
-        });
+        setFacturaData(prev => ({
+            ...prev,
+            [name]: value || '' // Asegurar que no se asigna undefined
+        }));
     };
 
     const calcularValores = (lecturaActual) => {
@@ -188,7 +183,7 @@ const FacturacionPage = () => {
     };
     const generarFacturasAutomaticas = async () => {
         try {
-            const responseMatriculas = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas',{
+            const responseMatriculas = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas', {
                 method: 'POST'
             });
             if (!responseMatriculas.ok) {
@@ -318,31 +313,42 @@ const FacturacionPage = () => {
         }
     };
 
-    const buscarDatosPorMatricula = async () => {
-        if (!facturaData.numeroMatricula.trim()) {
+    const buscarDatosPorMatricula = async (numeroMatricula) => {
+        if (!numeroMatricula.trim()) {
             toast.warning("Ingrese un número de matrícula");
             return;
         }
+
         try {
-            const response = await fetch(`http://localhost:9090/matriculas/buscar_numero_matricula?numero_matricula=${facturaData.numeroMatricula}`);
+            const response = await fetch(`http://localhost:9090/matriculas/buscar_numero_matricula?numero_matricula=${numeroMatricula}`);
             if (!response.ok) throw new Error("No se encontró la matrícula");
+
             const data = await response.json();
 
             if (!data || typeof data !== "object") {
                 toast.warning("No hay datos para esta matrícula");
                 return;
             }
+
+            console.log("Datos recibidos del backend:", data); // Para depuración
+
             setFacturaData(prev => ({
                 ...prev,
-                identificacion: data.numero_documento,
-                nombre: data.nombre,
-                barrio: data.direccion,
-                fechaInicioCobro: data.fecha_creacion,
-                numeroMatricula: data.numero_matricula,
-                lecturaAnterior: data.lectura_anterior,
-                multas: data.total_multas,
+                identificacion: data.numero_documento ?? prev.identificacion ?? '',
+                nombre: data.nombre ?? prev.nombre ?? '',
+                barrio: data.direccion ?? prev.barrio ?? '',
+                fechaInicioCobro: data.fecha_creacion ?? prev.fechaInicioCobro ?? '',
+                numeroMatricula: data.numero_matricula ?? prev.numeroMatricula ?? '',
+                lecturaAnterior: data.lectura_anterior ?? prev.lecturaAnterior ?? '0',
+                multas: data.total_multas ?? prev.multas ?? '0',
+                saldoPendiente: data.saldo_pendiente ?? prev.saldoPendiente ?? '0',
+                observacion: data.observacion ?? prev.observacion ?? '',
             }));
+
+            setNumeroMatriculaInput(data.numero_matricula ?? prev.numeroMatricula ?? '');
+
             toast.success("Datos de la matrícula cargados exitosamente");
+
         } catch (error) {
             toast.error("Error al buscar la matrícula");
         }
@@ -477,9 +483,9 @@ const FacturacionPage = () => {
                                 <label>MATRICULA N°:</label>
                                 <input
                                     type="text"
-                                    name='numeroMatricula'
-                                    value={facturaData.numeroMatricula}
-                                    onChange={handleInputChange}
+                                    name="numeroMatricula"
+                                    value={numeroMatriculaInput || ''}
+                                    onChange={(e) => setNumeroMatriculaInput(e.target.value)}
                                 />
                             </div>
                             <div className="input-group">
@@ -678,7 +684,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="identificacion"
-                                                value={facturaData.identificacion}
+                                                value={facturaData.identificacion || ''}
                                                 readOnly
                                             />
                                         </div>
@@ -687,7 +693,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="usuario"
-                                                value={facturaData.usuario}
+                                                value={facturaData.usuario || ''}
                                                 readOnly
                                             />
                                         </div>
@@ -707,7 +713,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="barrio"
-                                                value={facturaData.barrio}
+                                                value={facturaData.barrio || ''}
                                                 readOnly
                                             />
                                         </div>
