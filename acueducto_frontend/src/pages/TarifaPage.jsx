@@ -11,8 +11,6 @@ const TarifaPage = () => {
     const [limiteMedidor, setLimiteMedidor] = useState('');
     const [valorHastaLimite, setValorHastaLimite] = useState('');
     const [valorMetroCubico, setValorMetroCubico] = useState('');
-    const [fechaInicioMedidor, setFechaInicioMedidor] = useState('');
-    const [fechaFinMedidor, setFechaFinMedidor] = useState('');
     const [focusedInput, setFocusedInput] = useState('');
 
     const notify = (message, type) => {
@@ -28,9 +26,40 @@ const TarifaPage = () => {
             setLimiteMedidor('');
             setValorHastaLimite('');
             setValorMetroCubico('');
-            setFechaInicioMedidor('');
-            setFechaFinMedidor('');
         }
+    };
+
+    // Función para formatear la fecha al formato YYYY-MM-DD que requiere el input type="date"
+    const formatDateForInput = (dateString) => {
+        if (!dateString) return '';
+        
+        // Si ya está en formato ISO (YYYY-MM-DD), devuélvelo directamente
+        if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) return dateString.split('T')[0];
+        
+        // Si está en otro formato (por ejemplo, DD/MM/YYYY), conviértelo
+        const parts = dateString.split(/[/\-\.]/);
+        if (parts.length === 3) {
+            // Asumimos que puede estar en formato DD/MM/YYYY
+            if (parts[0].length === 2 && parts[1].length === 2) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            // O en formato YYYY/MM/DD
+            if (parts[0].length === 4) {
+                return `${parts[0]}-${parts[1]}-${parts[2]}`;
+            }
+        }
+        
+        // Si no podemos determinar el formato, intentamos parsear con Date
+        try {
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+            }
+        } catch (error) {
+            console.error("Error al formatear fecha:", error);
+        }
+        
+        return '';
     };
 
     const handleFetchTarifas = async () => {
@@ -40,8 +69,21 @@ const TarifaPage = () => {
                 const data = await response.json();
                 if (response.ok) {
                     setTarifaDefinida(data.tarifa_definida || '');
-                    setFechaInicioEstandar(data.fecha_inicio_tarifa || '');
-                    setFechaFinEstandar(data.fecha_final_tarifa || '');
+                    
+                    // Formateamos las fechas recibidas de la BD para que funcionen en los inputs de tipo date
+                    if (data.fecha_inicio_tarifa) {
+                        setFechaInicioEstandar(formatDateForInput(data.fecha_inicio_tarifa));
+                    }
+                    
+                    if (data.fecha_final_tarifa) {
+                        setFechaFinEstandar(formatDateForInput(data.fecha_final_tarifa));
+                    }
+                    
+                    console.log("Datos cargados:", {
+                        tarifa: data.tarifa_definida,
+                        fechaInicio: formatDateForInput(data.fecha_inicio_tarifa),
+                        fechaFin: formatDateForInput(data.fecha_final_tarifa)
+                    });
                 } else {
                     notify("Error al cargar la tarifa estándar", "error");
                 }
@@ -52,13 +94,12 @@ const TarifaPage = () => {
                     setLimiteMedidor(data.limite_medidor || '');
                     setValorHastaLimite(data.valor_limite || '');
                     setValorMetroCubico(data.valor_metro3 || '');
-                    setFechaInicioMedidor(data.fecha_inicio_tarifa || '');
-                    setFechaFinMedidor(data.fecha_final_tarifa || '');
                 } else {
                     notify("Error al cargar la tarifa de medidor", "error");
                 }
             }
         } catch (error) {
+            console.error("Error en la conexión:", error);
             notify("Error de conexión", "error");
         }
     };
@@ -91,7 +132,7 @@ const TarifaPage = () => {
 
                 if (response.ok) {
                     notify("Tarifa estándar actualizada exitosamente", "success");
-                    resetForm();
+                    handleFetchTarifas(); // Recargar datos después de actualizar
                 } else {
                     notify("Error al actualizar la tarifa estándar", "error");
                 }
@@ -111,12 +152,15 @@ const TarifaPage = () => {
                 notify("El valor por metro cúbico debe ser positivo", "warning");
                 return;
             }
-            if (!fechaInicioMedidor || !fechaFinMedidor) {
-                notify("Debe especificar fechas de inicio y fin", "warning");
-                return;
-            }
 
             try {
+                // Obtener fechas actuales para usar como fechas por defecto
+                const today = new Date();
+                const endOfYear = new Date(today.getFullYear(), 11, 31); // 31 de diciembre del año actual
+                
+                const fechaInicio = today.toISOString().split('T')[0];
+                const fechaFin = endOfYear.toISOString().split('T')[0];
+
                 const response = await fetch("http://localhost:9090/gestion/actualizar_medidor", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -124,14 +168,14 @@ const TarifaPage = () => {
                         limiteMedidor: parseFloat(limiteMedidor),
                         valorHastaLimite: parseFloat(valorHastaLimite),
                         valorMetroCubico: parseFloat(valorMetroCubico),
-                        fechaInicio: fechaInicioMedidor,
-                        fechaFin: fechaFinMedidor
+                        fechaInicio: fechaInicio,
+                        fechaFin: fechaFin
                     })
                 });
 
                 if (response.ok) {
                     notify("Tarifa de medidor actualizada exitosamente", "success");
-                    resetForm();
+                    handleFetchTarifas(); // Recargar datos después de actualizar
                 } else {
                     notify("Error al actualizar la tarifa de medidor", "error");
                 }
@@ -141,6 +185,26 @@ const TarifaPage = () => {
         }
     };
 
+    const handleCreateBackup = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch("http://localhost:9090/gestion/backup", {
+                method: "POST"
+            });
+            
+            if (response.ok) {
+                notify("Copia de seguridad creada exitosamente", "success");
+            } else {
+                notify("Error al crear la copia de seguridad", "error");
+            }
+        } catch (error) {
+            notify("Error de conexión", "error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Cargar los datos al iniciar el componente y cuando cambia el tipo de tarifa
     useEffect(() => {
         handleFetchTarifas();
     }, [tipoTarifa]);
@@ -180,30 +244,32 @@ const TarifaPage = () => {
                             <label htmlFor="tarifaDefinida" className="floating-label">Tarifa Definida</label>
                         </div>
 
-                        <div className="fecha-group">
-                            <div className="fecha-field">
-                                <input
-                                    id="fechaInicioEstandar"
-                                    type="date"
-                                    value={fechaInicioEstandar}
-                                    onChange={(e) => setFechaInicioEstandar(e.target.value)}
-                                    className="fecha-input"
-                                    required
-                                />
+                        <div className="floating-input-group fecha-group">
+                            <div className="fecha-label-container">
+                                <label htmlFor="fechaInicioEstandar" className="floating-label fecha-floating-label">Fecha de Inicio</label>
                             </div>
+                            <input
+                                id="fechaInicioEstandar"
+                                type="date"
+                                value={fechaInicioEstandar}
+                                onChange={(e) => setFechaInicioEstandar(e.target.value)}
+                                className="floating-input fecha-input"
+                                required
+                            />
                         </div>
 
-                        <div className="fecha-group">
-                            <div className="fecha-field">
-                                <input
-                                    id="fechaFinEstandar"
-                                    type="date"
-                                    value={fechaFinEstandar}
-                                    onChange={(e) => setFechaFinEstandar(e.target.value)}
-                                    className="fecha-input"
-                                    required
-                                />
+                        <div className="floating-input-group fecha-group">
+                            <div className="fecha-label-container">
+                                <label htmlFor="fechaFinEstandar" className="floating-label fecha-floating-label">Fecha de Fin</label>
                             </div>
+                            <input
+                                id="fechaFinEstandar"
+                                type="date"
+                                value={fechaFinEstandar}
+                                onChange={(e) => setFechaFinEstandar(e.target.value)}
+                                className="floating-input fecha-input"
+                                required
+                            />
                         </div>
                     </>
                 ) : (
@@ -252,32 +318,6 @@ const TarifaPage = () => {
                             />
                             <label htmlFor="valorMetroCubico" className="floating-label">Valor Metro Cúbico</label>
                         </div>
-                        
-                        <div className="fecha-group">
-                            <div className="fecha-field">
-                                <input
-                                    id="fechaInicioMedidor"
-                                    type="date"
-                                    value={fechaInicioMedidor}
-                                    onChange={(e) => setFechaInicioMedidor(e.target.value)}
-                                    className="fecha-input"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="fecha-group">
-                            <div className="fecha-field">
-                                <input
-                                    id="fechaFinMedidor"
-                                    type="date"
-                                    value={fechaFinMedidor}
-                                    onChange={(e) => setFechaFinMedidor(e.target.value)}
-                                    className="fecha-input"
-                                    required
-                                />
-                            </div>
-                        </div>
                     </>
                 )}
 
@@ -286,6 +326,15 @@ const TarifaPage = () => {
                         onClick={handleUpdateTarifa}
                         className="tarifa-button tarifa-button-primary">
                         Cambiar Tarifa
+                    </button>
+                </div>
+                
+                <div className="backup-section">
+                    <button 
+                        onClick={handleCreateBackup}
+                        disabled={isLoading}
+                        className="tarifa-button backup-button">
+                        {isLoading ? 'Creando...' : 'Crear Copia de Seguridad'}
                     </button>
                 </div>
             </div>
@@ -367,20 +416,21 @@ const TarifaPage = () => {
                 .fecha-group {
                     margin-bottom: 20px;
                 }
-
-                .fecha-field {
-                    display: flex;
-                    flex-direction: column;
+                
+                .fecha-label-container {
+                    margin-bottom: 5px;
+                }
+                
+                .fecha-floating-label {
+                    position: static;
+                    font-size: 14px;
+                    color: #555;
+                    font-weight: 500;
                 }
 
                 .fecha-input {
-                    width: 100%;
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
-                    font-size: 16px;
-                    background-color: white;
-                    transition: border-color 0.3s, box-shadow 0.3s;
+                    padding: 10px 16px;
+                    height: 42px;
                 }
 
                 .fecha-input:focus {
@@ -410,6 +460,23 @@ const TarifaPage = () => {
                 .tarifa-button-primary {
                     background-color: #4a90e2;
                     color: white;
+                }
+                
+                .backup-section {
+                    margin-top: 20px;
+                    border-top: 1px solid #ddd;
+                    padding-top: 20px;
+                }
+                
+                .backup-button {
+                    background-color: #28a745;
+                    color: white;
+                    width: 100%;
+                }
+                
+                .backup-button:disabled {
+                    background-color: #6c757d;
+                    cursor: not-allowed;
                 }
 
                 .tarifa-button:hover {

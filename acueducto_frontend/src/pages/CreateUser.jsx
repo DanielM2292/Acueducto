@@ -49,62 +49,170 @@ const CreateUser = () => {
     };
 
     return (
-        <div className="loginContainer">
+        <div className="page-container">
             <ToastContainer />
-            <h1 className="loginTitle">Crear un nuevo usuario</h1>
-            <div className="loginForm">
-                <form onSubmit={handleSubmit}>
-                    <div className="inputGroup">
+            <div className="create-user-container">
+                <div className="form-header">
+                    <h1 className="form-title">Crear Nuevo Usuario</h1>
+                    <p className="form-subtitle">Ingresa la información del usuario</p>
+                </div>
+                
+                <div className="form-card">
+                    <form onSubmit={handleSubmit}>
                         <input
                             type="text"
                             name="nombre"
                             value={formData.nombre}
                             onChange={handleChange}
                             required
-                            className="input-style"
+                            className="styled-input"
                             placeholder="Nombre Completo"
                         />
-                    </div>
-                    <div className="inputGroup">
+                        
                         <input
                             type="text"
                             name="nombre_usuario"
                             value={formData.nombre_usuario}
                             onChange={handleChange}
                             required
-                            className="input-style"
+                            className="styled-input"
                             placeholder="Nombre de Usuario"
                         />
-                    </div>
-                    <div className="inputGroup">
+                        
                         <input
                             type="password"
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            className="input-style"
+                            className="styled-input"
                             placeholder="Contraseña"
                         />
-                    </div>
-                    <div className="inputGroup">
+                        
                         <select
                             name="id_rol"
                             value={formData.id_rol}
                             onChange={handleChange}
-                            className="styledSelect"
+                            className="styled-select"
                             required
                         >
                             <option value="ROL0001">Administrador</option>
                             <option value="ROL0002">Contador</option>
                             <option value="ROL0003">Secretario</option>
                         </select>
-                    </div>
-                    <button type="submit" className="loginButton">
-                        Crear Usuario
-                    </button>
-                </form>
+                        
+                        <button type="submit" className="submit-button">Crear Usuario</button>
+                    </form>
+                </div>
             </div>
+            
+            <style jsx>{`
+                /* Contenedor principal */
+                .page-container {
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    font-family: 'Poppins', sans-serif;
+                }
+                
+                .create-user-container {
+                    width: 100%;
+                    max-width: 400px;
+                }
+                
+                .form-header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                
+                .form-title {
+                    font-size: 26px;
+                    color: #333;
+                    font-weight: 700;
+                }
+                
+                .form-subtitle {
+                    color: #555;
+                    font-size: 14px;
+                }
+                
+                /* Tarjeta del formulario */
+                .form-card {
+                    background-color: white;
+                    border-radius: 12px;
+                    padding: 25px;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }
+
+                .form-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+                }
+                
+                /* Inputs y select con animaciones */
+                .styled-input, .styled-select {
+                    width: 100%;
+                    padding: 12px;
+                    margin: 10px 0;
+                    border: 1px solid #ccc;
+                    border-radius: 6px;
+                    font-size: 16px;
+                    outline: none;
+                    transition: all 0.3s ease;
+                    background: rgba(255, 255, 255, 0.8);
+                }
+
+                .styled-input:focus, .styled-select:focus {
+                    border-color: #007bff;
+                    box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+                    transform: scale(1.02);
+                }
+
+                .styled-select {
+                    cursor: pointer;
+                }
+                
+                /* Botón con animaciones */
+                .submit-button {
+                    width: 100%;
+                    padding: 12px;
+                    background: linear-gradient(135deg, #007bff, #0056b3);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+                    transform: translateY(0);
+                }
+                
+                .submit-button:hover {
+                    background: linear-gradient(135deg, #0056b3, #003d7a);
+                    transform: translateY(-3px);
+                    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.6);
+                }
+
+                .submit-button:active {
+                    transform: translateY(0);
+                    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+                }
+
+                /* Responsive */
+                @media (max-width: 480px) {
+                    .form-card {
+                        padding: 20px;
+                    }
+                    
+                    .form-title {
+                        font-size: 22px;
+                    }
+                }
+            `}</style>
         </div>
     );
 };
