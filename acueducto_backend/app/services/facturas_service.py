@@ -1,6 +1,6 @@
 from flask import jsonify, current_app, request
 from datetime import datetime
-from app.models import Clientes, Facturas, Auditoria, Matriculas, Valores_medidor, Tarifa_medidores, Tarifas_estandar, Estandar_factura
+from app.models import Clientes, Facturas, Auditoria, Matriculas, Valores_medidor, Tarifa_medidores, Tarifas_estandar, Estandar_factura, Matricula_cliente, Multa_clientes
 
 class FacturasServices:
     @staticmethod
@@ -26,8 +26,13 @@ class FacturasServices:
             facturas_generadas = [] 
             for matricula_cliente in id_matricula_cliente:  # Iterar sobre cada cliente
                 id_matricula_cliente = matricula_cliente['id_matricula_cliente']
-                
                 id_cliente = matricula_cliente['id_cliente']
+                
+                datos_cliente = Matricula_cliente.obtener_datos_factura_estandar(mysql, id_matricula_cliente)
+                print(datos_cliente)
+                multas = Multa_clientes.obtener_multas(mysql, id_matricula_cliente)
+                datos_cliente.update(multas or {})
+                print(datos_cliente)
                 custom_id = Auditoria.generate_custom_id(mysql, 'FAC', 'id_factura', 'facturas')
                 custom_id_estandar_factura = Auditoria.generate_custom_id(mysql, 'EFA', 'id_estandar_factura', 'estandar_factura')
                 custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
@@ -40,10 +45,13 @@ class FacturasServices:
                 factura_info = {
                     "id_factura": custom_id,
                     "fecha_vencimiento": fecha_vencimiento.strftime("%Y-%m-%d"),
-                    "id_cliente": id_cliente,
+                    "fecha_inicio": fecha_actual.strftime("%Y-%m-%d"),
+                    "numero_documento": datos_cliente['numero_documento'],
                     "valor_pendiente": valor_pendiente,
-                    "id_matricula_cliente": id_matricula_cliente,
-                    "id_estandar_factura": custom_id_estandar_factura
+                    "nombre_cliente": datos_cliente['nombre'],
+                    "direccion": datos_cliente['direccion'],
+                    "numero_matricula": datos_cliente['numero_matricula'],
+                    "multas": datos_cliente['total_multas']
                 }
                 facturas_generadas.append(factura_info)
 
