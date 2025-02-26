@@ -561,6 +561,18 @@ class Matricula_cliente:
         return id_matricula_cliente
     
     @staticmethod
+    def obtener_id_matricula_cliente(mysql, numero_matricula):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('''
+            SELECT mc.id_matricula_cliente 
+            FROM matricula_cliente AS mc
+            INNER JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
+            WHERE numero_matricula = %s;''', (numero_matricula,))
+        id_matricula_cliente = cursor.fetchone()
+        cursor.close()
+        return id_matricula_cliente
+    
+    @staticmethod
     def actualizar_estado(mysql, id_estado_cliente, id_matricula):
         cursor = mysql.connection.cursor()
         cursor.execute('UPDATE matricula_cliente SET id_estado_cliente = %s WHERE id_matricula = %s', (id_estado_cliente, id_matricula))
@@ -588,7 +600,7 @@ class Matricula_cliente:
     def obtener_datos_factura(mysql, numero_matricula):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-                SELECT c.numero_documento, c.nombre, mc.direccion, mc.id_matricula_cliente
+                SELECT c.numero_documento, c.nombre, mc.direccion
                 FROM clientes AS c
                 INNER JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
                 INNER JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
