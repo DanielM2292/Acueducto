@@ -608,6 +608,19 @@ class Matricula_cliente:
         datos_cliente = cursor.fetchone()
         cursor.close()
         return datos_cliente
+    
+    @staticmethod
+    def obtener_datos_factura_estandar(mysql, id_matricula_cliente):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('''
+                SELECT c.numero_documento, c.nombre, mc.direccion, m.numero_matricula
+                FROM clientes AS c
+                INNER JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
+                INNER JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
+                WHERE id_matricula_cliente = %s;''', (id_matricula_cliente,))
+        datos_cliente = cursor.fetchone()
+        cursor.close()
+        return datos_cliente
 
 class Multas:
     @staticmethod
