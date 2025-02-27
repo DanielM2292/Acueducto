@@ -607,6 +607,7 @@ const FacturacionPage = () => {
                                     name="identificacion"
                                     value={facturaData.identificacion}
                                     onChange={handleInputChange}
+                                    readOnly
                                 />
                             </div>
                             <div className="input-group">

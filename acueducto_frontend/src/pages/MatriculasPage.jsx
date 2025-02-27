@@ -245,6 +245,7 @@ const MatriculasPage = () => {
                         <option value="Vereda la Palma">Vereda la Palma</option>
                         <option value="Barrio San José">Barrio San José</option>
                         <option value="Barrio Miraflores">Barrio Miraflores</option>
+                        <option value="Barrio la Asosiación">Barrio la Asosiación</option>
                     </select>
                 </div>
 
