@@ -59,15 +59,13 @@ class GestionServices:
     def actualizar_datos_estandar(data):
         try:
             mysql = current_app.mysql
-            descripcion = 'Nueva'
             tarifa_definida = data.get('tarifaDefinida')
             fecha_inicio_tarifa = data.get('fechaInicio')
             fecha_final_tarifa = data.get('fechaFin')
-            
             custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             custom_id_tarifa_estandar = Auditoria.generate_custom_id(mysql, 'TAE', 'id_tarifa_estandar', 'tarifas_estandar')
             
-            Tarifas_estandar.crear_tarifa(mysql, custom_id_tarifa_estandar, descripcion, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa)
+            Tarifas_estandar.crear_tarifa(mysql, custom_id_tarifa_estandar, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa)
             Auditoria.log_audit(mysql, custom_id, 'tarifas_estandar', custom_id_tarifa_estandar, 'INSERT', 'ADM0001', 'Se crea una nueva tarifa estandar')
             
             return jsonify({"message": "Tarifa actualizada correctamente"}), 201

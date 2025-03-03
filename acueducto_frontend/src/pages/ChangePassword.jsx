@@ -3,17 +3,22 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ChangePassword = () => {
+
+  const name = localStorage.getItem("userName");  
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = {
+      nombre_usuario: name,
       password: formData.get('password_old'),
       new_password: formData.get('password'),
     };
 
     try {
-      const response = await fetch('/changuePassword', {
+      const response = await fetch('http://localhost:9090/auth/changuePassword', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

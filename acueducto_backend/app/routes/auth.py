@@ -37,6 +37,7 @@ def login():
 
 @auth_bp.route('/changuePassword', methods=['POST', "OPTIONS"])
 def changuePassword():
+    print('entra al endpoint')
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
     return AuthServices.changuePassword()    

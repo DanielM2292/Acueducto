@@ -340,11 +340,11 @@ const FacturacionPage = () => {
                                                 <input
                                                     type="number"
                                                     name="precioUnitario"
-                                                    value="${factura.valor_pendiente || 0}"
+                                                    value="${factura.valor_estandar || 0}"
                                                     readOnly
                                                 />
                                             </td>
-                                            <td>${formatCurrency(factura.valor_pendiente || 0)}</td>
+                                            <td>${formatCurrency(factura.valor_estandar || 0)}</td>
                                         </tr>
                                         <tr>
                                             <td>MULTAS</td>
@@ -386,8 +386,8 @@ const FacturacionPage = () => {
                                         <tr>
                                             <td colSpan="2">TOTAL A PAGAR</td>
                                             <td>
-                                                ${formatCurrency((parseFloat(factura.valor_pendiente || 0) +
-                    parseFloat(factura.multas || 0)).toFixed(2))}
+                                                ${formatCurrency((parseFloat(factura.valor_estandar || 0) +
+                    parseFloat(factura.multas || 0) + parseFloat(factura.valor_pendiente || 0)).toFixed(3))}
                                             </td>
                                         </tr>
                                     </tfoot>
@@ -416,8 +416,8 @@ const FacturacionPage = () => {
                                     <div class="comprobante-item">
                                         <p class="label">TOTAL PAGADO</p>
                                         <p class="value">
-                                            ${formatCurrency((parseFloat(factura.valor_pendiente || 0) +
-                        parseFloat(factura.multas || 0)).toFixed(2))}
+                                        ${formatCurrency((parseFloat(factura.valor_estandar || 0) +
+                    parseFloat(factura.multas || 0) + parseFloat(factura.valor_pendiente || 0)).toFixed(3))}
                                         </p>
                                     </div>
                                 </div>
@@ -809,8 +809,10 @@ const FacturacionPage = () => {
                                                 <td>{factura.nombre}</td>
                                                 <td>{factura.numero_documento}</td>
                                                 <td>{factura.direccion}</td>
-                                                <td>{factura.id_matricula}</td>
-                                                <td>{formatCurrency(factura.tarifa_definida)}</td>
+                                                <td>{factura.numero_matricula}</td>
+                                                <td>
+                                                    {factura.tarifa_definida ? formatCurrency(factura.tarifa_definida) : formatCurrency(factura.valor_total_lectura)}
+                                                </td>
                                                 <td>{factura.descripcion_estado_factura}</td>
                                             </tr>
                                         ))}

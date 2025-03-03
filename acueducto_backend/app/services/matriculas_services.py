@@ -152,16 +152,23 @@ class MatriculasServices:
         mysql = current_app.mysql
         try:
             numero_matricula = request.args.get("numero_matricula")
-            datos_cliente = Matricula_cliente.obtener_datos_factura(mysql, numero_matricula)
-            cliente = Matricula_cliente.obtener_id_matricula_cliente(mysql, numero_matricula)
-            id_matricula_cliente = cliente['id_matricula_cliente']
-            lectura_anterior = Facturas.get_ultima_lectura(mysql, id_matricula_cliente)
-            multas = Multa_clientes.obtener_multas(mysql, id_matricula_cliente)
             
-            datos_cliente.update(multas or {})
-            datos_cliente.update(lectura_anterior or {})
-            datos_cliente.update({'numero_matricula': numero_matricula})
-            return jsonify(datos_cliente), 200
+            tipo_tarifa = Matriculas.obtener_tipo(mysql, numero_matricula)
+            tipo_tarifa = tipo_tarifa['tipo_tarifa']
+            
+            if tipo_tarifa == 'Medidor':
+                datos_cliente = Matricula_cliente.obtener_datos_factura(mysql, numero_matricula)
+                cliente = Matricula_cliente.obtener_id_matricula_cliente(mysql, numero_matricula)
+                id_matricula_cliente = cliente['id_matricula_cliente']
+                lectura_anterior = Facturas.get_ultima_lectura(mysql, id_matricula_cliente)
+                multas = Multa_clientes.obtener_multas(mysql, id_matricula_cliente)
+                
+                datos_cliente.update(multas or {})
+                datos_cliente.update(lectura_anterior or {})
+                datos_cliente.update({'numero_matricula': numero_matricula})
+                return jsonify(datos_cliente), 200
+            else:
+                return jsonify({'error': 'Esta matricula no es valida para crear una factura de medidor'}), 409
             
         except Exception as e:
             return jsonify({"message": f"Error al obtener el id_matricula: {str(e)}"})

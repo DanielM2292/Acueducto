@@ -21,3 +21,10 @@ def registrar_pago_matricula():
         return jsonify({'message': 'CORS preflight response'}), 200
     data = request.get_json()
     return PagosServices.registrar_pago_matricula(data)
+
+@pagos_bp.route('/registrar_pago_factura', methods=["POST", "OPTIONS"])
+def registrar_pago_factura():
+    if request.method == 'OPTIONS':
+        return jsonify({'message': 'CORS preflight response'}), 200
+    data = request.get_json()
+    return PagosServices.registrar_pago_factura(data)
