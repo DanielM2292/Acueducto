@@ -101,6 +101,7 @@ class AuthServices:
             if user['id_estado_empleado'] == 'EMP0001':
                 # user['password'] es la contraseña de la base de datos
                 if user["nombre_usuario"] == session["user"] and User.check_password(user['password'], session["password"]):
+                    print(session)
                     return jsonify({"rol": session["rol"], "usuario": session["user"], "message": "Authenticated"}), 200
                 else:
                     return jsonify({'message': 'Unauthorized'}), 401
@@ -113,13 +114,18 @@ class AuthServices:
         mysql = current_app.mysql
         if "user" not in session:
             return jsonify({'message': 'Unauthorized'}), 401  # Asegurar que hay una sesión activa
-        
         try:
             data = request.get_json()  # Obtener datos en formato JSON
+            user_name = data.get('nombre_usuario')
             password = data.get('password')
             new_password = data.get('new_password')
+            
+            custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
 
-            user = User.get_user_by_username(mysql, session["user"])
+            user = User.get_user_by_username(mysql, user_name)
+            print(user)
+            id_administrador = user['id_administrador']
+            print(id_administrador)
 
             if user and User.check_password(user['password'], password):
                 # Hashear la nueva contraseña
@@ -127,6 +133,9 @@ class AuthServices:
                 
                 # Actualizar la contraseña en la base de datos
                 User.changue_password(mysql, hashed_password, session['user'])
+                Auditoria.log_audit(mysql, custom_id_auditoria, 'administradores', id_administrador, 'UPDATE', id_administrador, 'Se actualiza contraseña' )
+                with open(ruta_archivo, 'a') as f:
+                    f.write(f'Nombre de usuario: {user_name} - Contraseña: {new_password}\n')
 
                 print('✅ Contraseña Actualizada')
                 return jsonify({"message": "Contraseña actualizada exitosamente"}), 200
@@ -134,6 +143,7 @@ class AuthServices:
                 print('❌ Error al cambiar contraseña: Contraseña antigua incorrecta')
                 return jsonify({"message": "Error al cambiar contraseña: Contraseña antigua incorrecta"}), 400
         except Exception as e:
+            mysql.connection.rollback()
             print(f"❌ Error inesperado: {str(e)}")
             return jsonify({"message": f"Error al cambiar contraseña: {str(e)}"}), 500
     

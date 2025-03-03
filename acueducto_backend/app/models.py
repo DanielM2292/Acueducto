@@ -16,9 +16,9 @@ class User:
         
     # Obtener la informacion de los usuarios segun nombre
     @staticmethod
-    def get_user_by_username(mysql, username):
+    def get_user_by_username(mysql, user_name):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM administradores WHERE nombre_usuario = %s', (username,))
+        cursor.execute('SELECT * FROM administradores WHERE nombre_usuario = %s', (user_name,))
         user = cursor.fetchone()
         cursor.close()
         return user
@@ -233,20 +233,30 @@ class Facturas:
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
             SELECT f.id_factura, 
-                    f.fecha_factura, 
-                    c.nombre, 
-                    c.numero_documento, 
-                    mc.direccion, 
-                    MIN(mc.id_matricula) AS id_matricula, -- Tomará una sola matrícula
-                    te.tarifa_definida, 
-                    ef.descripcion_estado_factura
-            FROM facturas AS f
-            INNER JOIN clientes AS c ON f.id_cliente = c.id_cliente
-            INNER JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
-            INNER JOIN tarifas_estandar AS te ON f.id_tarifa_estandar = te.id_tarifa_estandar
-            INNER JOIN estado_facturas AS ef ON f.id_estado_factura = ef.id_estado_factura
-            GROUP BY f.id_factura, f.fecha_factura, c.nombre, c.numero_documento, mc.direccion, te.tarifa_definida, ef.descripcion_estado_factura;''')
-        facturas = cursor.fetchall()
+    f.fecha_factura, 
+    c.nombre, 
+    c.numero_documento, 
+    MAX(mc.direccion) AS direccion,
+    m.numero_matricula,
+    MAX(tm.valor_total_lectura) AS valor_total_lectura,
+    MAX(te.tarifa_definida) AS tarifa_definida,
+    ef.descripcion_estado_factura
+FROM facturas AS f
+LEFT JOIN clientes AS c ON f.id_cliente = c.id_cliente
+LEFT JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
+LEFT JOIN (
+    SELECT mc.id_cliente, MAX(m.numero_matricula) AS numero_matricula
+    FROM matricula_cliente AS mc
+    JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
+    GROUP BY mc.id_cliente
+) AS m ON mc.id_cliente = m.id_cliente
+LEFT JOIN estandar_factura AS efa ON f.id_estandar_factura = efa.id_estandar_factura
+LEFT JOIN tarifas_estandar AS te ON efa.id_tarifa_estandar = te.id_tarifa_estandar
+LEFT JOIN tarifa_medidores AS tm ON f.id_tarifa_medidor = tm.id_tarifa_medidor
+LEFT JOIN estado_facturas AS ef ON f.id_estado_factura = ef.id_estado_factura
+GROUP BY f.id_factura, f.fecha_factura, c.nombre, c.numero_documento, mc.direccion, m.numero_matricula, tm.valor_total_lectura, te.tarifa_definida, ef.descripcion_estado_factura;
+''')
+        facturas = cursor.fetchone()
         cursor.close()
         return facturas
     
@@ -254,6 +264,22 @@ class Facturas:
     def buscar_factura(mysql, id_factura):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM facturas WHERE id_factura = %s', (id_factura,))
+        factura = cursor.fetchone()
+        cursor.close()
+        return factura
+    
+    @staticmethod
+    def obtener_pendiente(mysql, id_factura):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT valor_pendiente FROM facturas WHERE id_factura = %s', (id_factura,))
+        factura = cursor.fetchone()
+        cursor.close()
+        return factura
+    
+    @staticmethod
+    def obtener_id_estandar(mysql, id_factura):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT id_estandar_factura FROM facturas WHERE id_factura = %s', (id_factura,))
         factura = cursor.fetchone()
         cursor.close()
         return factura
@@ -277,6 +303,42 @@ class Facturas:
                     (id_factura, fecha_factura, fecha_vencimiento, id_cliente, id_estado_factura, valor_pendiente, id_matricula_cliente, id_tarifa_medidor))
         mysql.connection.commit()
         cursor.close()
+        
+    @staticmethod
+    def pagar_factura_medidor(mysql, id_estado_factura, valor_pendiente, id_factura):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE facturas SET id_estado_factura = %s, valor_pendiente = %s WHERE id_factura = %s',
+                       (id_estado_factura, valor_pendiente, id_factura))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def update_pago_factura(mysql, valor_pendiente, id_factura):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE facturas SET valor_pendiente = %s WHERE id_factura = %s',
+                       (valor_pendiente, id_factura))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def pagar_factura_estandar_mes(mysql, id_estado_factura, valor_pendiente, id_factura):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE facturas SET id_estado_factura = %s, valor_pendiente = %s WHERE id_factura = %s',
+                       (id_estado_factura, valor_pendiente, id_factura))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def obtener_suma_facturas_pendientes(mysql, id_matricula_cliente):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('''
+            SELECT SUM(valor_pendiente) AS valor_pendiente
+            FROM facturas
+            WHERE id_estado_factura = 'ESF0001' AND id_matricula_cliente = %s;''',
+                       (id_matricula_cliente,))
+        facturas_pendientes = cursor.fetchone()
+        cursor.close()
+        return facturas_pendientes
 
 class Valores_medidor:
     @staticmethod
@@ -313,10 +375,23 @@ class Tarifas_estandar:
         return datos_cliente
     
     @staticmethod
-    def crear_tarifa(mysql, id_tarifa_estandar, descripcion, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa):
+    def obtener_tarifa(mysql, id_factura):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('INSERT INTO tarifas_estandar (id_tarifa_estandar, descripcion, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa) VALUES (%s, %s, %s, %s, %s)', 
-                    (id_tarifa_estandar, descripcion, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa))
+        cursor.execute('''
+            SELECT te.tarifa_definida AS total_factura 
+            FROM tarifas_estandar AS te 
+            INNER JOIN estandar_factura AS ef ON te.id_tarifa_estandar = ef.id_tarifa_estandar
+            INNER JOIN facturas AS f ON ef.id_estandar_factura = f.id_estandar_factura
+            WHERE id_factura = %s;''', (id_factura,))
+        datos_cliente = cursor.fetchone()
+        cursor.close()
+        return datos_cliente
+    
+    @staticmethod
+    def crear_tarifa(mysql, id_tarifa_estandar, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('INSERT INTO tarifas_estandar (id_tarifa_estandar, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa) VALUES (%s, %s, %s, %s)', 
+                    (id_tarifa_estandar, tarifa_definida, fecha_inicio_tarifa, fecha_final_tarifa))
         mysql.connection.commit()
         cursor.close()
 
@@ -329,6 +404,18 @@ class Tarifa_medidores:
         mysql.connection.commit()
         cursor.close()
         
+    @staticmethod
+    def obtener_tarifa(mysql, id_factura):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('''
+            SELECT valor_total_lectura AS total_factura 
+            FROM tarifa_medidores AS tm
+            INNER JOIN facturas AS f ON tm.id_tarifa_medidor = f.id_tarifa_medidor
+            WHERE id_factura = %s;''', (id_factura,))
+        datos_cliente = cursor.fetchone()
+        cursor.close()
+        return datos_cliente
+        
 class Estandar_factura:
     @staticmethod
     def crear_factura_estandar(mysql, id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, cantidad_meses):
@@ -337,6 +424,36 @@ class Estandar_factura:
                     (id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, cantidad_meses))
         mysql.connection.commit()
         cursor.close()
+    
+class Estandar_factura:
+    @staticmethod
+    def actualizar_cantidad_mes(mysql, cantidad_meses, id_estandar_factura):
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE estandar_factura SET cantidad_meses = %s WHERE id_estandar_factura = %s', 
+                    (cantidad_meses, id_estandar_factura))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def crear_factura_estandar(mysql, id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, cantidad_meses):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO estandar_factura (id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, cantidad_meses) VALUES (%s, %s, %s, %s)', 
+                    (id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, cantidad_meses))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def get_cantidad_pagos(mysql, id_matricula_cliente):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('''
+                SELECT ef.cantidad_meses, f.id_factura 
+                FROM estandar_factura AS ef
+                INNER JOIN facturas AS f ON ef.id_estandar_factura = f.id_estandar_factura
+                WHERE ef.id_matricula_cliente = %s ORDER BY ef.id_estandar_factura DESC LIMIT 1;''',
+                    (id_matricula_cliente,))
+        dato_factura = cursor.fetchone()
+        cursor.close()
+        return dato_factura
         
 class Inventario:
     # Obtener todos los productos de la base de datos
@@ -737,6 +854,14 @@ class Ingresos:
         cursor = mysql.connection.cursor()
         cursor.execute('INSERT INTO ingresos (id_ingreso, descripcion_ingreso, valor_ingreso, id_multa) VALUES (%s, %s, %s, %s)',
                        (id_ingreso, descripcion_ingreso, valor_ingreso, id_multa))
+        mysql.connection.commit()
+        cursor.close()
+    
+    @staticmethod
+    def crear_ingreso_factura(mysql, id_ingreso, descripcion_ingreso, valor_ingreso, id_factura):
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO ingresos (id_ingreso, descripcion_ingreso, valor_ingreso, id_factura) VALUES (%s, %s, %s, %s)',
+                       (id_ingreso, descripcion_ingreso, valor_ingreso, id_factura))
         mysql.connection.commit()
         cursor.close()
     
