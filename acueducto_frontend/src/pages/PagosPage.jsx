@@ -104,6 +104,7 @@ const PagosPage = () => {
 
             setPaymentData(prev => ({
                 ...prev,
+                total_factura: data.total_factura,
                 valor_matricula: data.valor_matricula,
                 valor_multa: data.valor_multa,
                 valor_pendiente: data.valor_pendiente,
@@ -247,7 +248,7 @@ const PagosPage = () => {
                     </select>
                     <input
                         type="text"
-                        value={paymentData.total ? formatCurrency(paymentData.total) : ''}
+                        value={paymentData.total_factura ? formatCurrency(paymentData.total_factura) : ''}
                         disabled
                         placeholder="Total"
                         className="pagos-input"
