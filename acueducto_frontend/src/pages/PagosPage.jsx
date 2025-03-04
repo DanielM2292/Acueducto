@@ -97,7 +97,7 @@ const PagosPage = () => {
             if (!response.ok) throw new Error('Error al obtener detalles del pago');
 
             const data = await response.json();
-            
+
             if (data.estado === 'PAGADO') {
                 toast.warning('Este item ya se encuentra cancelado');
             }
@@ -216,6 +216,33 @@ const PagosPage = () => {
         }, 300);
     };
 
+    const handleTipoPagoChange = (e) => {
+        const selectedTipoPago = e.target.value;
+        setTipoPago(selectedTipoPago);
+
+        let totalCalculated = 0;
+        let pendienteCalculated = 0;
+
+        // Calculamos el total y valor pendiente dependiendo del tipo de pago seleccionado
+        if (selectedTipoPago === 'Mensual') {
+            totalCalculated = paymentData.total_factura; // Mantén el valor normal
+            pendienteCalculated = paymentData.valor_pendiente; // Mantén el valor normal
+        } else if (selectedTipoPago === 'Semestral') {
+            totalCalculated = (parseFloat(paymentData.total_factura) || 0) * 6;
+            pendienteCalculated = (parseFloat(paymentData.valor_pendiente) || 0) * 6;
+        } else if (selectedTipoPago === 'Anual') {
+            totalCalculated = (parseFloat(paymentData.total_factura) || 0) * 12;
+            pendienteCalculated = (parseFloat(paymentData.valor_pendiente) || 0) * 12;
+        }
+
+        // Actualizamos el estado con los nuevos valores calculados
+        setPaymentData(prev => ({
+            ...prev,
+            total: totalCalculated,
+            pendiente: pendienteCalculated
+        }));
+    };
+
     const renderFields = () => {
         if (tipo === 'Factura') {
             return (
@@ -237,7 +264,7 @@ const PagosPage = () => {
                     </div>
                     <select
                         value={tipoPago}
-                        onChange={(e) => setTipoPago(e.target.value)}
+                        onChange={handleTipoPagoChange}
                         className="pagos-select"
                         disabled={paymentData.estado === 'PAGADO'}
                     >
@@ -248,14 +275,14 @@ const PagosPage = () => {
                     </select>
                     <input
                         type="text"
-                        value={paymentData.total_factura ? formatCurrency(paymentData.total_factura) : ''}
+                        value={paymentData.total ? formatCurrency(paymentData.total) : ''} // Usamos 'total' en lugar de 'total_factura'
                         disabled
                         placeholder="Total"
                         className="pagos-input"
                     />
                     <input
                         type="text"
-                        value={paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''}
+                        value={paymentData.pendiente ? formatCurrency(paymentData.pendiente) : ''} // Usamos 'pendiente' en lugar de 'valor_pendiente'
                         disabled
                         placeholder="Valor Pendiente"
                         className="pagos-input"
@@ -295,7 +322,7 @@ const PagosPage = () => {
                     </div>
                     <input
                         type="text"
-                        value={paymentData.valor_matricula || paymentData.valor_multa ? 
+                        value={paymentData.valor_matricula || paymentData.valor_multa ?
                             formatCurrency(paymentData.valor_matricula || paymentData.valor_multa) : ''}
                         disabled
                         placeholder="Total"

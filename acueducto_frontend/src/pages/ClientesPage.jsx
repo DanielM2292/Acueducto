@@ -98,7 +98,7 @@ const ClientesPage = () => {
                 setSelectedClientEnrollments(prevEnrollments =>
                     prevEnrollments.map(enrollment =>
                         enrollment.id_matricula === enrollmentId
-                            ? { ...enrollment, estado_real: newStatus }
+                            ? { ...enrollment, estado: newStatus }
                             : enrollment
                     )
                 );
@@ -141,7 +141,7 @@ const ClientesPage = () => {
             // Asignar el estado real basado en estado_clientes
             setSelectedClientEnrollments(data.map(enrollment => ({
                 ...enrollment,
-                estado_real: enrollment.estado_real || "Desconocido"  // Manejo de valores nulos
+                estado: enrollment.estado || "Desconocido"  // Manejo de valores nulos
             })));
 
             setSelectedClient(client);
@@ -438,16 +438,16 @@ const ClientesPage = () => {
                                             <td>{enrollment.id_matricula}</td>
                                             <td>{new Date(enrollment.fecha_creacion).toLocaleDateString()}</td>
                                             <td>{enrollment.direccion}</td>
-                                            <td>{enrollment.estado_real || "Desconocido"}</td> {/* Mostrar estado real */}
+                                            <td>{enrollment.estado || "Desconocido"}</td> {/* Mostrar estado real */}
                                             <td>
                                                 <select
-                                                    value={enrollment.estado_real || ""}
+                                                    value={enrollment.estado || ""}
                                                     onChange={(e) => {
                                                         const newStatus = e.target.value;
                                                         setSelectedClientEnrollments(prevEnrollments =>
                                                             prevEnrollments.map(prev =>
                                                                 prev.id_matricula === enrollment.id_matricula
-                                                                    ? { ...prev, estado_real: newStatus }
+                                                                    ? { ...prev, estado: newStatus }
                                                                     : prev
                                                             )
                                                         );
@@ -468,7 +468,7 @@ const ClientesPage = () => {
                                                     className="pagos-button pagos-button-save"
                                                     onClick={() => updateEnrollmentStatus(
                                                         enrollment.id_matricula,
-                                                        enrollment.estado_real
+                                                        enrollment.estado
                                                     )}
                                                     disabled={updatingStatus}
                                                 >

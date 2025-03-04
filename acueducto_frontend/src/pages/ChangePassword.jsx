@@ -1,18 +1,31 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ChangePassword = () => {
-
   const name = localStorage.getItem("userName");  
+  const formRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setIsSubmitting(true);
+    
     const formData = new FormData(event.target);
+    const password = formData.get('password');
+    const passwordConfirmation = formData.get('password_confirmation');
+    
+    // Verificar si las contraseñas coinciden
+    if (password !== passwordConfirmation) {
+      toast.error("Las contraseñas nuevas no coinciden");
+      setIsSubmitting(false);
+      return;
+    }
+    
     const data = {
       nombre_usuario: name,
       password: formData.get('password_old'),
-      new_password: formData.get('password'),
+      new_password: password,
     };
 
     try {
@@ -28,18 +41,27 @@ const ChangePassword = () => {
       const result = await response.json();
       if (response.ok) {
         toast.success(result.message || "Contraseña cambiada exitosamente");
+        // Limpiar el formulario después de un cambio exitoso
+        formRef.current.reset();
       } else {
         toast.error(result.message || "Error al cambiar la contraseña");
       }
     } catch (error) {
       console.error('Error:', error);
       toast.error("Error de conexión. Intenta nuevamente.");
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleReset = () => {
+    formRef.current.reset();
+    toast.info("Formulario limpiado");
   };
 
   return (
     <div className="changePasswordContainer">
-      <form className="form" onSubmit={handleSubmit}>
+      <form ref={formRef} className="form" onSubmit={handleSubmit}>
         <h1 id="heading">Cambiar Contraseña</h1>
         <div className="field">
           <input 
@@ -69,8 +91,19 @@ const ChangePassword = () => {
           />
         </div>
         <div className="btn">
-          <button type="submit" className="button1">
-            Cambiar Contraseña
+          <button 
+            type="submit" 
+            className="button1" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Procesando..." : "Cambiar Contraseña"}
+          </button>
+          <button 
+            type="button" 
+            className="button2" 
+            onClick={handleReset}
+          >
+            Limpiar
           </button>
         </div>
       </form>
@@ -154,6 +187,29 @@ const ChangePassword = () => {
 
         .button1:hover {
           background-color: rgb(1, 25, 179);
+          color: white;
+          cursor: pointer;
+        }
+        
+        .button1:disabled {
+          background-color: #ccc;
+          cursor: not-allowed;
+        }
+
+        .button2 {
+          padding: 0.5em;
+          padding-left: 1.1em;
+          padding-right: 1.1em;
+          border-radius: 5px;
+          border: none;
+          outline: none;
+          transition: .4s ease-in-out;
+          background-color:rgb(150, 150, 150);
+          color: white;
+        }
+
+        .button2:hover {
+          background-color: rgb(100, 100, 100);
           color: white;
           cursor: pointer;
         }

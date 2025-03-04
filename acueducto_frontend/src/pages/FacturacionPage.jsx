@@ -5,9 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import html2canvas from 'html2canvas';
 import LogoAcueducto from '../imagenes/LogoAcueducto.png';
 
-const TARIFA_BASE = 7000;
-const LIMITE_BASE = 20;
-const PRECIO_ADICIONAL_POR_METRO = 500;
+
 
 const FacturacionPage = () => {
     const [facturaData, setFacturaData] = useState({
@@ -19,7 +17,7 @@ const FacturacionPage = () => {
         fechaVencimiento: '',
         lecturaAnterior: '',
         lecturaActual: '',
-        precioUnitario: '',
+        precioUnitario: 1000,
         multas: '',
         saldoPendiente: '',
         observacion: ''
@@ -32,22 +30,56 @@ const FacturacionPage = () => {
     const [facturas, setFacturas] = useState([]);
     const [isFacturasClosing, setIsFacturasClosing] = useState(false);
     const [matriculasTAM, setMatriculasTAM] = useState([]);
-    const [numeroFactura, setNumeroFactura] = useState(1);
     const [numeroMatriculaInput, setNumeroMatriculaInput] = useState("");
+    const [numeroFactura, setNumeroFactura] = useState("");
+    const [cargandoNumero, setCargandoNumero] = useState(false);
 
     const abrirModalFacturasAutomaticas = () => {
         setShowModal(true);
     };
 
     const abrirModalFacturas = () => {
+        obtenerFacturas();
         setShowFacturasModal(true);
     };
+
+    const obtenerDatosIniciales = async () => {
+        try {
+            const response = await fetch('http://localhost:9090/facturas/datos_iniciales');
+            if (response.ok) {
+                const data = await response.json();
+                setFacturaData({
+                    identificacion: data.numero_documento || '',
+                    nombre: data.nombre_cliente || '',
+                    barrio: data.direccion || '',
+                    numeroMatricula: data.numero_matricula || '',
+                    fechaInicioCobro: data.fecha_inicio || '',
+                    fechaVencimiento: data.fecha_vencimiento || '',
+                    lecturaAnterior: data.lectura_anterior || '',
+                    lecturaActual: data.lectura_actual || '',
+                    precioUnitario: data.precio_unitario || 1000,
+                    multas: data.multas || '',
+                    saldoPendiente: data.valor_pendiente || '',
+                    observacion: data.observacion || ''
+                });
+                setNumeroFactura(data.id_factura || '');
+                setNumeroMatriculaInput(data.numero_matricula || '');
+            }
+        } catch (error) {
+            console.error("Error al obtener datos iniciales:", error);
+        }
+    };
+
+    // Llamar a la función cuando el componente se monte
+    useEffect(() => {
+        obtenerDatosIniciales();
+    }, []);
 
     useEffect(() => {
         if (numeroMatriculaInput.length >= 4) {
             buscarDatosPorMatricula(numeroMatriculaInput);
         }
-    }, [numeroMatriculaInput]); // Se ejecuta cuando cambia numeroMatriculaInput
+    }, [numeroMatriculaInput]);
 
     const buscarFactura = async () => {
         if (!numeroFactura) {
@@ -59,15 +91,47 @@ const FacturacionPage = () => {
             const response = await fetch(`http://localhost:9090/facturas/buscar_factura?id_factura=${numeroFactura}`);
             if (response.ok) {
                 const factura = await response.json();
+                console.log("Factura encontrada:", factura);
 
-                // Si la factura es de medidor, mostrar en la pantalla principal
-                if (factura.id_tarifa_medidor !== null) {
-                    setFacturaData(factura);
-                }
-                // Si la factura es estándar, mostrar en la ventana emergente
-                else if (factura.id_tarifa_estandar !== null) {
-                    setFacturas([factura]);
+                if (factura.id_tarifa_medidor === null) {
+                    setFacturaData({
+                        id_factura: factura.id_factura || '',
+                        identificacion: factura.id_cliente || '',
+                        nombre: factura.nombre_cliente || '',
+                        barrio: factura.direccion || '',
+                        numeroMatricula: factura.id_matricula_cliente || '',
+                        fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
+                        fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
+                        lecturaAnterior: factura.lectura_anterior || '',
+                        lecturaActual: factura.lectura_actual || '',
+                        precioUnitario: factura.precio_unitario || "",
+                        multas: factura.multas || 0,
+                        saldoPendiente: factura.valor_pendiente || 0,
+                        observacion: factura.observacion || ''
+                    });
+                    setNumeroFactura(factura.id_factura);
+                    setNumeroMatriculaInput(factura.id_matricula_cliente || '');
                     setShowModal(true);
+                } else {
+                    // Si es factura de medidor
+                    setFacturaData({
+                        id_factura: factura.id_factura || '',
+                        identificacion: factura.id_cliente || '',
+                        nombre: factura.nombre_cliente || '',
+                        barrio: factura.direccion || '',
+                        numeroMatricula: factura.id_matricula_cliente || '',
+                        fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
+                        fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
+                        lecturaAnterior: factura.lectura_anterior || '',
+                        lecturaActual: factura.lectura_actual || '',
+                        precioUnitario: factura.precio_unitario || 1000,
+                        multas: factura.multas || 0,
+                        saldoPendiente: factura.valor_pendiente || 0,
+                        observacion: factura.observacion || ''
+                    });
+                    setNumeroFactura(factura.id_factura);
+                    setNumeroMatriculaInput(factura.id_matricula_cliente || '');
+                    setShowModal(false);
                 }
 
                 toast.success("Factura encontrada");
@@ -79,13 +143,45 @@ const FacturacionPage = () => {
             console.error("Error:", error);
         }
     };
+  
+    const obtenerSiguienteNumeroFactura = async () => {
+        try {
+            const response = await fetch('http://localhost:9090/facturas/siguiente_numero');
+            if (response.ok) {
+                const data = await response.json();
+                setNumeroFactura(data.siguiente_numero);
+                // Opcional: Resaltar el nuevo número
+                resaltarNuevoNumero();
+            } else {
+                console.error('Error al obtener el siguiente número de factura');
+                toast.error('Error al obtener el número de factura');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('Error de conexión con el servidor');
+        }
+    };
+
+    useEffect(() => {
+        obtenerSiguienteNumeroFactura();
+    }, []);
+
+    const resaltarNuevoNumero = () => {
+        const elemento = document.querySelector('.numero-factura-input');
+        if (elemento) {
+            elemento.classList.add('destacado');
+            setTimeout(() => {
+                elemento.classList.remove('destacado');
+            }, 2000);
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
         setFacturaData(prev => ({
             ...prev,
-            [name]: value || '' // Asegurar que no se asigna undefined
+            [name]: value || ''
         }));
     };
 
@@ -112,6 +208,11 @@ const FacturacionPage = () => {
     };
 
     const crearFactura = async () => {
+        const datosFactura = {
+            ...facturaData,
+            id_factura: numeroFactura
+        };
+
         if (!facturaData.numeroMatricula) {
             toast.warning("No hay matrícula seleccionada para crear factura");
             return;
@@ -417,7 +518,7 @@ const FacturacionPage = () => {
                                         <p class="label">TOTAL PAGADO</p>
                                         <p class="value">
                                         ${formatCurrency((parseFloat(factura.valor_estandar || 0) +
-                    parseFloat(factura.multas || 0) + parseFloat(factura.valor_pendiente || 0)).toFixed(3))}
+                        parseFloat(factura.multas || 0) + parseFloat(factura.valor_pendiente || 0)).toFixed(3))}
                                         </p>
                                     </div>
                                 </div>
@@ -468,19 +569,21 @@ const FacturacionPage = () => {
             console.error('Error:', error);
         }
     };
+
     const obtenerFacturas = async () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/listar_facturas');
             if (response.ok) {
                 const data = await response.json();
-                setFacturas(data);
+                console.log("Datos recibidos del backend:", data); // Para depuración
+                setFacturas(Array.isArray(data) ? data : [data]);
                 toast.success('Facturas cargadas exitosamente');
             } else {
                 toast.error('Error al obtener las facturas');
             }
         } catch (error) {
+            console.error("Error completo:", error); // Para depuración
             toast.error('Error de conexión con el servidor');
-            console.error('Error:', error);
         }
     };
 
@@ -501,7 +604,7 @@ const FacturacionPage = () => {
                 return;
             }
 
-            console.log("Datos recibidos del backend:", data); // Para depuración
+            console.log("Datos recibidos del backend:", data);
 
             setFacturaData(prev => ({
                 ...prev,
@@ -594,7 +697,7 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="factura-numero">
-                            <p>FACTURA N°: {numeroFactura}</p>
+                        <p> {numeroFactura || 'Cargando...'}</p>
                         </div>
                     </div>
 
@@ -693,16 +796,20 @@ const FacturacionPage = () => {
                                 <tr>
                                     <td>PRECIO TARIFA MEDIDOR</td>
                                     <td>
-                                        <div className="input-group">
-                                            <input
-                                                type="number"
-                                                name="precioUnitario"
-                                                value={facturaData.precioUnitario}
-                                                readOnly
-                                            />
-                                        </div>
+                                        <input
+                                            type="number"
+                                            name="precioUnitario"
+                                            value={facturaData.precioUnitario}
+                                            onChange={handleInputChange}
+                                            readOnly
+                                        />
                                     </td>
-                                    <td>{formatCurrency(facturaData.precioUnitario || 0)}</td>
+                                    <td>
+                                        {formatCurrency(
+                                            (parseFloat(facturaData.lecturaActual || 0) - parseFloat(facturaData.lecturaAnterior || 0))
+                                            * parseFloat(facturaData.precioUnitario || 0)
+                                        )}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>MULTAS</td>
@@ -745,7 +852,8 @@ const FacturacionPage = () => {
                                 <tr>
                                     <td colSpan="2">TOTAL A PAGAR</td>
                                     <td>
-                                        {formatCurrency((parseFloat(facturaData.precioUnitario || 0) +
+                                        {formatCurrency(((parseFloat(facturaData.lecturaActual || 0) - parseFloat(facturaData.lecturaAnterior || 0))
+                                            * parseFloat(facturaData.precioUnitario || 0) +
                                             parseFloat(facturaData.multas || 0) +
                                             parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}
                                     </td>
@@ -801,21 +909,35 @@ const FacturacionPage = () => {
                                             <th>Estado</th>
                                         </tr>
                                     </thead>
+                                    {/* Aquí va el código del tbody que proporcionaste */}
                                     <tbody>
-                                        {facturas.map((factura, index) => (
-                                            <tr key={index}>
-                                                <td>{factura.id_factura}</td>
-                                                <td>{new Date(factura.fecha_factura).toLocaleDateString()}</td>
-                                                <td>{factura.nombre}</td>
-                                                <td>{factura.numero_documento}</td>
-                                                <td>{factura.direccion}</td>
-                                                <td>{factura.numero_matricula}</td>
-                                                <td>
-                                                    {factura.tarifa_definida ? formatCurrency(factura.tarifa_definida) : formatCurrency(factura.valor_total_lectura)}
+                                        {Array.isArray(facturas) && facturas.length > 0 ? (
+                                            facturas.map((factura) => (
+                                                <tr key={factura.id_factura}>
+                                                    <td>{factura.id_factura}</td>
+                                                    <td>
+                                                        {factura.fecha_factura ?
+                                                            new Date(factura.fecha_factura).toLocaleDateString('es-CO', {
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric'
+                                                            }) : '-'}
+                                                    </td>
+                                                    <td>{factura.nombre || '-'}</td>
+                                                    <td>{factura.numero_documento || '-'}</td>
+                                                    <td>{factura.direccion || '-'}</td>
+                                                    <td>{factura.numero_matricula || '-'}</td>
+                                                    <td>{formatCurrency(factura.valor_total || 0)}</td>
+                                                    <td>{factura.descripcion_estado_factura || '-'}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="8" style={{ textAlign: 'center' }}>
+                                                    No hay facturas disponibles
                                                 </td>
-                                                <td>{factura.descripcion_estado_factura}</td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -1075,20 +1197,63 @@ const FacturacionPage = () => {
             )}
             <style jsx>{`
                 .modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 1000;
-                    opacity: 1;
-                    visibility: visible;
-                    transition: opacity 0.3s ease, visibility 0.3s ease;
-                }
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+
+            .modal-large {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                width: 90%;
+                max-width: 1200px;
+                max-height: 80vh;
+                overflow-y: auto;
+                position: relative;
+                z-index: 1001;
+            }
+
+            .table-container {
+                overflow-x: auto;
+                margin: 15px 0;
+                max-height: calc(80vh - 200px);
+                overflow-y: auto;
+            }
+
+            .facturas-table {
+                width: 100%;
+                border-collapse: collapse;
+                background-color: white;
+            }
+
+            .facturas-table th,
+            .facturas-table td {
+                padding: 12px;
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+
+            .facturas-table th {
+                background-color: #53D4FF;
+                color: white;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+
+            .modal.closing,
+            .modal-overlay.closing {
+                opacity: 0;
+                visibility: hidden;
+            }
 
                 .modal {
                     background-color: white;

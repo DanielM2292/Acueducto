@@ -118,13 +118,15 @@ class FacturasServices:
         
     @staticmethod
     def listar_facturas():
+        from flask import current_app
         mysql = current_app.mysql
         try:
             facturas = Facturas.listar_facturas(mysql)
             return jsonify(facturas), 200
         except Exception as e:
+            print("Error en listar_facturas:", str(e))  # Para depuración
             return jsonify({"message": f"Error al listar todas las facturas: {str(e)}"}), 500
-    
+        
     # Para el modulo pagos
     @staticmethod
     def obtener_factura():
@@ -219,3 +221,13 @@ class FacturasServices:
         except Exception as e:
             return jsonify({"message": f"Error al obtener el id de la factura: {str(e)}"})
     
+    @staticmethod
+    def obtener_siguiente_numero():
+        from flask import current_app
+        mysql = current_app.mysql
+        try:
+            custom_id_factura = Auditoria.generate_custom_id(mysql, 'FAC', 'id_factura', 'facturas')
+            print(custom_id_factura)
+            return jsonify({'siguiente_numero': custom_id_factura}), 200
+        except Exception as e:
+            return jsonify({"message": f"Error al obtener siguiente número de factura: {str(e)}"}), 500

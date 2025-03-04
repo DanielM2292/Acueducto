@@ -232,31 +232,47 @@ class Facturas:
     def listar_facturas(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT f.id_factura, 
-    f.fecha_factura, 
-    c.nombre, 
-    c.numero_documento, 
-    MAX(mc.direccion) AS direccion,
-    m.numero_matricula,
-    MAX(tm.valor_total_lectura) AS valor_total_lectura,
-    MAX(te.tarifa_definida) AS tarifa_definida,
-    ef.descripcion_estado_factura
-FROM facturas AS f
-LEFT JOIN clientes AS c ON f.id_cliente = c.id_cliente
-LEFT JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
-LEFT JOIN (
-    SELECT mc.id_cliente, MAX(m.numero_matricula) AS numero_matricula
-    FROM matricula_cliente AS mc
-    JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
-    GROUP BY mc.id_cliente
-) AS m ON mc.id_cliente = m.id_cliente
-LEFT JOIN estandar_factura AS efa ON f.id_estandar_factura = efa.id_estandar_factura
-LEFT JOIN tarifas_estandar AS te ON efa.id_tarifa_estandar = te.id_tarifa_estandar
-LEFT JOIN tarifa_medidores AS tm ON f.id_tarifa_medidor = tm.id_tarifa_medidor
-LEFT JOIN estado_facturas AS ef ON f.id_estado_factura = ef.id_estado_factura
-GROUP BY f.id_factura, f.fecha_factura, c.nombre, c.numero_documento, mc.direccion, m.numero_matricula, tm.valor_total_lectura, te.tarifa_definida, ef.descripcion_estado_factura;
-''')
-        facturas = cursor.fetchone()
+            SELECT 
+                f.id_factura, 
+                f.fecha_factura, 
+                c.nombre, 
+                c.numero_documento, 
+                mc.direccion,
+                m.numero_matricula,
+                CASE 
+                    WHEN tm.valor_total_lectura IS NOT NULL THEN tm.valor_total_lectura
+                    ELSE te.tarifa_definida
+                END as valor_total,
+                ef.descripcion_estado_factura
+            FROM facturas f
+            LEFT JOIN clientes c 
+                ON f.id_cliente = c.id_cliente
+            LEFT JOIN matricula_cliente mc 
+                ON f.id_matricula_cliente = mc.id_matricula_cliente
+            LEFT JOIN matriculas m 
+                ON mc.id_matricula = m.id_matricula
+            LEFT JOIN estandar_factura efa 
+                ON f.id_estandar_factura = efa.id_estandar_factura
+            LEFT JOIN tarifas_estandar te 
+                ON efa.id_tarifa_estandar = te.id_tarifa_estandar
+            LEFT JOIN tarifa_medidores tm 
+                ON f.id_tarifa_medidor = tm.id_tarifa_medidor
+            LEFT JOIN estado_facturas ef 
+                ON f.id_estado_factura = ef.id_estado_factura
+            WHERE f.id_factura IS NOT NULL
+            GROUP BY 
+                f.id_factura, 
+                f.fecha_factura, 
+                c.nombre, 
+                c.numero_documento,
+                mc.direccion,
+                m.numero_matricula,
+                tm.valor_total_lectura,
+                te.tarifa_definida,
+                ef.descripcion_estado_factura
+            ORDER BY f.fecha_factura DESC;
+        ''')
+        facturas = cursor.fetchall()
         cursor.close()
         return facturas
     
@@ -339,6 +355,7 @@ GROUP BY f.id_factura, f.fecha_factura, c.nombre, c.numero_documento, mc.direcci
         facturas_pendientes = cursor.fetchone()
         cursor.close()
         return facturas_pendientes
+    
 
 class Valores_medidor:
     @staticmethod
