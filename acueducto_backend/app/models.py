@@ -313,7 +313,8 @@ class Facturas:
         cursor.execute('SELECT valor_pendiente FROM facturas WHERE id_factura = %s', (id_factura,))
         factura = cursor.fetchone()
         cursor.close()
-        return factura
+        return factura['valor_pendiente'] if factura and 'valor_pendiente' in factura else 0
+
     
     @staticmethod
     def obtener_id_estandar(mysql, id_factura):
@@ -390,10 +391,10 @@ class Valores_medidor:
         return datos_cliente
     
     @staticmethod
-    def crear_valores(mysql, id_valores_medidor, limite_medidor, valor_limite, valor_metro3):
+    def crear_valores(mysql, id_valores_medidor, valor_metro3):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('INSERT INTO valores_medidor (id_valores_medidor, limite_medidor, valor_limite, valor_metro3) VALUES (%s, %s, %s, %s)', 
-                    (id_valores_medidor, limite_medidor, valor_limite, valor_metro3))
+        cursor.execute('INSERT INTO valores_medidor (id_valores_medidor, valor_metro3) VALUES (%s, %s, %s, %s)', 
+                    (id_valores_medidor, valor_metro3))
         mysql.connection.commit()
         cursor.close()
 
@@ -437,7 +438,13 @@ class Tarifas_estandar:
 
 class Tarifa_medidores:
     @staticmethod
-    def crear_tarifa(mysql, id_tarifa_medidor, lectura_actual, id_valores_medidor, valor_total_lectura, id_matricula_cliente):
+    def crear_tarifa(mysql, id_tarifa_medidor, lectura_actual, id_matricula_cliente):
+        # Obtener el último valor de valores_medidor
+        ultimo_valor_medidor = Valores_medidor.obtener_ultimo_valor_medidor(mysql)
+        id_valores_medidor = ultimo_valor_medidor['id_valores_medidor']
+        valor_metro3 = ultimo_valor_medidor['valor_metro3']
+        valor_total_lectura = lectura_actual * valor_metro3
+
         cursor = mysql.connection.cursor()
         cursor.execute('INSERT INTO tarifa_medidores (id_tarifa_medidor, lectura_actual, id_valores_medidor, valor_total_lectura, id_matricula_cliente) VALUES (%s, %s, %s, %s, %s)', 
                     (id_tarifa_medidor, lectura_actual, id_valores_medidor, valor_total_lectura, id_matricula_cliente))

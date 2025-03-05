@@ -79,7 +79,7 @@ class PagosServices:
             mysql.connection.rollback()
             return jsonify({"message": f"Error al procesar el pago de la matricula: {str(e)}"}), 500
 
-    @staticmethod    
+    @staticmethod
     def registrar_pago_factura(data):
         mysql = current_app.mysql
         custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
@@ -93,7 +93,7 @@ class PagosServices:
             valor_pagar = int(valor_pagar)
             
             valor_pendiente = Facturas.obtener_pendiente(mysql, id_factura)
-            valor_pendiente = int(valor_pendiente['valor_pendiente'])
+            valor_pendiente = int(valor_pendiente['valor_pendiente']) if valor_pendiente else 0
             print('pasa y saca el valor pendiente', valor_pendiente)
             total_estandar = Tarifas_estandar.obtener_tarifa(mysql, id_factura)
             total_medidor = Tarifa_medidores.obtener_tarifa(mysql, id_factura)
@@ -101,56 +101,56 @@ class PagosServices:
             
             if total_estandar is None:
                 print('entra a pagar medidor')
-                total_medidor = int(total_medidor['total_factura'])
+                total_medidor = int(total_medidor['total_factura']) if total_medidor else 0
                 if valor_pagar > total_medidor or valor_pagar > valor_pendiente:
                     return jsonify({'error': 'El valor no es correcto'}), 400
                 
                 if valor_pagar == valor_pendiente:
                     Facturas.pagar_factura_medidor(mysql, 'ESF0002', 0, id_factura)
-                    Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago total de factura {id_factura}', valor_pagar, id_factura)
-                    return jsonify({'message': 'Pago completado, saldo pendiente en 0'}), 200
+                else:
+                    nuevo_valor = valor_pendiente - valor_pagar
+                    Facturas.update_pago_factura(mysql, nuevo_valor, id_factura)
                 
-                nuevo_valor = valor_pendiente - valor_pagar
-                
-                Facturas.update_pago_factura(mysql, nuevo_valor, id_factura)
-                Auditoria.log_audit(mysql, custom_id, 'facturas', id_factura, 'UPDATE', 'ADM0001', 'Se actualiza valor de factura desde el pago realizado')
-
                 Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago de factura {id_factura}', valor_pagar, id_factura)
                 Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de factura {id_factura}')
                 
-                return jsonify({"message": "Pago realizado correctamente"}), 200
             else:
-                total_estandar = int(total_estandar['total_factura'])
+                total_estandar = int(total_estandar['total_factura']) if total_estandar else 0
                 if tipo_pago == 'Mensual':
                     if valor_pagar != total_estandar:
                         return jsonify({'error': 'El valor no es correcto'}), 400
                     Facturas.pagar_factura_estandar_mes(mysql, 'ESF0002', 0, id_factura)
-                    id_estandar_factura = Facturas.obtener_id_estandar(mysql, id_factura)
-                    id_estandar_factura = id_estandar_factura['id_estandar_factura']
-                    Estandar_factura.actualizar_cantidad_mes(mysql, 0, id_estandar_factura)
-                    Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago total de factura {id_factura}', valor_pagar, id_factura)
-                    return jsonify({"message": "Pago realizado correctamente"}), 200
                 elif tipo_pago == 'Semestral':
                     total_semestre = total_estandar * 6
                     if valor_pagar != total_semestre:
                         return jsonify({'error': 'El valor no es correcto'}), 400
                     Facturas.pagar_factura_estandar_mes(mysql, 'ESF0002', valor_pagar, id_factura)
-                    id_estandar_factura = Facturas.obtener_id_estandar(mysql, id_factura)
-                    id_estandar_factura = id_estandar_factura['id_estandar_factura']
-                    Estandar_factura.actualizar_cantidad_mes(mysql, 6, id_estandar_factura)
-                    Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago semestral de la factura {id_factura}', total_semestre, id_factura)
-                    return jsonify({"message": "Pago realizado correctamente"}), 200
                 elif tipo_pago == 'Anual':
-                    total_semestre = total_estandar * 12
-                    if valor_pagar != total_semestre:
+                    total_anual = total_estandar * 12
+                    if valor_pagar != total_anual:
                         return jsonify({'error': 'El valor no es correcto'}), 400
                     Facturas.pagar_factura_estandar_mes(mysql, 'ESF0002', valor_pagar, id_factura)
-                    id_estandar_factura = Facturas.obtener_id_estandar(mysql, id_factura)
-                    id_estandar_factura = id_estandar_factura['id_estandar_factura']
-                    Estandar_factura.actualizar_cantidad_mes(mysql, 12, id_estandar_factura)
-                    Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago semestral de la factura {id_factura}', total_semestre, id_factura)
-                    return jsonify({"message": "Pago realizado correctamente"}), 200
-                    
+                
+                id_estandar_factura = Facturas.obtener_id_estandar(mysql, id_factura)
+                id_estandar_factura = id_estandar_factura['id_estandar_factura'] if id_estandar_factura else None
+                if id_estandar_factura:
+                    meses_actualizar = 0 if tipo_pago == 'Mensual' else (6 if tipo_pago == 'Semestral' else 12)
+                    Estandar_factura.actualizar_cantidad_mes(mysql, meses_actualizar, id_estandar_factura)
+                
+                Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago de factura {id_factura}', valor_pagar, id_factura)
+                Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de factura {id_factura}')
+                
+            # Obtener valores actualizados después del pago
+            valor_pendiente_actualizado = Facturas.obtener_pendiente(mysql, id_factura) or 0
+            total_factura = Tarifas_estandar.obtener_tarifa(mysql, id_factura) or Tarifa_medidores.obtener_tarifa(mysql, id_factura)
+            total_factura = total_factura['total_factura'] if total_factura else 0
+            
+            return jsonify({
+                "message": "Pago realizado correctamente",
+                "total_factura": total_factura,
+                "valor_pendiente": valor_pendiente_actualizado
+            }), 200
+                            
         except Exception as e:
             # Deshacer cualquier cambio realizado en la base de datos cuando ocurre un error, en el instante que se falla
             # si hubo cambios previos los deshace para mantener la integridad de los datos 

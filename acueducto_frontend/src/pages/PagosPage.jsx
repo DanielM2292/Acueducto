@@ -219,14 +219,13 @@ const PagosPage = () => {
     const handleTipoPagoChange = (e) => {
         const selectedTipoPago = e.target.value;
         setTipoPago(selectedTipoPago);
-
+    
         let totalCalculated = 0;
         let pendienteCalculated = 0;
-
-        // Calculamos el total y valor pendiente dependiendo del tipo de pago seleccionado
+    
         if (selectedTipoPago === 'Mensual') {
-            totalCalculated = paymentData.total_factura; // Mantén el valor normal
-            pendienteCalculated = paymentData.valor_pendiente; // Mantén el valor normal
+            totalCalculated = paymentData.total_factura || 0;
+            pendienteCalculated = paymentData.valor_pendiente || 0;
         } else if (selectedTipoPago === 'Semestral') {
             totalCalculated = (parseFloat(paymentData.total_factura) || 0) * 6;
             pendienteCalculated = (parseFloat(paymentData.valor_pendiente) || 0) * 6;
@@ -234,14 +233,13 @@ const PagosPage = () => {
             totalCalculated = (parseFloat(paymentData.total_factura) || 0) * 12;
             pendienteCalculated = (parseFloat(paymentData.valor_pendiente) || 0) * 12;
         }
-
-        // Actualizamos el estado con los nuevos valores calculados
+    
         setPaymentData(prev => ({
             ...prev,
             total: totalCalculated,
             pendiente: pendienteCalculated
         }));
-    };
+    };    
 
     const renderFields = () => {
         if (tipo === 'Factura') {

@@ -140,36 +140,17 @@ const TarifaPage = () => {
                 notify("Error de conexión", "error");
             }
         } else {
-            if (!limiteMedidor || parseFloat(limiteMedidor) <= 0) {
-                notify("El límite del medidor debe ser un valor positivo", "warning");
-                return;
-            }
-            if (!valorHastaLimite || parseFloat(valorHastaLimite) <= 0) {
-                notify("El valor hasta límite debe ser positivo", "warning");
-                return;
-            }
             if (!valorMetroCubico || parseFloat(valorMetroCubico) <= 0) {
                 notify("El valor por metro cúbico debe ser positivo", "warning");
                 return;
             }
 
             try {
-                // Obtener fechas actuales para usar como fechas por defecto
-                const today = new Date();
-                const endOfYear = new Date(today.getFullYear(), 11, 31); // 31 de diciembre del año actual
-                
-                const fechaInicio = today.toISOString().split('T')[0];
-                const fechaFin = endOfYear.toISOString().split('T')[0];
-
                 const response = await fetch("http://localhost:9090/gestion/actualizar_medidor", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        limiteMedidor: parseFloat(limiteMedidor),
-                        valorHastaLimite: parseFloat(valorHastaLimite),
                         valorMetroCubico: parseFloat(valorMetroCubico),
-                        fechaInicio: fechaInicio,
-                        fechaFin: fechaFin
                     })
                 });
 
@@ -274,36 +255,6 @@ const TarifaPage = () => {
                     </>
                 ) : (
                     <>
-                        <div className={`floating-input-group ${limiteMedidor || focusedInput === 'limiteMedidor' ? 'active' : ''}`}>
-                            <input
-                                id="limiteMedidor"
-                                type="number"
-                                value={limiteMedidor}
-                                onChange={(e) => setLimiteMedidor(e.target.value)}
-                                className="floating-input"
-                                placeholder=" "
-                                onFocus={() => setFocusedInput('limiteMedidor')}
-                                onBlur={() => setFocusedInput(null)}
-                                required
-                            />
-                            <label htmlFor="limiteMedidor" className="floating-label">Límite Medidor (m³)</label>
-                        </div>
-
-                        <div className={`floating-input-group ${valorHastaLimite || focusedInput === 'valorHastaLimite' ? 'active' : ''}`}>
-                            <input
-                                id="valorHastaLimite"
-                                type="number"
-                                value={valorHastaLimite}
-                                onChange={(e) => setValorHastaLimite(e.target.value)}
-                                className="floating-input"
-                                placeholder=" "
-                                onFocus={() => setFocusedInput('valorHastaLimite')}
-                                onBlur={() => setFocusedInput(null)}
-                                required
-                            />
-                            <label htmlFor="valorHastaLimite" className="floating-label">Valor Hasta Límite</label>
-                        </div>
-
                         <div className={`floating-input-group ${valorMetroCubico || focusedInput === 'valorMetroCubico' ? 'active' : ''}`}>
                             <input
                                 id="valorMetroCubico"

@@ -77,14 +77,12 @@ class GestionServices:
         try:
             print('entra al endpoint medido')
             mysql = current_app.mysql
-            limite_medidor = data.get('limiteMedidor')
-            valor_limite = data.get('valorHastaLimite')
             valor_metro3 = data.get('valorMetroCubico')
             
             custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             custom_id_valores_medidor = Auditoria.generate_custom_id(mysql, 'VAM', 'id_valores_medidor', 'valores_medidor')
             
-            Valores_medidor.crear_valores(mysql, custom_id_valores_medidor, limite_medidor, valor_limite, valor_metro3)
+            Valores_medidor.crear_valores(mysql, custom_id_valores_medidor, valor_metro3)
             Auditoria.log_audit(mysql, custom_id, 'valores_medidor', custom_id_valores_medidor, 'INSERT', 'ADM0001', 'Se crean nuevos parametros para medidores')
             
             return jsonify({"message": "Tarifa actualizada correctamente"}), 201

@@ -17,7 +17,7 @@ const FacturacionPage = () => {
         fechaVencimiento: '',
         lecturaAnterior: '',
         lecturaActual: '',
-        precioUnitario: 1000,
+        precioUnitario: '',
         multas: '',
         saldoPendiente: '',
         observacion: ''
@@ -49,18 +49,19 @@ const FacturacionPage = () => {
             if (response.ok) {
                 const data = await response.json();
                 setFacturaData({
-                    identificacion: data.numero_documento || '',
-                    nombre: data.nombre_cliente || '',
-                    barrio: data.direccion || '',
-                    numeroMatricula: data.numero_matricula || '',
-                    fechaInicioCobro: data.fecha_inicio || '',
-                    fechaVencimiento: data.fecha_vencimiento || '',
-                    lecturaAnterior: data.lectura_anterior || '',
-                    lecturaActual: data.lectura_actual || '',
-                    precioUnitario: data.precio_unitario || 1000,
-                    multas: data.multas || '',
-                    saldoPendiente: data.valor_pendiente || '',
-                    observacion: data.observacion || ''
+                    id_factura: factura.id_factura || '',
+                    identificacion: factura.numero_documento || '',
+                    nombre: factura.nombre || '',
+                    barrio: factura.direccion || '',
+                    numeroMatricula: factura.numero_matricula || '',
+                    fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
+                    fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
+                    lecturaAnterior: factura.lectura_anterior || '',
+                    lecturaActual: factura.lectura_actual || '',
+                    precioUnitario: factura.precio_unitario || 0,  // Ahora usamos el valor del backend
+                    multas: factura.total_multas || 0,
+                    saldoPendiente: factura.valor_pendiente || 0,
+                    observacion: factura.observacion || ''
                 });
                 setNumeroFactura(data.id_factura || '');
                 setNumeroMatriculaInput(data.numero_matricula || '');
@@ -121,7 +122,7 @@ const FacturacionPage = () => {
                         fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
                         lecturaAnterior: factura.lectura_anterior || '',
                         lecturaActual: factura.lectura_actual || '',
-                        precioUnitario: factura.valor_total_lectura || 1000,
+                        precioUnitario: factura.precio_unitario || 0,  // Ahora usamos el valor del backend
                         multas: factura.total_multas || 0,
                         saldoPendiente: factura.valor_pendiente || 0,
                         observacion: factura.observacion || ''
@@ -138,7 +139,7 @@ const FacturacionPage = () => {
             console.error("Error:", error);
         }
     };
-  
+
     const obtenerSiguienteNumeroFactura = async () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/siguiente_numero');
@@ -689,7 +690,7 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="factura-numero">
-                        <p> {numeroFactura || 'Cargando...'}</p>
+                            <p> {numeroFactura || 'Cargando...'}</p>
                         </div>
                     </div>
 
@@ -792,7 +793,6 @@ const FacturacionPage = () => {
                                             type="number"
                                             name="precioUnitario"
                                             value={facturaData.precioUnitario}
-                                            onChange={handleInputChange}
                                             readOnly
                                         />
                                     </td>
