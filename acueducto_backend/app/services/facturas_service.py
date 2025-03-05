@@ -118,13 +118,11 @@ class FacturasServices:
         
     @staticmethod
     def listar_facturas():
-        from flask import current_app
         mysql = current_app.mysql
         try:
             facturas = Facturas.listar_facturas(mysql)
             return jsonify(facturas), 200
         except Exception as e:
-            print("Error en listar_facturas:", str(e))  # Para depuración
             return jsonify({"message": f"Error al listar todas las facturas: {str(e)}"}), 500
         
     # Para el modulo pagos
@@ -156,10 +154,21 @@ class FacturasServices:
         print('entra al end')
         mysql = current_app.mysql
         try:
+            print('entra al try')
             id_factura = request.args.get("id_factura")
             print(id_factura)
-            factura = Facturas.buscar_factura(mysql, id_factura)
+            factura_medidor = Facturas.buscar_factura_medidor(mysql, id_factura)
+            factura_estandar = Facturas.buscar_factura_estandar(mysql, id_factura)
+            if not factura_estandar:
+                factura = factura_medidor
+            else:
+                factura = factura_estandar
             print(factura)
+            id_matricula_cliente = factura['id_matricula_cliente']
+            multas = Multa_clientes.obtener_multas(mysql, id_matricula_cliente)
+            factura.update(multas or {})
+            lectura_anterior = Facturas.get_ultima_lectura(mysql, id_matricula_cliente)
+            factura.update(lectura_anterior or {})
             if not factura:
                 return jsonify({'error': 'Factura no encontrada'}), 404
             return jsonify(factura), 200

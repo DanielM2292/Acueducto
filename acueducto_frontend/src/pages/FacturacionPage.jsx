@@ -93,45 +93,40 @@ const FacturacionPage = () => {
                 const factura = await response.json();
                 console.log("Factura encontrada:", factura);
 
-                if (factura.id_tarifa_medidor === null) {
+                if (factura.tarifa_definida != null) {
                     setFacturaData({
                         id_factura: factura.id_factura || '',
-                        identificacion: factura.id_cliente || '',
-                        nombre: factura.nombre_cliente || '',
+                        identificacion: factura.numero_documento || '',
+                        nombre: factura.nombre || '',
                         barrio: factura.direccion || '',
-                        numeroMatricula: factura.id_matricula_cliente || '',
+                        numeroMatricula: factura.numero_matricula || '',
                         fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
                         fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
-                        lecturaAnterior: factura.lectura_anterior || '',
-                        lecturaActual: factura.lectura_actual || '',
-                        precioUnitario: factura.precio_unitario || "",
-                        multas: factura.multas || 0,
+                        precioUnitario: factura.tarifa_definida || "",
+                        multas: factura.total_multas || 0,
                         saldoPendiente: factura.valor_pendiente || 0,
                         observacion: factura.observacion || ''
                     });
                     setNumeroFactura(factura.id_factura);
-                    setNumeroMatriculaInput(factura.id_matricula_cliente || '');
                     setShowModal(true);
                 } else {
                     // Si es factura de medidor
                     setFacturaData({
                         id_factura: factura.id_factura || '',
-                        identificacion: factura.id_cliente || '',
-                        nombre: factura.nombre_cliente || '',
+                        identificacion: factura.numero_documento || '',
+                        nombre: factura.nombre || '',
                         barrio: factura.direccion || '',
-                        numeroMatricula: factura.id_matricula_cliente || '',
+                        numeroMatricula: factura.numero_matricula || '',
                         fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
                         fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
                         lecturaAnterior: factura.lectura_anterior || '',
                         lecturaActual: factura.lectura_actual || '',
-                        precioUnitario: factura.precio_unitario || 1000,
-                        multas: factura.multas || 0,
+                        precioUnitario: factura.valor_total_lectura || 1000,
+                        multas: factura.total_multas || 0,
                         saldoPendiente: factura.valor_pendiente || 0,
                         observacion: factura.observacion || ''
                     });
                     setNumeroFactura(factura.id_factura);
-                    setNumeroMatriculaInput(factura.id_matricula_cliente || '');
-                    setShowModal(false);
                 }
 
                 toast.success("Factura encontrada");
@@ -218,11 +213,8 @@ const FacturacionPage = () => {
             return;
         }
 
-        const { saldoPendiente } = calcularValores();
         const nuevaFactura = {
-            ...facturaData,
-            saldoPendiente,
-            numeroFactura
+            ...facturaData
         };
 
         try {
@@ -380,7 +372,7 @@ const FacturacionPage = () => {
                                         <input
                                             type="text"
                                             name="usuario"
-                                            value="${factura.nombre_cliente || ''}"
+                                            value="${factura.nombre || ''}"
                                             readOnly
                                         />
                                     </div>
@@ -500,7 +492,7 @@ const FacturacionPage = () => {
                                 <div class="comprobante-grid">
                                     <div class="comprobante-item">
                                         <p class="label">USUARIO</p>
-                                        <p class="value">${factura.nombre_cliente || '-'}</p>
+                                        <p class="value">${factura.nombre || '-'}</p>
                                     </div>
                                     <div class="comprobante-item">
                                         <p class="label">IDENTIFICACIÓN</p>
@@ -989,7 +981,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="usuario"
-                                                value={facturaData.usuario || ''}
+                                                value={facturaData.nombre || ''}
                                                 readOnly
                                             />
                                         </div>
@@ -1173,7 +1165,7 @@ const FacturacionPage = () => {
                                                     <tr key={index}>
                                                         <td>{factura.numero_factura}</td>
                                                         <td>{new Date(factura.fecha_creacion).toLocaleDateString()}</td>
-                                                        <td>{factura.usuario}</td>
+                                                        <td>{factura.nombre}</td>
                                                         <td>{factura.identificacion}</td>
                                                         <td>{factura.barrio}</td>
                                                         <td>{factura.matricula_cliente}</td>
