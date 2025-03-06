@@ -3,8 +3,9 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const PagosPage = () => {
+    const name = localStorage.getItem("userName");
     const API_BASE_URL = "http://localhost:9090";
-
+    
     const [tipo, setTipo] = useState('Factura');
     const [tipoPago, setTipoPago] = useState('');
     const [tarifa, setTarifa] = useState('Estandar');
@@ -166,6 +167,7 @@ const PagosPage = () => {
                 id: tipo === 'Factura' ? paymentData.idFactura : idReferencia,
                 valor: paymentData.aCancelar,
                 ...(tipo === 'Factura' && tarifa === 'Medidor' && {
+                    nombre_usuario: name,
                     lecturaAnterior: paymentData.lecturaAnterior,
                     lecturaActual: paymentData.lecturaActual,
                     fechaLecturaAnterior: paymentData.fechaLecturaAnterior,
@@ -174,7 +176,8 @@ const PagosPage = () => {
             };
 
             const response = await fetch(endpoints[tipo], {
-                method: 'POST',
+                method: "POST",
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -273,14 +276,14 @@ const PagosPage = () => {
                     </select>
                     <input
                         type="text"
-                        value={paymentData.total ? formatCurrency(paymentData.total) : ''} // Usamos 'total' en lugar de 'total_factura'
+                        value={paymentData.total_factura ? formatCurrency(paymentData.total_factura) : ''} // Usamos 'total' en lugar de 'total_factura'
                         disabled
                         placeholder="Total"
                         className="pagos-input"
                     />
                     <input
                         type="text"
-                        value={paymentData.pendiente ? formatCurrency(paymentData.pendiente) : ''} // Usamos 'pendiente' en lugar de 'valor_pendiente'
+                        value={paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''} // Usamos 'pendiente' en lugar de 'valor_pendiente'
                         disabled
                         placeholder="Valor Pendiente"
                         className="pagos-input"

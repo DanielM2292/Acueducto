@@ -3,6 +3,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const MultasPage = () => {
+    const name = localStorage.getItem("userName");
     const [numeroDocumento, setNumeroDocumento] = useState("");
     const [motivoMulta, setMotivoMulta] = useState("");
     const [valorMulta, setValorMulta] = useState("");
@@ -104,10 +105,12 @@ const MultasPage = () => {
         try {
             const response = await fetch("http://localhost:9090/multas/crear_multa", {
                 method: "POST",
+                credentials: 'include',
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
+                    nombre_usuario: name,
                     numero_documento: numeroDocumento,
                     motivo_multa: motivoMulta,
                     valor_multa: valorMulta,

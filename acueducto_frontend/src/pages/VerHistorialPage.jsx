@@ -57,7 +57,7 @@ const VerHistorialPage = () => {
                       <td>{item.tabla}</td>
                       <td>{item.id_registro_afectado}</td>
                       <td>{item.accion}</td>
-                      <td>{item.id_administrador}</td>
+                      <td>{item.nombre_usuario}</td>
                       <td>{new Date(item.fecha).toLocaleString()}</td>
                       <td>{item.detalles}</td>
                     </tr>

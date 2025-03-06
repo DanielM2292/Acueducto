@@ -3,7 +3,9 @@ import { ToastContainer, toast } from "react-toastify";
 import { FaEdit } from "react-icons/fa";
 
 const EgresosPage = () => {
+    const name = localStorage.getItem("userName");
     const [formData, setFormData] = useState({
+        nombre_usuario: name,
         descripcionEgreso: "",
         cantidadEgreso: "",
         valorEgreso: "",
@@ -62,6 +64,7 @@ const EgresosPage = () => {
         try {
             const response = await fetch("http://localhost:9090/egresos/crear_egreso", {
                 method: "POST",
+                credentials: 'include',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             });
@@ -104,6 +107,7 @@ const EgresosPage = () => {
         try {
             const response = await fetch(`http://localhost:9090/egresos/actualizar_egreso`, {
                 method: "PUT",
+                credentials: 'include',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             });

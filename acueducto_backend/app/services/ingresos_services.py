@@ -1,5 +1,5 @@
-from flask import jsonify, current_app, request
-from app.models import Ingresos, Auditoria
+from flask import jsonify, current_app, request, session
+from app.models import Ingresos, Auditoria, User
 
 class IngresosServices:
     @staticmethod
@@ -16,14 +16,19 @@ class IngresosServices:
     @staticmethod
     def crear_ingreso(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         try:
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             descripcion_ingreso = data.get('descripcionIngreso')
             valor_ingreso = data.get('valorIngreso')
             custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             custom_id_ingreso = Auditoria.generate_custom_id(mysql, 'ING', 'id_ingreso', 'ingresos')
             
             Ingresos.crear_ingreso(mysql, custom_id_ingreso, descripcion_ingreso, valor_ingreso)
-            Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', 'Ingreso general')
+            Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, 'Ingreso general')
             
             return jsonify({"message": "Se crea ingreso correctamente"}), 200
         except Exception as e:
@@ -49,7 +54,12 @@ class IngresosServices:
     @staticmethod
     def actualizar_ingreso(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         try:
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             id_ingreso = data.get('idIngreso')
             descripcion_ingreso = data.get('descripcionIngreso')
             valor_ingreso = data.get('valorIngreso')
@@ -59,7 +69,7 @@ class IngresosServices:
             
             if otro_ingreso == {'id_matricula': None, 'id_factura': None, 'id_producto': None, 'id_multa': None}:
                 Ingresos.actualizar_ingreso(mysql, id_ingreso, descripcion_ingreso, valor_ingreso)
-                Auditoria.log_audit(mysql, custom_id, 'ingresos', id_ingreso, 'UPDATE', 'ADM0001', f'Se actualiza el ingreso {id_ingreso}')
+                Auditoria.log_audit(mysql, custom_id, 'ingresos', id_ingreso, 'UPDATE', id_administrador, f'Se actualiza el ingreso {id_ingreso}')
             
                 return jsonify({"message": "Ingreso actualizado correctamente"}), 200
             else:

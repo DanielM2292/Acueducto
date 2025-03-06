@@ -1,15 +1,20 @@
-from flask import jsonify, current_app, request
-from app.models import Auditoria, Matriculas, Clientes, Matricula_cliente, Multa_clientes, Facturas
+from flask import jsonify, current_app, request, session
+from app.models import Auditoria, Matriculas, Clientes, Matricula_cliente, Multa_clientes, Facturas, Valores_medidor, User
 import MySQLdb
 
 class MatriculasServices:
     @staticmethod
     def crear_matricula(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         custom_id_matricula = Auditoria.generate_custom_id(mysql, "MAT", "id_matricula", "matriculas")
         custom_id_matricula_audi = Auditoria.generate_custom_id(mysql, "AUD", "id_auditoria", "auditoria")
         custom_id_matricula_cliente = Auditoria.generate_custom_id(mysql, "MAC", "id_matricula_cliente", "matricula_cliente")
         try:
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             numero_documento = data.get("numero_documento")
             valor_matricula = data.get("valor_matricula")
             numero_matricula = Matriculas.nuevo_numero_matricula(mysql)
@@ -22,12 +27,12 @@ class MatriculasServices:
                 return jsonify({'error': 'Cliente no encontrado'}), 404
             
             Matriculas.agregar_matricula(mysql, custom_id_matricula, numero_matricula, valor_matricula, tipo_tarifa)
-            Auditoria.log_audit(mysql, custom_id_matricula_audi, "matriculas", custom_id_matricula, "INSERT", "ADM0001",f'Se agrega matricula {custom_id_matricula}')
+            Auditoria.log_audit(mysql, custom_id_matricula_audi, "matriculas", custom_id_matricula, "INSERT", id_administrador,f'Se agrega matricula {custom_id_matricula}')
 
             custom_id_matricula_cliente_audi = Auditoria.generate_custom_id(mysql, "AUD", "id_auditoria", "auditoria")
             # Asociar el cliente con la matricula nueva
             Matricula_cliente.asociar_matricula_cliente(mysql, custom_id_matricula_cliente, custom_id_matricula, id_cliente, direccion, 'ESC0001')
-            Auditoria.log_audit(mysql, custom_id_matricula_cliente_audi, "matricula_cliente", custom_id_matricula_cliente, "INSERT", "ADM0001",f'Se asocia la matricula {custom_id_matricula} al cliente {id_cliente}')
+            Auditoria.log_audit(mysql, custom_id_matricula_cliente_audi, "matricula_cliente", custom_id_matricula_cliente, "INSERT", id_administrador,f'Se asocia la matricula {custom_id_matricula} al cliente {id_cliente}')
 
             return jsonify({"message": "Matrícula creada y vinculada exitosamente", "id_matricula": custom_id_matricula, "numero_matricula": numero_matricula}), 201              
         except Exception as e:
@@ -36,15 +41,20 @@ class MatriculasServices:
     @staticmethod
     def actualizar_matricula(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         try:
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             id_matricula = data.get("id_matricula")
             valor_matricula = data.get("valor_matricula")
             tipo_tarifa = data.get("tipo_tarifa")
             direccion = data.get("direccion")
             
             Matriculas.actualizar_matricula(mysql, valor_matricula, tipo_tarifa, id_matricula)
-            Auditoria.log_audit(mysql,custom_id,"matriculas", id_matricula, "UPDATE","ADM0001", "Se actualiza matricula matricula")
+            Auditoria.log_audit(mysql,custom_id,"matriculas", id_matricula, "UPDATE", id_administrador, "Se actualiza matricula matricula")
             
             Matricula_cliente.actualizar_direccion(mysql, direccion, id_matricula)
             
@@ -86,6 +96,7 @@ class MatriculasServices:
             
             matricula = Matriculas.buscar_matricula_documento(mysql, numero_documento)
             if matricula:
+                print(matricula)
                 return jsonify(matricula), 200
             return jsonify({"message": "Matrícula no encontrada"}), 404
         except Exception as e:
@@ -162,10 +173,14 @@ class MatriculasServices:
                 id_matricula_cliente = cliente['id_matricula_cliente']
                 lectura_anterior = Facturas.get_ultima_lectura(mysql, id_matricula_cliente)
                 multas = Multa_clientes.obtener_multas(mysql, id_matricula_cliente)
+                valores_medidor = Valores_medidor.obtener_datos(mysql)
+                valor_metro3 = int(valores_medidor['valor_metro3'])
                 
                 datos_cliente.update(multas or {})
                 datos_cliente.update(lectura_anterior or {})
                 datos_cliente.update({'numero_matricula': numero_matricula})
+                datos_cliente.update({'precio_unitario': valor_metro3})
+                print('aqui los datos para la factura',datos_cliente)
                 return jsonify(datos_cliente), 200
             else:
                 return jsonify({'error': 'Esta matricula no es valida para crear una factura de medidor'}), 409

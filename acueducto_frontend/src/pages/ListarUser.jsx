@@ -3,6 +3,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const ListarUser = () => {
+    const name = localStorage.getItem("userName");
     const [usuarios, setUsuarios] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [newEstado, setNewEstado] = useState("");
@@ -32,10 +33,14 @@ const ListarUser = () => {
             try {
                 const response = await fetch(`http://localhost:9090/auth/actualizar_estado_usuario?id_administrador=${selectedUser.id_administrador}`, {
                     method: "PUT",
+                    credentials: 'include',
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ id_estado_empleado: newEstado }),
+                    body: JSON.stringify({
+                        nombre_usuario: name,
+                        id_estado_empleado: newEstado
+                    }),
                 });
                 const data = await response.json();
                 if (response.ok) {

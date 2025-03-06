@@ -123,9 +123,7 @@ class AuthServices:
             custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
 
             user = User.get_user_by_username(mysql, user_name)
-            print(user)
             id_administrador = user['id_administrador']
-            print(id_administrador)
 
             if user and User.check_password(user['password'], password):
                 # Hashear la nueva contraseña

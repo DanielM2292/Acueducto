@@ -7,7 +7,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 const IngresosPage = () => {
+    const name = localStorage.getItem("userName");
     const [formData, setFormData] = useState({
+        nombre_usuario: name,
         descripcionIngreso: "",
         valorIngreso: "",
         idIngreso: null
@@ -99,6 +101,7 @@ const IngresosPage = () => {
         try {
             const response = await fetch("http://localhost:9090/ingresos/crear_ingreso", {
                 method: "POST",
+                credentials: 'include',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             });
@@ -124,8 +127,10 @@ const IngresosPage = () => {
         try {
             const response = await fetch("http://localhost:9090/ingresos/actualizar_ingreso", {
                 method: "PUT",
+                credentials: 'include',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    nombre_usuario: name,
                     idIngreso: formData.idIngreso,
                     descripcionIngreso: formData.descripcionIngreso,
                     valorIngreso: formData.valorIngreso

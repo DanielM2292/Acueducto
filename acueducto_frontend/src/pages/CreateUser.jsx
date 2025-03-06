@@ -3,7 +3,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const CreateUser = () => {
+    const name = localStorage.getItem("userName");
     const [formData, setFormData] = useState({
+        nombre_usuario: name,
         nombre: "",
         nombre_usuario: "",
         password: "",

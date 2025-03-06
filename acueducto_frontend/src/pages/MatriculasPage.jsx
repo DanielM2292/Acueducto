@@ -4,6 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { FaEdit } from "react-icons/fa";
 
 const MatriculasPage = () => {
+    const name = localStorage.getItem("userName");
     const [idMatricula, setIdMatricula] = useState("");
     const [numeroDocumento, setNumeroDocumento] = useState("");
     const [valorMatricula, setValorMatricula] = useState("");
@@ -38,10 +39,12 @@ const MatriculasPage = () => {
         try {
             const response = await fetch("http://localhost:9090/matriculas/crear_matricula", {
                 method: "POST",
+                credentials: 'include',
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
+                    nombre_usuario: name,
                     numero_documento: numeroDocumento, 
                     valor_matricula: valorMatricula,
                     tipo_tarifa: tipoTarifa,
@@ -70,10 +73,12 @@ const MatriculasPage = () => {
         try {
             const response = await fetch("http://localhost:9090/matriculas/actualizar_matricula", {
                 method: "PUT",
+                credentials: 'include',
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
+                    nombre_usuario: name,
                     id_matricula: selectedMatricula.id_matricula,
                     numero_documento: numeroDocumento,
                     valor_matricula: valorMatricula,
