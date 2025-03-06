@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { Search } from "lucide-react";
 
 const VerHistorialPage = () => {
   const [auditoria, setAuditoria] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredAuditoria, setFilteredAuditoria] = useState([]);
 
   useEffect(() => {
     fetchAuditoria();
   }, []);
+
+  useEffect(() => {
+    filterAuditoria();
+  }, [auditoria, selectedMonth, searchTerm]);
 
   const fetchAuditoria = async () => {
     try {
@@ -22,9 +30,52 @@ const VerHistorialPage = () => {
     }
   };
 
+  const filterAuditoria = () => {
+    let filtered = [...auditoria];
+
+    // Filtrar por mes si hay uno seleccionado
+    if (selectedMonth) {
+      filtered = filtered.filter(item => {
+        const itemDate = new Date(item.fecha);
+        return itemDate.getMonth() === parseInt(selectedMonth) - 1;
+      });
+    }
+
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(item =>
+        Object.values(item).some(value =>
+          String(value).toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    setFilteredAuditoria(filtered);
+  };
+
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
+    if (!isModalOpen) {
+      setSelectedMonth("");
+      setSearchTerm("");
+    }
   };
+
+  const months = [
+    { value: "1", label: "Enero" },
+    { value: "2", label: "Febrero" },
+    { value: "3", label: "Marzo" },
+    { value: "4", label: "Abril" },
+    { value: "5", label: "Mayo" },
+    { value: "6", label: "Junio" },
+    { value: "7", label: "Julio" },
+    { value: "8", label: "Agosto" },
+    { value: "9", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" }
+  ];
 
   return (
     <div className="historialListCustom">
@@ -37,6 +88,33 @@ const VerHistorialPage = () => {
         <div className="modalOverlay">
           <div className="modalContent">
             <h2 className="modalTitle">Historial de Auditoría</h2>
+            
+            <div className="filterContainer">
+              <div className="searchContainer">
+                <Search className="searchIcon" size={20} />
+                <input
+                  type="text"
+                  placeholder="Buscar en el historial..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="searchInput"
+                />
+              </div>
+
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="monthSelect"
+              >
+                <option value="">Todos los meses</option>
+                {months.map(month => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="historialTableContainer">
               <table className="historialTableCustom">
                 <thead>
@@ -51,7 +129,7 @@ const VerHistorialPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {auditoria.map((item) => (
+                  {filteredAuditoria.map((item) => (
                     <tr key={item.id_auditoria}>
                       <td>{item.id_auditoria}</td>
                       <td>{item.tabla}</td>
@@ -98,6 +176,63 @@ const VerHistorialPage = () => {
           background-color: #2980b9;
         }
 
+        .filterContainer {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 20px;
+          align-items: center;
+        }
+
+        .searchContainer {
+          flex: 1;
+          position: relative;
+          max-width: 500px;
+        }
+
+        .searchIcon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #666;
+        }
+
+        .searchInput {
+          width: 100%;
+          padding: 10px 10px 10px 40px;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 16px;
+          transition: all 0.3s ease;
+        }
+
+        .searchInput:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .monthSelect {
+          padding: 10px 35px 10px 15px;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 16px;
+          background-color: white;
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 8px center;
+          background-size: 16px;
+          min-width: 180px;
+        }
+
+        .monthSelect:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
         .modalOverlay {
           position: fixed;
           top: 0;
@@ -139,7 +274,6 @@ const VerHistorialPage = () => {
           position: relative;
         }
 
-        /* Estilo del scrollbar minimalista */
         .historialTableContainer::-webkit-scrollbar {
           width: 8px;
           height: 8px;
@@ -187,7 +321,6 @@ const VerHistorialPage = () => {
           font-weight: 600;
         }
 
-        /* Distribución de anchos de columnas */
         .historialTableCustom th:nth-child(1),
         .historialTableCustom td:nth-child(1) {
           width: 10%;
@@ -252,6 +385,21 @@ const VerHistorialPage = () => {
 
         .closeModalButton:hover {
           background-color: #c0392b;
+        }
+
+        @media (max-width: 768px) {
+          .filterContainer {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .searchContainer {
+            max-width: 100%;
+          }
+
+          .monthSelect {
+            width: 100%;
+          }
         }
       `}</style>
     </div>

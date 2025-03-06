@@ -25,6 +25,10 @@ const PagosPage = () => {
         fechaLecturaAnterior: '',
         fechaLecturaActual: '',
         estado: '',
+        total_factura: '',
+        valor_pendiente: '',
+        valor_matricula: '',
+        valor_multa: ''
     });
 
     const formatCurrency = (value) => {
@@ -65,7 +69,11 @@ const PagosPage = () => {
                 total: '',
                 pendiente: '',
                 aCancelar: '',
-                estado: ''
+                estado: '',
+                total_factura: '',
+                valor_pendiente: '',
+                valor_matricula: '',
+                valor_multa: ''
             }));
             return;
         }
@@ -103,14 +111,19 @@ const PagosPage = () => {
                 toast.warning('Este item ya se encuentra cancelado');
             }
 
+            // Reset tipoPago and calculated values when loading new data
+            setTipoPago('');
+
             setPaymentData(prev => ({
                 ...prev,
                 total_factura: data.total_factura,
                 valor_matricula: data.valor_matricula,
                 valor_multa: data.valor_multa,
                 valor_pendiente: data.valor_pendiente,
-                aCancelar: data.estado === 'PAGADO' ? '' : data.aCancelar,
-                estado: data.estado
+                aCancelar: data.estado === 'PAGADO' ? '' : data.valor_pendiente,
+                estado: data.estado,
+                total: '',  // Clear calculated values
+                pendiente: ''
             }));
         } catch (err) {
             toast.error('Error al cargar los detalles del pago');
@@ -148,7 +161,11 @@ const PagosPage = () => {
             return;
         }
 
-        if (parseFloat(paymentData.aCancelar) > parseFloat(paymentData.pendiente)) {
+        // Use pendiente value for validation based on tipo
+        const valorPendienteToCheck = tipo === 'Factura' && tipoPago ? 
+            paymentData.pendiente : paymentData.valor_pendiente;
+            
+        if (parseFloat(paymentData.aCancelar) > parseFloat(valorPendienteToCheck)) {
             toast.error('El valor a cancelar no puede ser mayor que el valor pendiente.');
             setLoading(false);
             return;
@@ -162,12 +179,12 @@ const PagosPage = () => {
             };
 
             const payloadData = {
+                nombre_usuario: name,
                 tipo,
                 ...(tipo === 'Factura' && { tipoPago }),
                 id: tipo === 'Factura' ? paymentData.idFactura : idReferencia,
                 valor: paymentData.aCancelar,
                 ...(tipo === 'Factura' && tarifa === 'Medidor' && {
-                    nombre_usuario: name,
                     lecturaAnterior: paymentData.lecturaAnterior,
                     lecturaActual: paymentData.lecturaActual,
                     fechaLecturaAnterior: paymentData.fechaLecturaAnterior,
@@ -197,6 +214,10 @@ const PagosPage = () => {
                 fechaLecturaAnterior: '',
                 fechaLecturaActual: '',
                 estado: '',
+                total_factura: '',
+                valor_pendiente: '',
+                valor_matricula: '',
+                valor_multa: ''
             });
             setIdReferencia('');
             setTipoPago('');
@@ -227,8 +248,8 @@ const PagosPage = () => {
         let pendienteCalculated = 0;
     
         if (selectedTipoPago === 'Mensual') {
-            totalCalculated = paymentData.total_factura || 0;
-            pendienteCalculated = paymentData.valor_pendiente || 0;
+            totalCalculated = parseFloat(paymentData.total_factura) || 0;
+            pendienteCalculated = parseFloat(paymentData.valor_pendiente) || 0;
         } else if (selectedTipoPago === 'Semestral') {
             totalCalculated = (parseFloat(paymentData.total_factura) || 0) * 6;
             pendienteCalculated = (parseFloat(paymentData.valor_pendiente) || 0) * 6;
@@ -240,9 +261,10 @@ const PagosPage = () => {
         setPaymentData(prev => ({
             ...prev,
             total: totalCalculated,
-            pendiente: pendienteCalculated
+            pendiente: pendienteCalculated,
+            aCancelar: pendienteCalculated // También actualiza el valor a cancelar con el pendiente calculado
         }));
-    };    
+    };
 
     const renderFields = () => {
         if (tipo === 'Factura') {
@@ -267,7 +289,7 @@ const PagosPage = () => {
                         value={tipoPago}
                         onChange={handleTipoPagoChange}
                         className="pagos-select"
-                        disabled={paymentData.estado === 'PAGADO'}
+                        disabled={paymentData.estado === 'PAGADO' || !paymentData.total_factura}
                     >
                         <option value="">Seleccione el tipo de pago (por tiempo)</option>
                         <option value="Mensual">Mensual</option>
@@ -276,14 +298,16 @@ const PagosPage = () => {
                     </select>
                     <input
                         type="text"
-                        value={paymentData.total_factura ? formatCurrency(paymentData.total_factura) : ''} // Usamos 'total' en lugar de 'total_factura'
+                        value={tipoPago && paymentData.total ? formatCurrency(paymentData.total) : 
+                              paymentData.total_factura ? formatCurrency(paymentData.total_factura) : ''}
                         disabled
                         placeholder="Total"
                         className="pagos-input"
                     />
                     <input
                         type="text"
-                        value={paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''} // Usamos 'pendiente' en lugar de 'valor_pendiente'
+                        value={tipoPago && paymentData.pendiente ? formatCurrency(paymentData.pendiente) : 
+                              paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''}
                         disabled
                         placeholder="Valor Pendiente"
                         className="pagos-input"
@@ -386,6 +410,10 @@ const PagosPage = () => {
                                 fechaLecturaAnterior: '',
                                 fechaLecturaActual: '',
                                 estado: '',
+                                total_factura: '',
+                                valor_pendiente: '',
+                                valor_matricula: '',
+                                valor_multa: ''
                             });
                             setIdReferencia('');
                             setTipoPago('');
@@ -402,7 +430,7 @@ const PagosPage = () => {
                     <button
                         className="pagos-button pagos-button-save"
                         onClick={procesarPago}
-                        disabled={loading || paymentData.estado === 'PAGADO'}
+                        disabled={loading || paymentData.estado === 'PAGADO' || (tipo === 'Factura' && !tipoPago)}
                     >
                         {loading ? 'Procesando...' : 'Guardar Pago'}
                     </button>
@@ -432,7 +460,7 @@ const PagosPage = () => {
                                 </thead>
                                 <tbody>
                                     {historialData.map((item) => (
-                                        <tr key={item.id}>
+                                        <tr key={item.id_ingreso}>
                                             <td>{item.id_ingreso}</td>
                                             <td>{item.descripcion_ingreso}</td>
                                             <td>{item.tipo_pago || '-'}</td>

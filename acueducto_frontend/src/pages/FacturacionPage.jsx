@@ -44,14 +44,19 @@ const FacturacionPage = () => {
     const [numeroMatriculaInput, setNumeroMatriculaInput] = useState("");
     const [numeroFactura, setNumeroFactura] = useState("");
     const [cargandoNumero, setCargandoNumero] = useState(false);
-    
+
     const abrirModalFacturasAutomaticas = () => {
         setShowModal(true);
     };
 
-    const abrirModalFacturas = () => {
-        obtenerFacturas();
-        setShowFacturasModal(true);
+    const abrirModalFacturas = async () => {
+        try {
+            await obtenerFacturas(); // Primero obtener las facturas
+            setShowFacturasModal(true); // Luego mostrar el modal
+        } catch (error) {
+            console.error('Error al abrir modal de facturas:', error);
+            toast.error('Error al cargar las facturas');
+        }
     };
 
     const obtenerDatosIniciales = async () => {
@@ -114,7 +119,7 @@ const FacturacionPage = () => {
                     observacion: factura.observacion || ''
                 };
 
-                if (factura.tarifa_definida != null) {  
+                if (factura.tarifa_definida != null) {
                     setFacturaDataEstandar({
                         ...facturas,
                         precioUnitario: factura.tarifa_definida || 0
@@ -144,11 +149,11 @@ const FacturacionPage = () => {
 
     const obtenerSiguienteNumeroFactura = async () => {
         try {
+            setCargandoNumero(true);
             const response = await fetch('http://localhost:9090/facturas/siguiente_numero');
             if (response.ok) {
                 const data = await response.json();
                 setNumeroFactura(data.siguiente_numero);
-                // Opcional: Resaltar el nuevo número
                 resaltarNuevoNumero();
             } else {
                 console.error('Error al obtener el siguiente número de factura');
@@ -157,6 +162,8 @@ const FacturacionPage = () => {
         } catch (error) {
             console.error('Error:', error);
             toast.error('Error de conexión con el servidor');
+        } finally {
+            setCargandoNumero(false);
         }
     };
 
@@ -206,35 +213,30 @@ const FacturacionPage = () => {
     };
 
     const crearFactura = async () => {
-        const datosFactura = {
-            ...facturaData,
-            id_factura: numeroFactura
-        };
-
         if (!facturaData.numeroMatricula) {
             toast.warning("No hay matrícula seleccionada para crear factura");
             return;
         }
-
-        const nuevaFactura = {
-            ...facturaData
-        };
 
         try {
             const response = await fetch('http://localhost:9090/facturas/crear_factura', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(nuevaFactura)
+                body: JSON.stringify(facturaData)
             });
 
             if (response.ok) {
                 toast.success('Factura creada exitosamente');
-                setFacturaData(nuevaFactura);
+                // Exportar PDF inmediatamente después de crear la factura
+                await exportarPDF();
+                await obtenerSiguienteNumeroFactura();
+                setNumeroMatriculaInput('');
             } else {
                 toast.error('Error al crear la factura');
             }
         } catch (error) {
+            console.error('Error:', error);
             toast.error('Error de conexión con el servidor');
         }
     };
@@ -258,8 +260,9 @@ const FacturacionPage = () => {
             pdf.save(`factura Matricula N°${numeroMatricula} del mes de ${mes}.pdf`);
             toast.success('PDF exportado exitosamente');
 
-            // Reiniciar el formulario después de la exportación
+            // Limpiar el formulario después de exportar
             setFacturaData({
+                nombre_usuario: name,
                 identificacion: '',
                 nombre: '',
                 barrio: '',
@@ -271,20 +274,23 @@ const FacturacionPage = () => {
                 precioUnitario: '',
                 multas: '',
                 saldoPendiente: '',
-                observacion: ''
             });
+            setNumeroMatriculaInput('');
+
+            // **Ahora actualizamos el ID de la factura después de exportar**
+            await obtenerSiguienteNumeroFactura();
 
         } catch (error) {
+            console.error('Error:', error);
             toast.error('Error al exportar el PDF');
         }
     };
+
     // Método mejorado para generar facturas automáticas
     const generarFacturasAutomaticas = async () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas', {
                 method: 'POST',
-                credentials: 'include',
-                body: JSON.stringify(name),
             });
 
             if (!response.ok) {
@@ -294,34 +300,54 @@ const FacturacionPage = () => {
             }
 
             const { facturas } = await response.json();
-            console.log(facturas)
             if (!facturas || facturas.length === 0) {
                 toast.info('No hay facturas para generar');
                 return;
             }
 
-            // Llenar los inputs con los datos de la primera factura
-            const primeraFactura = facturas[0];
-            setFacturaData({
-                identificacion: primeraFactura.numero_documento,
-                nombre: primeraFactura.nombre,
-                barrio: primeraFactura.direccion,
-                numeroMatricula: primeraFactura.id_matricula_cliente,
-                fechaVencimiento: primeraFactura.fecha_vencimiento,
-                valorPendiente: primeraFactura.valor_pendiente,
-            });
-
             setFacturas(facturas);
             setInvoicesGenerated(true);
 
-            // Generar el PDF con todas las facturas
+            // Obtener el nuevo número de factura después de generar facturas automáticas
+            await obtenerSiguienteNumeroFactura();
             await exportarFacturasPDF(facturas);
             toast.success(`Se generaron ${facturas.length} facturas automáticamente`);
+
+            // Limpiar el formulario después de generar facturas automáticas
+            setFacturaData({
+                nombre_usuario: name,
+                identificacion: '',
+                nombre: '',
+                barrio: '',
+                numeroMatricula: '',
+                fechaInicioCobro: '',
+                fechaVencimiento: '',
+                lecturaAnterior: '',
+                lecturaActual: '',
+                precioUnitario: '',
+                multas: '',
+                saldoPendiente: '',
+            });
+            setNumeroMatriculaInput('');
         } catch (error) {
-            toast.error('Error al generar facturas automáticas');
             console.error('Error:', error);
+            toast.error('Error al generar facturas automáticas');
         }
     };
+
+    const handleMatriculaChange = (e) => {
+        const value = e.target.value;
+        setNumeroMatriculaInput(value);
+        setFacturaData(prev => ({
+            ...prev,
+            numeroMatricula: value
+        }));
+
+        if (value.length >= 4) {
+            buscarDatosPorMatricula(value);
+        }
+    };
+
     // Método mejorado para exportar múltiples facturas a PDF
     const exportarFacturasPDF = async (facturasParaExportar) => {
         try {
@@ -358,7 +384,7 @@ const FacturacionPage = () => {
                                     </div>
                                 </div>
                                 <div class="factura-numero">
-                                    <p>FACTURA N°: ${factura.id_factura}</p>
+                                    <p>${factura.id_factura}</p>
                                 </div>
                             </div>
                             <div class="cliente-info">
@@ -670,8 +696,7 @@ const FacturacionPage = () => {
                         className="factura-input"
                         placeholder="Número de Factura"
                     />
-                    <button onClick={crearFactura} className="btn btn-success">Grabar</button>
-                    <button onClick={exportarPDF} className="btn btn-success">Exportar a PDF</button>
+                    <button onClick={crearFactura} className="btn btn-success">Guardar Factura y Exportar Factura en PDF</button>
                     <button onClick={abrirModalFacturasAutomaticas} className="btn btn-secondary">
                         Facturas Automáticas
                     </button>
@@ -757,8 +782,8 @@ const FacturacionPage = () => {
                                 <input
                                     type="text"
                                     name="numeroMatricula"
-                                    value={facturaData.numeroMatricula || ''}
-                                    onChange={(e) => setNumeroMatriculaInput(e.target.value)}
+                                    value={numeroMatriculaInput}
+                                    onChange={handleMatriculaChange}
                                 />
                             </div>
                             <div className="input-group">
@@ -875,7 +900,7 @@ const FacturacionPage = () => {
                             </div>
                             <div className="comprobante-item">
                                 <p className="label">MATRICULA N°</p>
-                                <p className="value">{facturaData.numeroMatricula || '-'}</p>
+                                <p className="value" style={{ fontWeight: 'bold' }}>{facturaData.numeroMatricula || '-'}</p>
                             </div>
                             <div className="comprobante-item">
                                 <p className="label">TOTAL PAGADO</p>
@@ -1074,9 +1099,6 @@ const FacturacionPage = () => {
                             </div>
                         </div>
                         <div className="modal-buttons">
-                            <button onClick={exportarFacturasPDF} className="btn btn-primary">
-                                Exportar Factura Automática
-                            </button>
                             <button onClick={generarFacturasAutomaticas} className="btn btn-primary">
                                 Generar Facturas Automáticas
                             </button>
@@ -1086,50 +1108,50 @@ const FacturacionPage = () => {
                         </div>
                         {invoicesGenerated && <p className="success-message">Facturas generadas correctamente.</p>}
                     </div>
-                    {showFacturasModal && (
-                        <div className={`modal-overlay ${isFacturasClosing ? 'closing' : ''}`}>
-                            <div className={`modal modal-large ${isFacturasClosing ? 'closing' : ''}`}>
-                                <h3 className="modal-title">Lista de Facturas</h3>
-                                <div className="modal-content">
-                                    <div className="table-container">
-                                        <table className="facturas-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>N° Factura</th>
-                                                    <th>Fecha</th>
-                                                    <th>Usuario</th>
-                                                    <th>Identificación</th>
-                                                    <th>Barrio</th>
-                                                    <th>Matrícula</th>
-                                                    <th>Valor Total</th>
-                                                    <th>Estado</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {facturas.map((factura, index) => (
-                                                    <tr key={index}>
-                                                        <td>{factura.numero_factura}</td>
-                                                        <td>{new Date(factura.fecha_creacion).toLocaleDateString()}</td>
-                                                        <td>{factura.nombre}</td>
-                                                        <td>{factura.identificacion}</td>
-                                                        <td>{factura.barrio}</td>
-                                                        <td>{factura.matricula_cliente}</td>
-                                                        <td>{formatCurrency(factura.valor_total)}</td>
-                                                        <td>{factura.estado}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div className="modal-buttons">
-                                    <button onClick={handleCloseFacturasModal} className="btn btn-secondary">
-                                        Cerrar
-                                    </button>
-                                </div>
+                </div>
+            )}
+            {showFacturasModal && (
+                <div className="modal-overlay" style={{ zIndex: 1002 }}>
+                    <div className="modal modal-large">
+                        <h3 className="modal-title">Lista de Facturas</h3>
+                        <div className="modal-content">
+                            <div className="table-container">
+                                <table className="facturas-table">
+                                    <thead>
+                                        <tr>
+                                            <th>N° Factura</th>
+                                            <th>Fecha</th>
+                                            <th>Usuario</th>
+                                            <th>Identificación</th>
+                                            <th>Barrio</th>
+                                            <th>Matrícula</th>
+                                            <th>Valor Total</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {facturas.map((factura, index) => (
+                                            <tr key={index}>
+                                                <td>{factura.numero_factura}</td>
+                                                <td>{new Date(factura.fecha_creacion).toLocaleDateString()}</td>
+                                                <td>{factura.nombre}</td>
+                                                <td>{factura.identificacion}</td>
+                                                <td>{factura.barrio}</td>
+                                                <td style={{ fontWeight: 'bold' }}>{factura.matricula_cliente}</td>
+                                                <td>{formatCurrency(factura.valor_total)}</td>
+                                                <td>{factura.estado}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    )}
+                        <div className="modal-buttons">
+                            <button onClick={handleCloseFacturasModal} className="btn btn-secondary">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
             <style jsx>{`

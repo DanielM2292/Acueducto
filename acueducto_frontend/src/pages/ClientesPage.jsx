@@ -227,6 +227,7 @@ const ClientesPage = () => {
 
     const resetForm = () => {
         setFormData({
+            nombre_usuario: name,
             id_cliente: "",
             tipo_documento: "C.C",
             numero_documento: "",

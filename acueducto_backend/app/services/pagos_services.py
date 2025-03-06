@@ -103,7 +103,7 @@ class PagosServices:
             id_factura = data.get("id")
             valor_pagar = data.get("valor")
             tipo_pago = data.get("tipoPago")
-            print(id_factura, valor_pagar, tipo_pago)
+            print(id_factura, valor_pagar, tipo_pago, id_administrador)
             valor_pagar = int(valor_pagar)
             
             valor_pendiente = Facturas.obtener_pendiente(mysql, id_factura)
@@ -168,5 +168,6 @@ class PagosServices:
         except Exception as e:
             # Deshacer cualquier cambio realizado en la base de datos cuando ocurre un error, en el instante que se falla
             # si hubo cambios previos los deshace para mantener la integridad de los datos 
+            print(e)
             mysql.connection.rollback()
             return jsonify({"message": f"Error al procesar el pago de la factura: {str(e)}"}), 500

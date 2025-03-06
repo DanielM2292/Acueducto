@@ -125,6 +125,7 @@ const EgresosPage = () => {
 
     const handleEdit = (item) => {
         setFormData({
+            nombre_usuario: name,
             descripcionEgreso: item.descripcion_egreso,
             cantidadEgreso: item.cantidad,
             valorEgreso: item.total_egreso,

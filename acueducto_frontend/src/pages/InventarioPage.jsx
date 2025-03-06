@@ -44,7 +44,7 @@ const InventarioPage = () => {
             const data = await response.json();
             if (response.ok) {
                 notify("Producto agregado exitosamente", "success");
-                setFormData({ descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setFormData({ nombre_usuario: name, descripcion_producto: "", cantidad: "", valor_producto: "" });
                 fetchAllProducts();
             } else {
                 notify(data.message || "Error al agregar el producto", "error");
@@ -103,7 +103,7 @@ const InventarioPage = () => {
             const data = await response.json();
             if (response.ok) {
                 notify("Producto actualizado exitosamente", "success");
-                setFormData({ descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setFormData({ nombre_usuario: name, descripcion_producto: "", cantidad: "", valor_producto: "" });
                 setSelectedProductId(null);
                 fetchAllProducts();
             } else {
@@ -129,7 +129,7 @@ const InventarioPage = () => {
             const data = await response.json();
             if (response.ok) {
                 notify("Producto eliminado exitosamente", "success");
-                setFormData({ descripcion_producto: "", cantidad: "", valor_producto: "" });
+                setFormData({ nombre_usuario: name, descripcion_producto: "", cantidad: "", valor_producto: "" });
                 setSelectedProductId(null);
                 fetchAllProducts();
             } else {
@@ -230,10 +230,10 @@ const InventarioPage = () => {
                     <div className="productTableBody">
                         {productos.length > 0 ? (
                             productos.map((product) => (
-                                <div 
-                                    key={product.id_producto} 
-                                    className={`productTableRow ${selectedProductId === product.id_producto ? 'selected' : ''}`} 
-                                    onClick={() => handleRowClick(product)} 
+                                <div
+                                    key={product.id_producto}
+                                    className={`productTableRow ${selectedProductId === product.id_producto ? 'selected' : ''}`}
+                                    onClick={() => handleRowClick(product)}
                                     style={{ cursor: 'pointer' }}
                                 >
                                     <div>{product.id_producto}</div>

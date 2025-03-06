@@ -90,6 +90,7 @@ const IngresosPage = () => {
 
     const resetForm = () => {
         setFormData({
+            nombre_usuario: name,
             descripcionIngreso: "",
             valorIngreso: "",
             idIngreso: null
@@ -152,6 +153,7 @@ const IngresosPage = () => {
 
     const handleSelectIngreso = (ingreso) => {
         setFormData({
+            nombre_usuario: name,
             idIngreso: ingreso.id_ingreso,
             descripcionIngreso: ingreso.descripcion_ingreso,
             valorIngreso: ingreso.valor_ingreso
