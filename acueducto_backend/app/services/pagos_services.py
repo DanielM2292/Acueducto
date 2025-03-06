@@ -99,15 +99,14 @@ class PagosServices:
             user_name = data.get('nombre_usuario')
             user = User.get_user_by_username(mysql, user_name)
             id_administrador = user['id_administrador']
-            custom_id_ingreso_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             id_factura = data.get("id")
             valor_pagar = data.get("valor")
             tipo_pago = data.get("tipoPago")
             print(id_factura, valor_pagar, tipo_pago, id_administrador)
             valor_pagar = int(valor_pagar)
-            
+            print('pasa guardando valor')
             valor_pendiente = Facturas.obtener_pendiente(mysql, id_factura)
-            valor_pendiente = int(valor_pendiente['valor_pendiente']) if valor_pendiente else 0
+            valor_pendiente = int(valor_pendiente['valor_pendiente'])
             print('pasa y saca el valor pendiente', valor_pendiente)
             total_estandar = Tarifas_estandar.obtener_tarifa(mysql, id_factura)
             total_medidor = Tarifa_medidores.obtener_tarifa(mysql, id_factura)
@@ -126,7 +125,7 @@ class PagosServices:
                     Facturas.update_pago_factura(mysql, nuevo_valor, id_factura)
                 
                 Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago de factura {id_factura}', valor_pagar, id_factura)
-                Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de factura {id_factura}')
+                Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de factura {id_factura}')
                 
             else:
                 total_estandar = int(total_estandar['total_factura']) if total_estandar else 0
@@ -152,7 +151,7 @@ class PagosServices:
                     Estandar_factura.actualizar_cantidad_mes(mysql, meses_actualizar, id_estandar_factura)
                 
                 Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago de factura {id_factura}', valor_pagar, id_factura)
-                Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de factura {id_factura}')
+                Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de factura {id_factura}')
                 
             # Obtener valores actualizados después del pago
             valor_pendiente_actualizado = Facturas.obtener_pendiente(mysql, id_factura) or 0

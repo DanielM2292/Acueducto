@@ -1,5 +1,5 @@
 from flask import jsonify, current_app, session, request
-from app.models import Inventario, Auditoria, Ingresos, User
+from app.models import Inventario, Auditoria, Ingresos, User, Egresos
 
 class ProductosServices:
     @staticmethod
@@ -10,6 +10,7 @@ class ProductosServices:
         custom_id_producto = Auditoria.generate_custom_id(mysql, 'PRO', 'id_producto', 'inventario')
         custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         custom_id_ingreso = Auditoria.generate_custom_id(mysql, 'ING', 'id_ingreso', 'ingresos')
+        custom_id_egreso = Auditoria.generate_custom_id(mysql, 'EGR', 'id_egreso', 'egresos')
         
         try:
             user_name = data.get('nombre_usuario')
@@ -22,6 +23,7 @@ class ProductosServices:
             
             Inventario.add_product(mysql,custom_id_producto, descripcion_producto, cantidad, valor_producto, total_productos)
             Ingresos.crear_ingreso_producto(mysql, custom_id_ingreso, f'Se agrega producto {descripcion_producto} al inventario', total_productos, custom_id_producto)
+            Egresos.crear_egreso_general(mysql, custom_id_egreso, 'Egreso de efectivo para compra de producto', cantidad, total_productos)
             Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", custom_id_producto, "INSERT", id_administrador, "Se agrega producto al inventario")
             return jsonify({"message": "Producto agregado exitosamente"}), 201
         except Exception as e:

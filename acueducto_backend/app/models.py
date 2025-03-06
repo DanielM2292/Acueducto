@@ -283,12 +283,10 @@ class Facturas:
     def buscar_factura_medidor(mysql, id_factura):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT f.id_factura, f.fecha_factura, f.fecha_vencimiento, f.valor_pendiente, c.nombre, c.numero_documento, mc.id_matricula_cliente, mc.direccion, m.numero_matricula, tm.valor_total_lectura, tm.lectura_actual
+            SELECT f.id_factura, f.fecha_factura, f.fecha_vencimiento, f.valor_pendiente, c.nombre, c.numero_documento, tm.valor_total_lectura, tm.lectura_actual
             FROM facturas AS f
             INNER JOIN clientes AS c ON f.id_cliente = c.id_cliente
             LEFT JOIN tarifa_medidores AS tm ON f.id_tarifa_medidor = tm.id_tarifa_medidor
-            INNER JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
-            INNER JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
             WHERE f.id_factura = %s;''', (id_factura,))
         factura = cursor.fetchone()
         cursor.close()
@@ -298,13 +296,24 @@ class Facturas:
     def buscar_factura_estandar(mysql, id_factura):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT f.id_factura, f.fecha_factura, f.fecha_vencimiento, f.valor_pendiente, c.nombre, c.numero_documento, mc.id_matricula_cliente, mc.direccion, m.numero_matricula, te.tarifa_definida
+            SELECT f.id_factura, f.fecha_factura, f.fecha_vencimiento, f.valor_pendiente, c.nombre, c.numero_documento, te.tarifa_definida
             FROM facturas AS f
             INNER JOIN clientes AS c ON f.id_cliente = c.id_cliente
-            INNER JOIN matricula_cliente AS mc ON c.id_cliente = mc.id_cliente
-            INNER JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
             INNER JOIN estandar_factura AS efa ON f.id_estandar_factura = efa.id_estandar_factura
             LEFT JOIN tarifas_estandar AS te ON efa.id_tarifa_estandar = te.id_tarifa_estandar
+            WHERE f.id_factura = %s;''', (id_factura,))
+        factura = cursor.fetchone()
+        cursor.close()
+        return factura
+    
+    @staticmethod
+    def obtener_datos_matricula(mysql, id_factura):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('''
+            SELECT mc.id_matricula_cliente, mc.direccion, m.numero_matricula
+            FROM facturas AS f
+            INNER JOIN matricula_cliente AS mc ON f.id_matricula_cliente = mc.id_matricula_cliente
+            INNER JOIN matriculas AS m ON mc.id_matricula = m.id_matricula
             WHERE f.id_factura = %s;''', (id_factura,))
         factura = cursor.fetchone()
         cursor.close()
@@ -327,7 +336,7 @@ class Facturas:
         cursor.execute('SELECT valor_pendiente FROM facturas WHERE id_factura = %s', (id_factura,))
         factura = cursor.fetchone()
         cursor.close()
-        return factura['valor_pendiente'] if factura and 'valor_pendiente' in factura else 0
+        return factura
 
     
     @staticmethod
