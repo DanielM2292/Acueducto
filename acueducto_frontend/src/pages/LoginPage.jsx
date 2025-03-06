@@ -20,7 +20,7 @@ const LoginPage = () => {
       formData.append('email', username);
       formData.append('password', password);
       const response = await fetch('http://localhost:9090/auth/verify_role', {
-        method: 'POST',
+        method: "POST",
         body: formData,
         credentials: 'include',
         headers: {

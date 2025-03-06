@@ -3,6 +3,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const ClientesPage = () => {
+    const name = localStorage.getItem("userName");
     const [noClientsFound, setNoClientsFound] = useState(false);
     const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
     const [selectedClientEnrollments, setSelectedClientEnrollments] = useState([]);
@@ -32,6 +33,7 @@ const ClientesPage = () => {
     }, []);
 
     const [formData, setFormData] = useState({
+        nombre_usuario: name,
         id_cliente: "",
         tipo_documento: "C.C",
         numero_documento: "",
@@ -80,10 +82,12 @@ const ClientesPage = () => {
 
             const response = await fetch(`http://localhost:9090/matriculas/actualizar_estado`, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    nombre_usuario: name,
                     id_matricula: enrollmentId,
                     estado: newStatus  // Enviamos el código correcto (ESC0001, ESC0002, ESC0003)
                 })
@@ -194,6 +198,7 @@ const ClientesPage = () => {
         try {
             const response = await fetch("http://localhost:9090/clientes/agregar_cliente", {
                 method: "POST",
+                credentials: 'include',
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -247,6 +252,7 @@ const ClientesPage = () => {
         try {
             const response = await fetch('http://localhost:9090/clientes/actualizar_cliente', {
                 method: 'PUT',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },

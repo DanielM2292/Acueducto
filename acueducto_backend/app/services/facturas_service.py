@@ -1,13 +1,18 @@
-from flask import jsonify, current_app, request
+from flask import jsonify, current_app, request, session
 from datetime import datetime
-from app.models import Clientes, Facturas, Auditoria, Matriculas, Valores_medidor, Tarifa_medidores, Tarifas_estandar, Estandar_factura, Matricula_cliente, Multa_clientes, Ingresos
+from app.models import Clientes, Facturas, Auditoria, Matriculas, Valores_medidor, Tarifa_medidores, Tarifas_estandar, Estandar_factura, Matricula_cliente, Multa_clientes, Ingresos, User
 
 class FacturasServices:
     @staticmethod
     def generarFacturasAutomaticas():
         mysql = current_app.mysql
-        
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         try:
+            data = request.get_json()
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             datos_estandar = Tarifas_estandar.obtener_datos_estandar(mysql)
             valor_pendiente = datos_estandar['tarifa_definida']
             id_tarifa_estandar = datos_estandar['id_tarifa_estandar']
@@ -48,7 +53,7 @@ class FacturasServices:
                             Estandar_factura.crear_factura_estandar(mysql, custom_id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, 1)
                             
                             Facturas.generar_facturas(mysql, custom_id, fecha_vencimiento, id_cliente, 'ESF0001', valor_pendiente, id_matricula_cliente, custom_id_estandar_factura)
-                            Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', 'ADM0001', f'Factura generada para el cliente {id_matricula_cliente}')
+                            Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', id_administrador, f'Factura generada para el cliente {id_matricula_cliente}')
                         
                             factura_info = {
                                 "id_factura": custom_id,
@@ -87,7 +92,7 @@ class FacturasServices:
                         Estandar_factura.crear_factura_estandar(mysql, custom_id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, 1)
                         
                         Facturas.generar_facturas(mysql, custom_id, fecha_vencimiento, id_cliente, 'ESF0001', valor_pendiente, id_matricula_cliente, custom_id_estandar_factura)
-                        Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', 'ADM0001', f'Factura generada para el cliente {id_matricula_cliente}')
+                        Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', id_administrador, f'Factura generada para el cliente {id_matricula_cliente}')
                         
                         factura_info = {
                             "id_factura": custom_id,
@@ -132,15 +137,15 @@ class FacturasServices:
         try:
             id_factura = request.args.get("id_factura")
             factura = Facturas.buscar_factura(mysql, id_factura)
-
+            
             total_estandar = Tarifas_estandar.obtener_tarifa(mysql, id_factura)
             total_medidor = Tarifa_medidores.obtener_tarifa(mysql, id_factura)
             
-            if total_medidor is None:
+            if not total_medidor:
                 total_factura = total_estandar
             else:
                 total_factura = total_medidor
-            
+                
             factura.update(total_factura)
             if not factura:
                 return jsonify({'error': 'Factura no encontrada'}), 404
@@ -169,6 +174,7 @@ class FacturasServices:
             factura.update(multas or {})
             lectura_anterior = Facturas.get_ultima_lectura(mysql, id_matricula_cliente)
             factura.update(lectura_anterior or {})
+            print(factura)
             if not factura:
                 return jsonify({'error': 'Factura no encontrada'}), 404
             return jsonify(factura), 200
@@ -177,15 +183,17 @@ class FacturasServices:
             return jsonify({"message": f"Error al obtener el id de la factura: {str(e)}"})
     
     @staticmethod
-    def crear_factura():
-        print('entra a crear fac')
-        mysql = current_app.mysql
-        custom_id_tarifa = Auditoria.generate_custom_id(mysql, 'TAM', 'id_tarifa_medidor', 'tarifa_medidores')
-        custom_id_factura = Auditoria.generate_custom_id(mysql, 'FAC', 'id_factura', 'facturas')
-        custom_id_audi_tarifa = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-        data = request.get_json()
-        print(data)
+    def crear_factura(data):
+        mysql = current_app.mysql    
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         try:
+            print('entra al tru')
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
+            custom_id_tarifa = Auditoria.generate_custom_id(mysql, 'TAM', 'id_tarifa_medidor', 'tarifa_medidores')
+            custom_id_factura = Auditoria.generate_custom_id(mysql, 'FAC', 'id_factura', 'facturas')  
             custom_id_audi_factura = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             numero_matricula = data.get("numeroMatricula")
             fecha_factura = data.get("fechaInicioCobro")            
@@ -193,19 +201,23 @@ class FacturasServices:
             lectura_actual = int(data.get("lecturaActual"))
             lectura_anterior = data.get("lecturaAnterior")
             
+            if not fecha_vencimiento or not fecha_factura:
+                return jsonify({'error': 'No digito las fechas para la factura'}), 409
+            
             if lectura_anterior is None or lectura_anterior == '':
                 lectura_anterior = 0
             else:
                 lectura_anterior = int(lectura_anterior)
-            
             tipo_tarifa = Matriculas.obtener_tipo(mysql, numero_matricula)
             tipo_tarifa = tipo_tarifa['tipo_tarifa']
             
+            factura_generada = []
             if tipo_tarifa == 'Medidor' and lectura_actual > lectura_anterior:
+                print('entra al if ')
                 cliente = Clientes.get_id_cliente(mysql, numero_matricula)
                 id_cliente = cliente['id_cliente']
                 id_matricula_cliente = cliente['id_matricula_cliente']
-                
+                print('cliente', id_matricula_cliente)
                 valores_medidor = Valores_medidor.obtener_datos(mysql)
                 id_valores_medidor = valores_medidor['id_valores_medidor']
                 valor_metro3 = int(valores_medidor['valor_metro3'])
@@ -213,26 +225,28 @@ class FacturasServices:
                 valor_total_lectura = (lectura_actual - lectura_anterior)*valor_metro3
                 
                 Tarifa_medidores.crear_tarifa(mysql, custom_id_tarifa, lectura_actual, id_valores_medidor, valor_total_lectura, id_matricula_cliente)
-                Auditoria.log_audit(mysql, custom_id_audi_tarifa, 'tarifa_medidores', custom_id_tarifa, 'INSERT', 'ADM0001', f'Se crea una nueva tarifa medidores para la matricula {id_matricula_cliente}')
-                
+                print('pasa aqui')
                 Facturas.crear_factura(mysql, custom_id_factura, fecha_factura, fecha_vencimiento, id_cliente, 'ESF0001', valor_total_lectura, id_matricula_cliente, custom_id_tarifa)
-                Auditoria.log_audit(mysql, custom_id_audi_factura, 'facturas', custom_id_factura, 'INSERT', 'ADM0001', f'Se crea una factura para la matricula {id_matricula_cliente}')
-                
+                print('pasa factur')
+                Auditoria.log_audit(mysql, custom_id_audi_factura, 'facturas', custom_id_factura, 'INSERT', id_administrador, f'Se crea una factura para la matricula {id_matricula_cliente}')
+                print('pasa datos',custom_id_factura, valor_total_lectura)
                 factura_nueva = {
                 "numeroFactura": custom_id_factura,
                 "precioUnitario": valor_total_lectura,
                 "saldoPendiente": valor_total_lectura
-                }                
-                return jsonify({"message": "Factura creada exitosamente", "factura": factura_nueva}), 200
+                }
+                print(factura_nueva)
+                factura_generada.append(factura_nueva)
+                print('factura gnera',factura_generada)
+                return jsonify({"message": "Factura creada exitosamente", "factura": factura_generada}), 200
             else:
                 return jsonify({'error': 'El tipo de matricula no permite crear una factura'}), 409
-            
         except Exception as e:
+            mysql.connection.rollback()
             return jsonify({"message": f"Error al obtener el id de la factura: {str(e)}"})
     
     @staticmethod
     def obtener_siguiente_numero():
-        from flask import current_app
         mysql = current_app.mysql
         try:
             custom_id_factura = Auditoria.generate_custom_id(mysql, 'FAC', 'id_factura', 'facturas')

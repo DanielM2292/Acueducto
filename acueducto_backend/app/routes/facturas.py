@@ -30,7 +30,8 @@ def buscar_factura():
 def crear_factura():
     if request.method == 'OPTIONS':
         return jsonify({'message': 'CORS preflight response'}), 200
-    return FacturasServices.crear_factura()
+    data = request.get_json()
+    return FacturasServices.crear_factura(data)
 
 @facturas_bp.route('/siguiente_numero', methods=['GET', 'OPTIONS'])
 def obtener_siguiente_numero():

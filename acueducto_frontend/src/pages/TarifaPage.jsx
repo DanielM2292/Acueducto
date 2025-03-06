@@ -3,6 +3,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const TarifaPage = () => {
+    const name = localStorage.getItem("userName");
     const [tipoTarifa, setTipoTarifa] = useState('estandar');
     const [isLoading, setIsLoading] = useState(false);
     const [tarifaDefinida, setTarifaDefinida] = useState('');
@@ -122,8 +123,10 @@ const TarifaPage = () => {
             try {
                 const response = await fetch("http://localhost:9090/gestion/actualizar_estandar", {
                     method: "PUT",
+                    credentials: 'include',
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        nombre_usuario: name,
                         tarifaDefinida: parseFloat(tarifaDefinida),
                         fechaInicio: fechaInicioEstandar,
                         fechaFin: fechaFinEstandar
@@ -148,8 +151,10 @@ const TarifaPage = () => {
             try {
                 const response = await fetch("http://localhost:9090/gestion/actualizar_medidor", {
                     method: "PUT",
+                    credentials: 'include',
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        nombre_usuario: name,
                         valorMetroCubico: parseFloat(valorMetroCubico),
                     })
                 });
@@ -170,7 +175,8 @@ const TarifaPage = () => {
         setIsLoading(true);
         try {
             const response = await fetch("http://localhost:9090/gestion/backup", {
-                method: "POST"
+                method: "POST",
+                credentials: 'include'
             });
             
             if (response.ok) {

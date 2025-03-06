@@ -3,7 +3,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ChangePassword = () => {
-  const name = localStorage.getItem("userName");  
+  const name = localStorage.getItem("userName");
   const formRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

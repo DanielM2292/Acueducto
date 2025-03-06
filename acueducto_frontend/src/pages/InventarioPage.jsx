@@ -3,7 +3,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const InventarioPage = () => {
+    const name = localStorage.getItem("userName");
     const [formData, setFormData] = useState({
+        nombre_usuario: name,
         descripcion_producto: "",
         cantidad: "",
         valor_producto: "",
@@ -33,6 +35,7 @@ const InventarioPage = () => {
         try {
             const response = await fetch("http://localhost:9090/productos/agregar_producto", {
                 method: "POST",
+                credentials: 'include',
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -91,6 +94,7 @@ const InventarioPage = () => {
         try {
             const response = await fetch(`http://localhost:9090/productos/actualizar_producto?id_producto=${selectedProductId}`, {
                 method: "PUT",
+                credentials: 'include',
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -120,6 +124,7 @@ const InventarioPage = () => {
         try {
             const response = await fetch(`http://localhost:9090/productos/eliminar_producto?id_producto=${selectedProductId}`, {
                 method: "DELETE",
+                credentials: 'include',
             });
             const data = await response.json();
             if (response.ok) {

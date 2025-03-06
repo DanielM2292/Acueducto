@@ -1,6 +1,6 @@
-from flask import jsonify, current_app, request
+from flask import jsonify, current_app, request, session
 import MySQLdb
-from app.models import Ingresos, Multas, Auditoria, Multa_clientes, Matriculas, Facturas, Tarifa_medidores, Tarifas_estandar, Estandar_factura
+from app.models import Ingresos, Multas, Auditoria, Multa_clientes, Matriculas, Facturas, Tarifa_medidores, Tarifas_estandar, Estandar_factura, User
 
 class PagosServices:
     @staticmethod
@@ -16,11 +16,15 @@ class PagosServices:
     @staticmethod
     def registrar_pago_multa(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         custom_id_ingreso = Auditoria.generate_custom_id(mysql, 'ING', 'id_ingreso', 'ingresos')
         try:
             custom_id_ingreso_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             id_multa = data.get("id")
             valor_pagar = data.get("valor")
             valor_pagar = int(valor_pagar)
@@ -41,10 +45,10 @@ class PagosServices:
             nuevo_valor = valor_pendiente - valor_pagar
             
             Multas.update_multa_pago(mysql, valor_multa, nuevo_valor, id_multa)
-            Auditoria.log_audit(mysql, custom_id, 'multas', id_multa, 'UPDATE', 'ADM0001', 'Se actualiza valor de multa desde el pago realizado')
+            Auditoria.log_audit(mysql, custom_id, 'multas', id_multa, 'UPDATE', id_administrador, 'Se actualiza valor de multa desde el pago realizado')
 
             Ingresos.crear_ingreso_multa(mysql, custom_id_ingreso, f'Se ingresa pago de multa {id_multa}', valor_pagar, id_multa)
-            Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de multa {id_multa}')
+            Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de multa {id_multa}')
             
             return jsonify({"message": "Pago realizado correctamente"}), 200
         except Exception as e:
@@ -54,9 +58,14 @@ class PagosServices:
     @staticmethod
     def registrar_pago_matricula(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         custom_id_ingreso = Auditoria.generate_custom_id(mysql, 'ING', 'id_ingreso', 'ingresos')
         try:
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             id_matricula = data.get("id")
             valor_pagar = data.get("valor")
             valor_pagar = int(valor_pagar)
@@ -70,7 +79,7 @@ class PagosServices:
                 if valor_pagar != valor_matricula:
                     return jsonify({'error': 'El valor no es correcto'}), 400
                 Ingresos.crear_ingreso_matricula(mysql, custom_id_ingreso, f'Se ingresa pago de matricula {id_matricula}', valor_pagar, id_matricula)
-                Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de matricula {id_matricula}')
+                Auditoria.log_audit(mysql, custom_id, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de matricula {id_matricula}')
 
                 return jsonify({"message": "Pago realizado correctamente"}), 200
             else:
@@ -82,9 +91,14 @@ class PagosServices:
     @staticmethod
     def registrar_pago_factura(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
         custom_id_ingreso = Auditoria.generate_custom_id(mysql, 'ING', 'id_ingreso', 'ingresos')
         try:
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             custom_id_ingreso_audi = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
             id_factura = data.get("id")
             valor_pagar = data.get("valor")
@@ -112,7 +126,7 @@ class PagosServices:
                     Facturas.update_pago_factura(mysql, nuevo_valor, id_factura)
                 
                 Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago de factura {id_factura}', valor_pagar, id_factura)
-                Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de factura {id_factura}')
+                Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de factura {id_factura}')
                 
             else:
                 total_estandar = int(total_estandar['total_factura']) if total_estandar else 0
@@ -138,7 +152,7 @@ class PagosServices:
                     Estandar_factura.actualizar_cantidad_mes(mysql, meses_actualizar, id_estandar_factura)
                 
                 Ingresos.crear_ingreso_factura(mysql, custom_id_ingreso, f'Se ingresa pago de factura {id_factura}', valor_pagar, id_factura)
-                Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', 'ADM0001', f'Se realiza pago de factura {id_factura}')
+                Auditoria.log_audit(mysql, custom_id_ingreso_audi, 'ingresos', custom_id_ingreso, 'INSERT', id_administrador, f'Se realiza pago de factura {id_factura}')
                 
             # Obtener valores actualizados después del pago
             valor_pendiente_actualizado = Facturas.obtener_pendiente(mysql, id_factura) or 0

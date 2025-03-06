@@ -5,10 +5,23 @@ import "react-toastify/dist/ReactToastify.css";
 import html2canvas from 'html2canvas';
 import LogoAcueducto from '../imagenes/LogoAcueducto.png';
 
-
-
 const FacturacionPage = () => {
+    const name = localStorage.getItem("userName");
+    const [facturaDataEstandar, setFacturaDataEstandar] = useState({
+        nombre_usuario: name,
+        identificacion: '',
+        nombre: '',
+        barrio: '',
+        numeroMatricula: '',
+        fechaInicioCobro: '',
+        fechaVencimiento: '',
+        precioUnitario: '',
+        multas: '',
+        saldoPendiente: '',
+        observacion: ''
+    });
     const [facturaData, setFacturaData] = useState({
+        nombre_usuario: name,
         identificacion: '',
         nombre: '',
         barrio: '',
@@ -20,9 +33,7 @@ const FacturacionPage = () => {
         precioUnitario: '',
         multas: '',
         saldoPendiente: '',
-        observacion: ''
     });
-
     const [showModal, setShowModal] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [invoicesGenerated, setInvoicesGenerated] = useState(false);
@@ -33,7 +44,7 @@ const FacturacionPage = () => {
     const [numeroMatriculaInput, setNumeroMatriculaInput] = useState("");
     const [numeroFactura, setNumeroFactura] = useState("");
     const [cargandoNumero, setCargandoNumero] = useState(false);
-
+    
     const abrirModalFacturasAutomaticas = () => {
         setShowModal(true);
     };
@@ -49,19 +60,19 @@ const FacturacionPage = () => {
             if (response.ok) {
                 const data = await response.json();
                 setFacturaData({
-                    id_factura: factura.id_factura || '',
-                    identificacion: factura.numero_documento || '',
-                    nombre: factura.nombre || '',
-                    barrio: factura.direccion || '',
-                    numeroMatricula: factura.numero_matricula || '',
-                    fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
-                    fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
-                    lecturaAnterior: factura.lectura_anterior || '',
-                    lecturaActual: factura.lectura_actual || '',
-                    precioUnitario: factura.precio_unitario || 0,  // Ahora usamos el valor del backend
-                    multas: factura.total_multas || 0,
-                    saldoPendiente: factura.valor_pendiente || 0,
-                    observacion: factura.observacion || ''
+                    id_factura: data.id_factura || '',
+                    identificacion: data.numero_documento || '',
+                    nombre: data.nombre || '',
+                    barrio: data.direccion || '',
+                    numeroMatricula: data.numero_matricula || '',
+                    fechaInicioCobro: data.fecha_factura ? new Date(data.fecha_factura).toISOString().split('T')[0] : '',
+                    fechaVencimiento: data.fecha_vencimiento ? new Date(data.fecha_vencimiento).toISOString().split('T')[0] : '',
+                    lecturaAnterior: data.lectura_anterior || '',
+                    lecturaActual: data.lectura_actual || '',
+                    precioUnitario: data.precio_unitario || 0,  // Ahora usamos el valor del backend
+                    multas: data.total_multas || 0,
+                    saldoPendiente: data.valor_pendiente || 0,
+                    observacion: data.observacion || ''
                 });
                 setNumeroFactura(data.id_factura || '');
                 setNumeroMatriculaInput(data.numero_matricula || '');
@@ -74,9 +85,6 @@ const FacturacionPage = () => {
     // Llamar a la función cuando el componente se monte
     useEffect(() => {
         obtenerDatosIniciales();
-    }, []);
-
-    useEffect(() => {
         if (numeroMatriculaInput.length >= 4) {
             buscarDatosPorMatricula(numeroMatriculaInput);
         }
@@ -93,39 +101,33 @@ const FacturacionPage = () => {
             if (response.ok) {
                 const factura = await response.json();
                 console.log("Factura encontrada:", factura);
+                const facturas = {
+                    id_factura: factura.id_factura || '',
+                    identificacion: factura.numero_documento || '',
+                    nombre: factura.nombre || '',
+                    barrio: factura.direccion || '',
+                    numeroMatricula: factura.numero_matricula || '',
+                    fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
+                    fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
+                    multas: factura.total_multas || 0,
+                    saldoPendiente: factura.valor_pendiente || 0,
+                    observacion: factura.observacion || ''
+                };
 
-                if (factura.tarifa_definida != null) {
-                    setFacturaData({
-                        id_factura: factura.id_factura || '',
-                        identificacion: factura.numero_documento || '',
-                        nombre: factura.nombre || '',
-                        barrio: factura.direccion || '',
-                        numeroMatricula: factura.numero_matricula || '',
-                        fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
-                        fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
-                        precioUnitario: factura.tarifa_definida || "",
-                        multas: factura.total_multas || 0,
-                        saldoPendiente: factura.valor_pendiente || 0,
-                        observacion: factura.observacion || ''
+                if (factura.tarifa_definida != null) {  
+                    setFacturaDataEstandar({
+                        ...facturas,
+                        precioUnitario: factura.tarifa_definida || 0
                     });
                     setNumeroFactura(factura.id_factura);
                     setShowModal(true);
                 } else {
                     // Si es factura de medidor
                     setFacturaData({
-                        id_factura: factura.id_factura || '',
-                        identificacion: factura.numero_documento || '',
-                        nombre: factura.nombre || '',
-                        barrio: factura.direccion || '',
-                        numeroMatricula: factura.numero_matricula || '',
-                        fechaInicioCobro: factura.fecha_factura ? new Date(factura.fecha_factura).toISOString().split('T')[0] : '',
-                        fechaVencimiento: factura.fecha_vencimiento ? new Date(factura.fecha_vencimiento).toISOString().split('T')[0] : '',
+                        ...facturas,
                         lecturaAnterior: factura.lectura_anterior || '',
                         lecturaActual: factura.lectura_actual || '',
-                        precioUnitario: factura.precio_unitario || 0,  // Ahora usamos el valor del backend
-                        multas: factura.total_multas || 0,
-                        saldoPendiente: factura.valor_pendiente || 0,
-                        observacion: factura.observacion || ''
+                        precioUnitario: factura.valor_total_lectura || 0
                     });
                     setNumeroFactura(factura.id_factura);
                 }
@@ -221,6 +223,7 @@ const FacturacionPage = () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/crear_factura', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(nuevaFactura)
             });
@@ -265,7 +268,7 @@ const FacturacionPage = () => {
                 fechaVencimiento: '',
                 lecturaAnterior: '',
                 lecturaActual: '',
-                precioUnitario: TARIFA_BASE,
+                precioUnitario: '',
                 multas: '',
                 saldoPendiente: '',
                 observacion: ''
@@ -279,7 +282,9 @@ const FacturacionPage = () => {
     const generarFacturasAutomaticas = async () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas', {
-                method: 'POST'
+                method: 'POST',
+                credentials: 'include',
+                body: JSON.stringify(name),
             });
 
             if (!response.ok) {
@@ -304,7 +309,6 @@ const FacturacionPage = () => {
                 numeroMatricula: primeraFactura.id_matricula_cliente,
                 fechaVencimiento: primeraFactura.fecha_vencimiento,
                 valorPendiente: primeraFactura.valor_pendiente,
-                // Agrega otros campos según sea necesario
             });
 
             setFacturas(facturas);
@@ -373,7 +377,7 @@ const FacturacionPage = () => {
                                         <input
                                             type="text"
                                             name="usuario"
-                                            value="${factura.nombre || ''}"
+                                            value="${factura.nombre_cliente || ''}"
                                             readOnly
                                         />
                                     </div>
@@ -609,6 +613,7 @@ const FacturacionPage = () => {
                 lecturaAnterior: data.lectura_anterior ?? prev.lecturaAnterior ?? '0',
                 multas: data.total_multas ?? prev.multas ?? '0',
                 saldoPendiente: data.saldo_pendiente ?? prev.saldoPendiente ?? '0',
+                precioUnitario: data.precio_unitario,
                 observacion: data.observacion ?? prev.observacion ?? '',
             }));
 
@@ -752,7 +757,7 @@ const FacturacionPage = () => {
                                 <input
                                     type="text"
                                     name="numeroMatricula"
-                                    value={numeroMatriculaInput || ''}
+                                    value={facturaData.numeroMatricula || ''}
                                     onChange={(e) => setNumeroMatriculaInput(e.target.value)}
                                 />
                             </div>
@@ -882,66 +887,6 @@ const FacturacionPage = () => {
                     </div>
                 </div>
             </div>
-            {showFacturasModal && (
-                <div className={`modal-overlay ${isFacturasClosing ? 'closing' : ''}`}>
-                    <div className={`modal modal-large ${isFacturasClosing ? 'closing' : ''}`}>
-                        <h3 className="modal-title">Lista de Facturas</h3>
-                        <div className="modal-content">
-                            <div className="table-container">
-                                <table className="facturas-table">
-                                    <thead>
-                                        <tr>
-                                            <th>N° Factura</th>
-                                            <th>Fecha</th>
-                                            <th>Usuario</th>
-                                            <th>Identificación</th>
-                                            <th>Barrio</th>
-                                            <th>Matrícula</th>
-                                            <th>Valor Total</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
-                                    {/* Aquí va el código del tbody que proporcionaste */}
-                                    <tbody>
-                                        {Array.isArray(facturas) && facturas.length > 0 ? (
-                                            facturas.map((factura) => (
-                                                <tr key={factura.id_factura}>
-                                                    <td>{factura.id_factura}</td>
-                                                    <td>
-                                                        {factura.fecha_factura ?
-                                                            new Date(factura.fecha_factura).toLocaleDateString('es-CO', {
-                                                                year: 'numeric',
-                                                                month: 'long',
-                                                                day: 'numeric'
-                                                            }) : '-'}
-                                                    </td>
-                                                    <td>{factura.nombre || '-'}</td>
-                                                    <td>{factura.numero_documento || '-'}</td>
-                                                    <td>{factura.direccion || '-'}</td>
-                                                    <td>{factura.numero_matricula || '-'}</td>
-                                                    <td>{formatCurrency(factura.valor_total || 0)}</td>
-                                                    <td>{factura.descripcion_estado_factura || '-'}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="8" style={{ textAlign: 'center' }}>
-                                                    No hay facturas disponibles
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div className="modal-buttons">
-                            <button onClick={handleCloseFacturasModal} className="btn btn-secondary">
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
             {showModal && (
                 <div className={`modal-overlay ${isClosing ? 'closing' : ''}`}>
                     <div className={`modal ${isClosing ? 'closing' : ''}`}>
@@ -972,7 +917,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="identificacion"
-                                                value={facturaData.identificacion || ''}
+                                                value={facturaDataEstandar.identificacion || ''}
                                                 readOnly
                                             />
                                         </div>
@@ -981,7 +926,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="usuario"
-                                                value={facturaData.nombre || ''}
+                                                value={facturaDataEstandar.nombre || ''}
                                                 readOnly
                                             />
                                         </div>
@@ -990,7 +935,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="date"
                                                 name="fechaInicioCobro"
-                                                value={facturaData.fechaInicioCobro}
+                                                value={facturaDataEstandar.fechaInicioCobro}
                                                 readOnly
                                             />
                                         </div>
@@ -1001,7 +946,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="barrio"
-                                                value={facturaData.barrio || ''}
+                                                value={facturaDataEstandar.barrio || ''}
                                                 readOnly
                                             />
                                         </div>
@@ -1010,7 +955,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="text"
                                                 name="MatriculaCliente"
-                                                value={facturaData.numeroMatricula}
+                                                value={facturaDataEstandar.numeroMatricula}
                                                 readOnly
                                             />
                                         </div>
@@ -1019,7 +964,7 @@ const FacturacionPage = () => {
                                             <input
                                                 type="date"
                                                 name="fechaVencimiento"
-                                                value={facturaData.fechaVencimiento}
+                                                value={facturaDataEstandar.fechaVencimiento}
                                                 readOnly
                                             />
                                         </div>
@@ -1042,11 +987,11 @@ const FacturacionPage = () => {
                                                     <input
                                                         type="number"
                                                         name="precioUnitario"
-                                                        value={facturaData.precioUnitario}
+                                                        value={facturaDataEstandar.precioUnitario}
                                                         readOnly
                                                     />
                                                 </td>
-                                                <td>{formatCurrency(facturaData.precioUnitario || 0)}</td>
+                                                <td>{formatCurrency(facturaDataEstandar.precioUnitario || 0)}</td>
                                             </tr>
                                             <tr>
                                                 <td>MULTAS</td>
@@ -1054,11 +999,11 @@ const FacturacionPage = () => {
                                                     <input
                                                         type="number"
                                                         name="multas"
-                                                        value={facturaData.multas}
+                                                        value={facturaDataEstandar.multas}
                                                         readOnly
                                                     />
                                                 </td>
-                                                <td>{formatCurrency(facturaData.multas || 0)}</td>
+                                                <td>{formatCurrency(facturaDataEstandar.multas || 0)}</td>
                                             </tr>
                                             <tr>
                                                 <td>SALDO PENDIENTE</td>
@@ -1066,11 +1011,11 @@ const FacturacionPage = () => {
                                                     <input
                                                         type="number"
                                                         name="saldoPendiente"
-                                                        value={facturaData.saldoPendiente}
+                                                        value={facturaDataEstandar.saldoPendiente}
                                                         readOnly
                                                     />
                                                 </td>
-                                                <td>{formatCurrency(facturaData.saldoPendiente || 0)}</td>
+                                                <td>{formatCurrency(facturaDataEstandar.saldoPendiente || 0)}</td>
                                             </tr>
                                             <tr>
                                                 <td>OBSERVACIÓN</td>
@@ -1078,7 +1023,7 @@ const FacturacionPage = () => {
                                                     <input
                                                         type="text"
                                                         name="observacion"
-                                                        value={facturaData.observacion}
+                                                        value={facturaDataEstandar.observacion}
                                                         readOnly
                                                     />
                                                 </td>
@@ -1088,9 +1033,9 @@ const FacturacionPage = () => {
                                             <tr>
                                                 <td colSpan="2">TOTAL A PAGAR</td>
                                                 <td>
-                                                    {formatCurrency((parseFloat(facturaData.precioUnitario || 0) +
-                                                        parseFloat(facturaData.multas || 0) +
-                                                        parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}
+                                                    {formatCurrency((parseFloat(facturaDataEstandar.precioUnitario || 0) +
+                                                        parseFloat(facturaDataEstandar.multas || 0) +
+                                                        parseFloat(facturaDataEstandar.saldoPendiente || 0)).toFixed(2))}
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -1102,26 +1047,26 @@ const FacturacionPage = () => {
                                     <div className="comprobante-grid">
                                         <div className="comprobante-item">
                                             <p className="label">USUARIO</p>
-                                            <p className="value">{facturaData.nombre || '-'}</p>
+                                            <p className="value">{facturaDataEstandar.nombre || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">IDENTIFICACIÓN</p>
-                                            <p className="value">{facturaData.identificacion || '-'}</p>
+                                            <p className="value">{facturaDataEstandar.identificacion || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">BARRIO</p>
-                                            <p className="value">{facturaData.barrio || '-'}</p>
+                                            <p className="value">{facturaDataEstandar.barrio || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">MATRICULA N°</p>
-                                            <p className="value">{facturaData.numeroMatricula || '-'}</p>
+                                            <p className="value">{facturaDataEstandar.numeroMatricula || '-'}</p>
                                         </div>
                                         <div className="comprobante-item">
                                             <p className="label">TOTAL PAGADO</p>
                                             <p className="value">
-                                                {formatCurrency((parseFloat(facturaData.precioUnitario || 0) +
-                                                    parseFloat(facturaData.multas || 0) +
-                                                    parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}
+                                                {formatCurrency((parseFloat(facturaDataEstandar.precioUnitario || 0) +
+                                                    parseFloat(facturaDataEstandar.multas || 0) +
+                                                    parseFloat(facturaDataEstandar.saldoPendiente || 0)).toFixed(2))}
                                             </p>
                                         </div>
                                     </div>
