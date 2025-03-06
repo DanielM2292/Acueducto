@@ -782,7 +782,7 @@ const FacturacionPage = () => {
                                 <input
                                     type="text"
                                     name="numeroMatricula"
-                                    value={numeroMatriculaInput}
+                                    value={facturaData.numeroMatricula}
                                     onChange={handleMatriculaChange}
                                 />
                             </div>
@@ -1132,14 +1132,14 @@ const FacturacionPage = () => {
                                     <tbody>
                                         {facturas.map((factura, index) => (
                                             <tr key={index}>
-                                                <td>{factura.numero_factura}</td>
-                                                <td>{new Date(factura.fecha_creacion).toLocaleDateString()}</td>
+                                                <td>{factura.id_factura}</td>
+                                                <td>{new Date(factura.fecha_factura).toLocaleDateString()}</td>
                                                 <td>{factura.nombre}</td>
-                                                <td>{factura.identificacion}</td>
-                                                <td>{factura.barrio}</td>
-                                                <td style={{ fontWeight: 'bold' }}>{factura.matricula_cliente}</td>
+                                                <td>{factura.numero_documento}</td>
+                                                <td>{factura.direccion}</td>
+                                                <td style={{ fontWeight: 'bold' }}>{factura.numero_matricula}</td>
                                                 <td>{formatCurrency(factura.valor_total)}</td>
-                                                <td>{factura.estado}</td>
+                                                <td>{factura.descripcion_estado_factura}</td>
                                             </tr>
                                         ))}
                                     </tbody>
