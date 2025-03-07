@@ -22,8 +22,8 @@ class ProductosServices:
             total_productos = cantidad * valor_producto
             
             Inventario.add_product(mysql,custom_id_producto, descripcion_producto, cantidad, valor_producto, total_productos)
-            Ingresos.crear_ingreso_producto(mysql, custom_id_ingreso, f'Se agrega producto {descripcion_producto} al inventario', total_productos, custom_id_producto)
-            Egresos.crear_egreso_general(mysql, custom_id_egreso, 'Egreso de efectivo para compra de producto', cantidad, total_productos)
+            Ingresos.crear_ingreso_producto(mysql, custom_id_ingreso, f'Se agrega producto {descripcion_producto} al inventario', 0, custom_id_producto)
+            Egresos.crear_egreso_general(mysql, custom_id_egreso, f'Egreso de efectivo para compra de producto {descripcion_producto}', cantidad, total_productos)
             Auditoria.log_audit(mysql, custom_id_auditoria, "inventario", custom_id_producto, "INSERT", id_administrador, "Se agrega producto al inventario")
             return jsonify({"message": "Producto agregado exitosamente"}), 201
         except Exception as e:

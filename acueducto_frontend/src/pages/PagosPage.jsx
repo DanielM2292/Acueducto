@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 const PagosPage = () => {
     const name = localStorage.getItem("userName");
     const API_BASE_URL = "http://localhost:9090";
-    
+
     const [tipo, setTipo] = useState('Factura');
     const [tipoPago, setTipoPago] = useState('');
     const [tarifa, setTarifa] = useState('Estandar');
@@ -14,7 +14,11 @@ const PagosPage = () => {
     const [idReferencia, setIdReferencia] = useState('');
     const [loading, setLoading] = useState(false);
     const [historialData, setHistorialData] = useState([]);
+    const [filteredHistorialData, setFilteredHistorialData] = useState([]);
     const [searchTimeout, setSearchTimeout] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedYear, setSelectedYear] = useState('2025'); // Año actual por defecto
+    const [selectedMonth, setSelectedMonth] = useState('2'); // Mes actual por defecto (Marzo es 2)
     const [paymentData, setPaymentData] = useState({
         total: '',
         pendiente: '',
@@ -31,6 +35,24 @@ const PagosPage = () => {
         valor_multa: ''
     });
 
+    // Generar años desde 2020 hasta el año actual (2025)
+    const years = Array.from({ length: 6 }, (_, i) => 2025 + i);
+
+    const months = [
+        { value: '0', label: 'Enero' },
+        { value: '1', label: 'Febrero' },
+        { value: '2', label: 'Marzo' },
+        { value: '3', label: 'Abril' },
+        { value: '4', label: 'Mayo' },
+        { value: '5', label: 'Junio' },
+        { value: '6', label: 'Julio' },
+        { value: '7', label: 'Agosto' },
+        { value: '8', label: 'Septiembre' },
+        { value: '9', label: 'Octubre' },
+        { value: '10', label: 'Noviembre' },
+        { value: '11', label: 'Diciembre' }
+    ];
+
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
             style: 'currency',
@@ -40,6 +62,15 @@ const PagosPage = () => {
         }).format(value);
     };
 
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-CO', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+    };
+
     useEffect(() => {
         fetchHistorial();
         return () => {
@@ -47,7 +78,38 @@ const PagosPage = () => {
                 clearTimeout(searchTimeout);
             }
         };
-    }, [searchTimeout]);
+    }, []);
+
+    useEffect(() => {
+        filterHistorial();
+    }, [searchTerm, selectedYear, selectedMonth, historialData]);
+
+    const filterHistorial = () => {
+        let filteredData = [...historialData];
+
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            filteredData = filteredData.filter(item =>
+                item.id_ingreso.toString().includes(searchLower) ||
+                item.descripcion_ingreso.toLowerCase().includes(searchLower) ||
+                (item.tipo_pago && item.tipo_pago.toLowerCase().includes(searchLower))
+            );
+        }
+
+        if (selectedYear) {
+            filteredData = filteredData.filter(item =>
+                new Date(item.fecha_ingreso).getFullYear().toString() === selectedYear
+            );
+        }
+
+        if (selectedMonth) {
+            filteredData = filteredData.filter(item =>
+                new Date(item.fecha_ingreso).getMonth().toString() === selectedMonth
+            );
+        }
+
+        setFilteredHistorialData(filteredData);
+    };
 
     const handleIdChange = (value, type) => {
         if (type === 'Factura') {
@@ -111,9 +173,7 @@ const PagosPage = () => {
                 toast.warning('Este item ya se encuentra cancelado');
             }
 
-            // Reset tipoPago and calculated values when loading new data
             setTipoPago('');
-
             setPaymentData(prev => ({
                 ...prev,
                 total_factura: data.total_factura,
@@ -122,7 +182,7 @@ const PagosPage = () => {
                 valor_pendiente: data.valor_pendiente,
                 aCancelar: data.estado === 'PAGADO' ? '' : data.valor_pendiente,
                 estado: data.estado,
-                total: '',  // Clear calculated values
+                total: '',
                 pendiente: ''
             }));
         } catch (err) {
@@ -140,6 +200,7 @@ const PagosPage = () => {
 
             const data = await response.json();
             setHistorialData(data);
+            setFilteredHistorialData(data);
         } catch (err) {
             toast.error('Error al cargar el historial de pagos');
             console.error(err);
@@ -161,10 +222,9 @@ const PagosPage = () => {
             return;
         }
 
-        // Use pendiente value for validation based on tipo
-        const valorPendienteToCheck = tipo === 'Factura' && tipoPago ? 
+        const valorPendienteToCheck = tipo === 'Factura' && tipoPago ?
             paymentData.pendiente : paymentData.valor_pendiente;
-            
+
         if (parseFloat(paymentData.aCancelar) > parseFloat(valorPendienteToCheck)) {
             toast.error('El valor a cancelar no puede ser mayor que el valor pendiente.');
             setLoading(false);
@@ -203,7 +263,6 @@ const PagosPage = () => {
 
             if (!response.ok) throw new Error('Error al procesar el pago');
 
-            // Limpiar el formulario
             setPaymentData({
                 total: '',
                 pendiente: '',
@@ -243,10 +302,10 @@ const PagosPage = () => {
     const handleTipoPagoChange = (e) => {
         const selectedTipoPago = e.target.value;
         setTipoPago(selectedTipoPago);
-    
+
         let totalCalculated = 0;
         let pendienteCalculated = 0;
-    
+
         if (selectedTipoPago === 'Mensual') {
             totalCalculated = parseFloat(paymentData.total_factura) || 0;
             pendienteCalculated = parseFloat(paymentData.valor_pendiente) || 0;
@@ -257,12 +316,12 @@ const PagosPage = () => {
             totalCalculated = (parseFloat(paymentData.total_factura) || 0) * 12;
             pendienteCalculated = (parseFloat(paymentData.valor_pendiente) || 0) * 12;
         }
-    
+
         setPaymentData(prev => ({
             ...prev,
             total: totalCalculated,
             pendiente: pendienteCalculated,
-            aCancelar: pendienteCalculated // También actualiza el valor a cancelar con el pendiente calculado
+            aCancelar: pendienteCalculated
         }));
     };
 
@@ -298,16 +357,16 @@ const PagosPage = () => {
                     </select>
                     <input
                         type="text"
-                        value={tipoPago && paymentData.total ? formatCurrency(paymentData.total) : 
-                              paymentData.total_factura ? formatCurrency(paymentData.total_factura) : ''}
+                        value={tipoPago && paymentData.total ? formatCurrency(paymentData.total) :
+                            paymentData.total_factura ? formatCurrency(paymentData.total_factura) : ''}
                         disabled
                         placeholder="Total"
                         className="pagos-input"
                     />
                     <input
                         type="text"
-                        value={tipoPago && paymentData.pendiente ? formatCurrency(paymentData.pendiente) : 
-                              paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''}
+                        value={tipoPago && paymentData.pendiente ? formatCurrency(paymentData.pendiente) :
+                            paymentData.valor_pendiente ? formatCurrency(paymentData.valor_pendiente) : ''}
                         disabled
                         placeholder="Valor Pendiente"
                         className="pagos-input"
@@ -447,6 +506,39 @@ const PagosPage = () => {
                 <div className={`pagos-modal-overlay ${isClosing ? 'closing' : ''}`}>
                     <div className={`pagos-modal ${isClosing ? 'closing' : ''}`}>
                         <h3 className="pagos-modal-title">Historial de Pagos</h3>
+                        <div className="pagos-filter-container">
+                            <input
+                                type="text"
+                                placeholder="Buscar..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pagos-input search-input"
+                            />
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                className="pagos-select"
+                            >
+                                <option value="">Seleccionar Año</option>
+                                {years.map(year => (
+                                    <option key={year} value={year.toString()}>
+                                        {year}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="pagos-select"
+                            >
+                                <option value="">Seleccionar Mes</option>
+                                {months.map(month => (
+                                    <option key={month.value} value={month.value}>
+                                        {month.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="pagos-table-container">
                             <table className="pagos-table">
                                 <thead>
@@ -459,12 +551,12 @@ const PagosPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {historialData.map((item) => (
+                                    {filteredHistorialData.map((item) => (
                                         <tr key={item.id_ingreso}>
                                             <td>{item.id_ingreso}</td>
                                             <td>{item.descripcion_ingreso}</td>
                                             <td>{item.tipo_pago || '-'}</td>
-                                            <td>{item.fecha_ingreso}</td>
+                                            <td>{formatDate(item.fecha_ingreso)}</td>
                                             <td>{formatCurrency(item.valor_ingreso)}</td>
                                         </tr>
                                     ))}
@@ -480,20 +572,99 @@ const PagosPage = () => {
                     </div>
                 </div>
             )}
-
             <style jsx>{`
-                .pagos-status-message {
-                    color: #e74c3c;
-                    font-weight: bold;
-                    margin-top: 8px;
-                    text-align: center;
-                    grid-column: 1 / -1;
+
+                .pagos-modal {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    width: 90%;
+                    max-width: 1000px;
+                    max-height: 80vh;
+                    display: flex;
+                    flex-direction: column;
                 }
-                
-                .pagos-input.disabled {
+
+                .pagos-filter-container {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background-color: #f8f9fa;
+                    border-radius: 8px;
+                }
+
+                .pagos-table-container {
+                    max-height: calc(80vh - 200px); /* Ajusta este valor según necesites */
+                    overflow-y: auto;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                }
+
+                /* Estilos personalizados para el scrollbar del contenedor */
+                .pagos-table-container::-webkit-scrollbar {
+                    width: 8px;
+                }
+
+                .pagos-table-container::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 4px;
+                }
+
+                .pagos-table-container::-webkit-scrollbar-thumb {
+                    background: #888;
+                    border-radius: 4px;
+                }
+
+                .pagos-table-container::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+                .pagos-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                .pagos-table th {
+                    position: sticky;
+                    top: 0;
+                    background-color: #f8f9fa;
+                    z-index: 1;
+                    font-weight: 600;
+                    padding: 12px;
+                    text-align: left;
+                    border-bottom: 2px solid #dee2e6;
+                }
+
+                .pagos-table td {
+                    padding: 12px;
+                    text-align: left;
+                    border-bottom: 1px solid #dee2e6;
+                }
+
+                .pagos-table tbody tr:hover {
                     background-color: #f5f5f5;
-                    cursor: not-allowed;
-                    opacity: 0.7;
+                }
+
+                .pagos-button-close {
+                    margin-top: 20px;
+                }
+
+                @media (max-width: 768px) {
+                    .pagos-filter-container {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .pagos-modal {
+                        width: 95%;
+                        margin: 10px;
+                        padding: 15px;
+                    }
+
+                    .pagos-table-container {
+                        max-height: calc(90vh - 250px); /* Ajuste para móviles */
+                    }
                 }
             `}</style>
         </div>

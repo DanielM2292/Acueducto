@@ -4,10 +4,11 @@ import { Search } from "lucide-react";
 const VerHistorialPage = () => {
   const [auditoria, setAuditoria] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredAuditoria, setFilteredAuditoria] = useState([]);
-
+  const years = [2025, 2026, 2027, 2028, 2029, 2030];
   useEffect(() => {
     fetchAuditoria();
   }, []);
@@ -30,14 +31,23 @@ const VerHistorialPage = () => {
     }
   };
 
+
   const filterAuditoria = () => {
     let filtered = [...auditoria];
+
+    // Filtrar por año si hay uno seleccionado
+    if (selectedYear) {
+      filtered = filtered.filter(item => {
+        const itemDate = new Date(item.fecha);
+        return itemDate.getFullYear() === parseInt(selectedYear);  // Asegúrate de que el año coincida
+      });
+    }
 
     // Filtrar por mes si hay uno seleccionado
     if (selectedMonth) {
       filtered = filtered.filter(item => {
         const itemDate = new Date(item.fecha);
-        return itemDate.getMonth() === parseInt(selectedMonth) - 1;
+        return itemDate.getMonth() === parseInt(selectedMonth) - 1;  // El mes es 0-indexed
       });
     }
 
@@ -51,8 +61,12 @@ const VerHistorialPage = () => {
       );
     }
 
-    setFilteredAuditoria(filtered);
+    setFilteredAuditoria(filtered);  // Establecer los resultados filtrados
   };
+
+  useEffect(() => {
+    filterAuditoria();  // Para Auditoria
+  }, [selectedYear, selectedMonth, searchTerm]);
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
@@ -88,7 +102,7 @@ const VerHistorialPage = () => {
         <div className="modalOverlay">
           <div className="modalContent">
             <h2 className="modalTitle">Historial de Auditoría</h2>
-            
+
             <div className="filterContainer">
               <div className="searchContainer">
                 <Search className="searchIcon" size={20} />
@@ -100,7 +114,18 @@ const VerHistorialPage = () => {
                   className="searchInput"
                 />
               </div>
-
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="yearSelect"
+              >
+                <option value="">Todos los años</option>
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -195,6 +220,20 @@ const VerHistorialPage = () => {
           top: 50%;
           transform: translateY(-50%);
           color: #666;
+        }
+          .yearSelect {
+            padding: 10px 35px 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: white;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+            min-width: 180px;
         }
 
         .searchInput {

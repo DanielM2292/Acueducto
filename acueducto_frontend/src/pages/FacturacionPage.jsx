@@ -44,6 +44,9 @@ const FacturacionPage = () => {
     const [numeroMatriculaInput, setNumeroMatriculaInput] = useState("");
     const [numeroFactura, setNumeroFactura] = useState("");
     const [cargandoNumero, setCargandoNumero] = useState(false);
+    const [selectedYear, setSelectedYear] = useState('todos');
+    const [selectedMonth, setSelectedMonth] = useState('todos');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const abrirModalFacturasAutomaticas = () => {
         setShowModal(true);
@@ -181,6 +184,7 @@ const FacturacionPage = () => {
         }
     };
 
+    const years = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() + i);
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
@@ -523,7 +527,7 @@ const FacturacionPage = () => {
                                 <div class="comprobante-grid">
                                     <div class="comprobante-item">
                                         <p class="label">USUARIO</p>
-                                        <p class="value">${factura.nombre || '-'}</p>
+                                        <p class="value">${factura.nombre_cliente || '-'}</p>
                                     </div>
                                     <div class="comprobante-item">
                                         <p class="label">IDENTIFICACIÓN</p>
@@ -1111,261 +1115,605 @@ const FacturacionPage = () => {
                 </div>
             )}
             {showFacturasModal && (
-                <div className="modal-overlay" style={{ zIndex: 1002 }}>
-                    <div className="modal modal-large">
-                        <h3 className="modal-title">Lista de Facturas</h3>
-                        <div className="modal-content">
-                            <div className="table-container">
-                                <table className="facturas-table">
-                                    <thead>
-                                        <tr>
-                                            <th>N° Factura</th>
-                                            <th>Fecha</th>
-                                            <th>Usuario</th>
-                                            <th>Identificación</th>
-                                            <th>Barrio</th>
-                                            <th>Matrícula</th>
-                                            <th>Valor Total</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {facturas.map((factura, index) => (
-                                            <tr key={index}>
-                                                <td>{factura.id_factura}</td>
-                                                <td>{new Date(factura.fecha_factura).toLocaleDateString()}</td>
-                                                <td>{factura.nombre}</td>
-                                                <td>{factura.numero_documento}</td>
-                                                <td>{factura.direccion}</td>
-                                                <td style={{ fontWeight: 'bold' }}>{factura.numero_matricula}</td>
-                                                <td>{formatCurrency(factura.valor_total)}</td>
-                                                <td>{factura.descripcion_estado_factura}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                <div className="modalOverlay">
+                    <div className="modalContent">
+                        <h2 className="modalTitle">Lista de Facturas</h2>
+
+                        <div className="filterContainer">
+                            <div className="searchContainer">
+                                <div className="searchIcon">
+                                    {/* Ícono de búsqueda simple con CSS */}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por número, usuario, identificación..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="searchInput"
+                                />
                             </div>
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                className="yearSelect"
+                            >
+                                <option value="">Todos los años</option>
+                                {years.map((year) => (
+                                    <option key={year} value={year}>
+                                        {year}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="monthSelect"
+                            >
+                                <option value="todos">Todos los meses</option>
+                                <option value="01">Enero</option>
+                                <option value="02">Febrero</option>
+                                <option value="03">Marzo</option>
+                                <option value="04">Abril</option>
+                                <option value="05">Mayo</option>
+                                <option value="06">Junio</option>
+                                <option value="07">Julio</option>
+                                <option value="08">Agosto</option>
+                                <option value="09">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
                         </div>
-                        <div className="modal-buttons">
-                            <button onClick={handleCloseFacturasModal} className="btn btn-secondary">
-                                Cerrar
-                            </button>
+
+                        <div className="historialTableContainer">
+                            <table className="historialTableCustom">
+                                <thead>
+                                    <tr>
+                                        <th>N° Factura</th>
+                                        <th>Fecha</th>
+                                        <th>Usuario</th>
+                                        <th>Identificación</th>
+                                        <th>Barrio</th>
+                                        <th>Matrícula</th>
+                                        <th>Valor Total</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {facturas && facturas.length > 0 ? (
+                                        facturas
+                                            .filter(factura => {
+                                                const yearMatch = (() => {
+                                                    if (selectedYear === 'todos') return true;
+                                                    if (!factura.fecha_factura) return false;
+                                                    try {
+                                                        const facturaDate = new Date(factura.fecha_factura);
+                                                        if (isNaN(facturaDate.getTime())) return false;
+                                                        const facturaYear = String(facturaDate.getFullYear());
+                                                        return facturaYear === selectedYear;
+                                                    } catch (error) {
+                                                        console.error("Error al procesar fecha:", error);
+                                                        return false;
+                                                    }
+                                                })();
+                                                // Filtro por mes
+                                                const monthMatch = (() => {
+                                                    if (selectedMonth === 'todos') return true;
+                                                    if (!factura.fecha_factura) return false;
+                                                    try {
+                                                        const facturaDate = new Date(factura.fecha_factura);
+                                                        if (isNaN(facturaDate.getTime())) return false;
+                                                        const facturaMonth = String(facturaDate.getMonth() + 1).padStart(2, '0');
+                                                        return facturaMonth === selectedMonth;
+                                                    } catch (error) {
+                                                        console.error("Error al procesar fecha:", error);
+                                                        return false;
+                                                    }
+                                                })();
+                                                    
+                                                // Filtro por término de búsqueda
+                                                const searchMatch = (() => {
+                                                    if (!searchTerm.trim()) return true;
+                                                    const term = searchTerm.toLowerCase();
+                                                    return (
+                                                        (factura.id_factura && factura.id_factura.toString().toLowerCase().includes(term)) ||
+                                                        (factura.nombre && factura.nombre.toLowerCase().includes(term)) ||
+                                                        (factura.numero_documento && factura.numero_documento.toString().toLowerCase().includes(term)) ||
+                                                        (factura.direccion && factura.direccion.toLowerCase().includes(term)) ||
+                                                        (factura.numero_matricula && factura.numero_matricula.toString().toLowerCase().includes(term)) ||
+                                                        (factura.descripcion_estado_factura && factura.descripcion_estado_factura.toLowerCase().includes(term))
+                                                    );
+                                                })();
+
+                                                // Debe cumplir ambos filtros
+                                                return yearMatch && monthMatch && searchMatch;
+                                            })
+                                            .map((factura, index) => (
+                                                <tr key={index}>
+                                                    <td>{factura.id_factura}</td>
+                                                    <td>{factura.fecha_factura ? new Date(factura.fecha_factura).toLocaleDateString() : 'Fecha no disponible'}</td>
+                                                    <td>{factura.nombre}</td>
+                                                    <td>{factura.numero_documento}</td>
+                                                    <td>{factura.direccion}</td>
+                                                    <td style={{ fontWeight: 'bold' }}>{factura.numero_matricula}</td>
+                                                    <td>{typeof formatCurrency === 'function' ? formatCurrency(factura.valor_total) : factura.valor_total}</td>
+                                                    <td>{factura.descripcion_estado_factura}</td>
+                                                </tr>
+                                            ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="8" style={{ textAlign: 'center' }}>No hay facturas disponibles</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
+                        <button onClick={handleCloseFacturasModal} className="closeModalButton">Cerrar</button>
                     </div>
                 </div>
             )}
+
             <style jsx>{`
-                .modal-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 1000;
-            }
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
 
-            .modal-large {
-                background: white;
-                padding: 20px;
-                border-radius: 8px;
-                width: 90%;
-                max-width: 1200px;
-                max-height: 80vh;
-                overflow-y: auto;
-                position: relative;
-                z-index: 1001;
-            }
+        .modal-large {
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          width: 90%;
+          max-width: 1200px;
+          max-height: 80vh;
+          overflow-y: auto;
+          position: relative;
+          z-index: 1001;
+        }
 
-            .table-container {
-                overflow-x: auto;
-                margin: 15px 0;
-                max-height: calc(80vh - 200px);
-                overflow-y: auto;
-            }
+        .filters-container {
+          display: flex;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 15px;
+          margin-bottom: 20px;
+        }
 
-            .facturas-table {
-                width: 100%;
-                border-collapse: collapse;
-                background-color: white;
-            }
+        .search-container, .filter-container {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
 
-            .facturas-table th,
-            .facturas-table td {
-                padding: 12px;
-                border: 1px solid #ddd;
-                text-align: left;
-            }
+        .search-input {
+          width: 300px;
+          padding: 0.5rem;
+          border: 1px solid #dee2e6;
+          border-radius: 0.375rem;
+          font-size: 1rem;
+        }
 
-            .facturas-table th {
-                background-color: #53D4FF;
-                color: white;
-                position: sticky;
-                top: 0;
-                z-index: 1;
-            }
+        .search-input:focus, .select-input:focus {
+          outline: none;
+          border-color: #0CB7F2;
+          box-shadow: 0 0 0 2px rgba(12, 183, 242, 0.2);
+        }
 
-            .modal.closing,
-            .modal-overlay.closing {
-                opacity: 0;
-                visibility: hidden;
-            }
+        .mes-selector {
+          width: 200px;
+        }
 
-                .modal {
-                    background-color: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                    width: 70%;
-                    max-width: 700px;
-                    max-height: 80vh;
-                    opacity: 1;
-                    visibility: visible;
-                    transition: opacity 0.3s ease, visibility 0.3s ease;
-                    display: flex;
-                    flex-direction: column;
-                }
+        .table-container {
+          overflow-x: auto;
+          margin: 15px 0;
+          max-height: calc(80vh - 240px);
+          overflow-y: auto;
+        }
 
-                .modal-title {
-                    margin-bottom: 20px;
-                    font-size: 20px;
-                    font-weight: bold;
-                    text-align: center;
-                    flex-shrink: 0;
-                }
+        .facturas-table {
+          width: 100%;
+          border-collapse: collapse;
+          background-color: white;
+        }
 
-                .modal-content {
-                    overflow-y: auto;
-                    flex-grow: 1;
-                    margin-bottom: 20px;
-                    padding-right: 10px;
-                }
+        .facturas-table th,
+        .facturas-table td {
+          padding: 12px;
+          border: 1px solid #ddd;
+          text-align: left;
+        }
 
-                .modal-buttons {
-                    display: flex;
-                    gap: 10px;
-                    justify-content: flex-end;
-                    padding-top: 10px;
-                    border-top: 1px solid #e0e0e0;
-                    flex-shrink: 0;
-                }
+        .facturas-table th {
+          background-color: #53D4FF;
+          color: white;
+          position: sticky;
+          top: 0;
+          z-index: 1;
+        }
 
-                .success-message {
-                    color: green;
-                    text-align: center;
-                    margin-top: 10px;
-                }
-                    .factura-numero {
-                    background-color: #f8f9fa;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    border: 1px solid #dee2e6;
-                    margin-left: auto;
-                }
+        .modal.closing,
+        .modal-overlay.closing {
+          opacity: 0;
+          visibility: hidden;
+        }
 
-                .factura-numero p {
-                    margin: 0;
-                    font-size: 1.2rem;
-                    font-weight: bold;
-                    color: #0056b3;
-                }
+        .modal {
+          background-color: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+          width: 70%;
+          max-width: 700px;
+          max-height: 80vh;
+          opacity: 1;
+          visibility: visible;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+          display: flex;
+          flex-direction: column;
+        }
 
-                /* Additional styles for disabled button */
-                .disabled {
-                    background-color: #bdc3c7;
-                    cursor: not-allowed;
-                }
+        .modal-title {
+          margin-bottom: 20px;
+          font-size: 20px;
+          font-weight: bold;
+          text-align: center;
+          flex-shrink: 0;
+        }
 
-                .modal-large {
-                    width: 90% !important;
-                    max-width: 1200px !important;
-                }
+        .modal-content {
+          overflow-y: auto;
+          flex-grow: 1;
+          margin-bottom: 20px;
+          padding-right: 10px;
+        }
 
-                .table-container {
-                    overflow-x: auto;
-                    margin-bottom: 1rem;
-                }
+        .modal-buttons {
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+          padding-top: 10px;
+          border-top: 1px solid #e0e0e0;
+          flex-shrink: 0;
+        }
 
-                .facturas-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    background-color: white;
-                }
+        .success-message {
+          color: green;
+          text-align: center;
+          margin-top: 10px;
+        }
+        
+        .factura-numero {
+          background-color: #f8f9fa;
+          padding: 10px 20px;
+          border-radius: 5px;
+          border: 1px solid #dee2e6;
+          margin-left: auto;
+        }
 
-                .facturas-table th,
-                .facturas-table td {
-                    padding: 12px;
-                    text-align: left;
-                    border-bottom: 1px solid #e2e8f0;
-                }
+        .factura-numero p {
+          margin: 0;
+          font-size: 1.2rem;
+          font-weight: bold;
+          color: #0056b3;
+        }
 
-                .facturas-table th {
-                    background-color: #53D4FF;
-                    color: white;
-                    font-weight: 600;
-                    white-space: nowrap;
-                }
+        /* Additional styles for disabled button */
+        .disabled {
+          background-color: #bdc3c7;
+          cursor: not-allowed;
+        }
 
-                .facturas-table tbody tr:hover {
-                    background-color: #f7fafc;
-                }
+        .modal-large {
+          width: 90% !important;
+          max-width: 1200px !important;
+        }
 
-                .btn-info {
-                    background-color: #3498db;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    transition: background-color 0.3s ease;
-                }
+        .table-container {
+          overflow-x: auto;
+          margin-bottom: 1rem;
+        }
 
-                .btn-info:hover {
-                    background-color: #2980b9;
-                }
-                .select-input {
-                    width: 100%;
-                    padding: 0.5rem;
-                    margin-top: 4px;
-                    border: 1px solid #dee2e6;
-                    border-radius: 0.375rem;
-                    background-color: white;
-                    font-size: 1rem;
-                }
+        .facturas-table {
+          width: 100%;
+          border-collapse: collapse;
+          background-color: white;
+        }
 
-                .factura-input{
-                    width: 30%;
-                    padding: 0.5rem;
-                    margin-top: 4px;
-                    border: 1px solid #dee2e6;
-                    border-radius: 0.375rem;
-                }
-                .select-input:focus {
-                    outline: none;
-                    border-color: #0CB7F2;
-                    box-shadow: 0 0 0 2px rgba(12, 183, 242, 0.2);
-                }
+        .facturas-table th,
+        .facturas-table td {
+          padding: 12px;
+          text-align: left;
+          border-bottom: 1px solid #e2e8f0;
+        }
 
-                /* Responsive styles */
-                @media (max-width: 768px) {
-                    .button-group {
-                        flex-direction: column;
-                        gap: 8px;
-                    }
+        .facturas-table th {
+          background-color: #53D4FF;
+          color: white;
+          font-weight: 600;
+          white-space: nowrap;
+        }
 
-                    .button-group button {
-                        width: 100%;
-                    }
+        .facturas-table tbody tr:hover {
+          background-color: #f7fafc;
+        }
 
-                    .modal-large {
-                        width: 95% !important;
-                        margin: 10px;
-                    }
-                }
-            `}</style>
+        .btn-info {
+          background-color: #3498db;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+
+        .btn-info:hover {
+          background-color: #2980b9;
+        }
+        
+        .select-input {
+          width: 100%;
+          padding: 0.5rem;
+          margin-top: 4px;
+          border: 1px solid #dee2e6;
+          border-radius: 0.375rem;
+          background-color: white;
+          font-size: 1rem;
+        }
+
+        .factura-input{
+          width: 30%;
+          padding: 0.5rem;
+          margin-top: 4px;
+          border: 1px solid #dee2e6;
+          border-radius: 0.375rem;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+          .filters-container {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .search-container, .filter-container {
+            width: 100%;
+          }
+          
+          .search-input, .mes-selector {
+            width: 100%;
+          }
+          
+          .button-group {
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .button-group button {
+            width: 100%;
+          }
+
+          .modal-large {
+            width: 95% !important;
+            margin: 10px;
+          }
+        }
+          .modalOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modalContent {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        width: 95%;
+        max-width: 1200px;
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .modalTitle {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 24px;
+        color: #2c3e50;
+    }
+
+    .filterContainer {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+
+    .searchContainer {
+        flex: 1;
+        position: relative;
+        max-width: 500px;
+    }
+
+    .searchIcon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+    }
+
+    .searchInput {
+        width: 100%;
+        padding: 10px 10px 10px 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .searchInput:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+
+    .monthSelect {
+        padding: 10px 35px 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: white;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 16px;
+        min-width: 180px;
+    }
+
+    .monthSelect:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+
+    .historialTableContainer {
+        flex: 1;
+        overflow-y: auto;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .historialTableContainer::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .historialTableContainer::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .yearSelect {
+        padding: 10px 35px 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: white;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 16px;
+        min-width: 180px;
+    }
+
+    .historialTableContainer::-webkit-scrollbar-thumb {
+        background: #bbb;
+        border-radius: 4px;
+    }
+
+    .historialTableContainer::-webkit-scrollbar-thumb:hover {
+        background: #999;
+    }
+
+    .historialTableCustom {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .historialTableCustom thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #3498db;
+        color: white;
+    }
+
+    .historialTableCustom th, 
+    .historialTableCustom td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .historialTableCustom th {
+        font-weight: 600;
+    }
+
+    .historialTableCustom tbody tr {
+        transition: background-color 0.2s;
+    }
+
+    .historialTableCustom tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    .historialTableCustom tbody tr:hover {
+        background-color: #e8f4fc;
+        cursor: pointer;
+    }
+
+    .closeModalButton {
+        align-self: center;
+        padding: 10px 25px;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    .closeModalButton:hover {
+        background-color: #c0392b;
+    }
+
+    @media (max-width: 768px) {
+        .filterContainer {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .searchContainer {
+            max-width: 100%;
+        }
+
+        .monthSelect {
+            width: 100%;
+        }
+    }
+      `}</style>
         </div>
     );
 };

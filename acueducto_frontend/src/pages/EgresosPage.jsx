@@ -39,8 +39,8 @@ const EgresosPage = () => {
             const data = await response.json();
             if (response.ok) {
                 setEgresos(data);
-                setFilteredEgresos(data); // Inicialmente, mostrar todos los egresos
-                setIsModalOpen(true); // Abrir la ventana modal solo aquí
+                setFilteredEgresos(data); 
+                setIsModalOpen(true);
                 notify("Egresos cargados exitosamente", "success");
             } else {
                 notify("Error al cargar los egresos", "error");
