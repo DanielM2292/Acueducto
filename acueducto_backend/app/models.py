@@ -111,9 +111,10 @@ class Auditoria:
     def mostrar_registros(mysql):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''
-            SELECT id_auditoria, tabla, id_registro_afectado, accion, nombre_usuario, fecha, detalles
-            FROM auditoria
-            INNER JOIN administradores;''')
+            SELECT a.id_auditoria, a.tabla, a.id_registro_afectado, a.accion, 
+            adm.nombre_usuario, a.fecha, a.detalles
+            FROM auditoria AS a
+            INNER JOIN administradores AS adm ON a.id_administrador = adm.id_administrador;''')
         clientes = cursor.fetchall()
         cursor.close()
         return clientes
@@ -531,9 +532,9 @@ class Inventario:
     
     #Obtener producto desde su id
     @staticmethod
-    def get_product_by_id(mysql, product_id):
+    def get_product_by_id(mysql, id_producto):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM inventario WHERE id_producto = %s', (product_id,))
+        cursor.execute('SELECT * FROM inventario WHERE id_producto = %s', (id_producto,))
         product = cursor.fetchone()
         cursor.close()
         return product
@@ -581,6 +582,14 @@ class Inventario:
         products = cursor.fetchall()
         cursor.close()
         return products
+    
+    @staticmethod
+    def existe_producto(mysql, descripcion_producto):
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM inventario WHERE descripcion_producto = %s", (descripcion_producto,))
+        existe_producto = cursor.fetchone()[0]  # Extraer el resultado
+        cursor.close()
+        return existe_producto
     
 class Matriculas:
     # Ojo dos metodos hacen lo mismo

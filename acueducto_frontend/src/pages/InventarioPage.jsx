@@ -9,6 +9,7 @@ const InventarioPage = () => {
         descripcion_producto: "",
         cantidad: "",
         valor_producto: "",
+        id_producto: ""
     });
 
     const [productos, setProductos] = useState([]);
@@ -39,7 +40,10 @@ const InventarioPage = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    nombre_usuario: name,
+                    ...formData
+                }),
             });
             const data = await response.json();
             if (response.ok) {
@@ -98,7 +102,10 @@ const InventarioPage = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    nombre_usuario: name,
+                    ...formData
+                }),
             });
             const data = await response.json();
             if (response.ok) {
@@ -108,32 +115,6 @@ const InventarioPage = () => {
                 fetchAllProducts();
             } else {
                 notify(data.message || "Error al actualizar el producto", "error");
-            }
-        } catch (error) {
-            notify("Error de conexión con el servidor", "error");
-            console.error("Error:", error);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!selectedProductId) {
-            notify("Por favor, seleccione un producto para eliminar", "error");
-            return;
-        }
-
-        try {
-            const response = await fetch(`http://localhost:9090/productos/eliminar_producto?id_producto=${selectedProductId}`, {
-                method: "DELETE",
-                credentials: 'include',
-            });
-            const data = await response.json();
-            if (response.ok) {
-                notify("Producto eliminado exitosamente", "success");
-                setFormData({ nombre_usuario: name, descripcion_producto: "", cantidad: "", valor_producto: "" });
-                setSelectedProductId(null);
-                fetchAllProducts();
-            } else {
-                notify(data.message || "Error al eliminar el producto", "error");
             }
         } catch (error) {
             notify("Error de conexión con el servidor", "error");
@@ -213,7 +194,6 @@ const InventarioPage = () => {
                     <button className="crudBtn" type="button" onClick={fetchAllProducts}>Mostrar Todos</button>
                     <button className="crudBtn" type="button" onClick={searchProductsByKeyword}>Buscar</button>
                     <button className="crudBtn" type="button" onClick={handleEdit}>Editar</button>
-                    <button className="btnEliminar" type="button" onClick={handleDelete}>Eliminar</button>
                 </div>
             </form>
             <div className="ProductList">

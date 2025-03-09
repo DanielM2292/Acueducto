@@ -68,15 +68,19 @@ class AuthServices:
     @staticmethod
     def actualizar_estado_usuario(data):
         mysql = current_app.mysql
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         custom_id_auditoria = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
-    
         try:
+            user_name = data.get('nombre_usuario')
             id_administrador = request.args.get("id_administrador")
             id_estado_empleado = data.get("id_estado_empleado")
-            current_user = session.get("id_administrador")
+            
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador_usuario = user['id_administrador']
 
             User.update_estado_empleado(mysql,id_estado_empleado, id_administrador)
-            Auditoria.log_audit(mysql, custom_id_auditoria, 'administradores', id_administrador, 'UPDATE', current_user, f'Estado de usuario {id_administrador} actualizado')
+            Auditoria.log_audit(mysql, custom_id_auditoria, 'administradores', id_administrador, 'UPDATE', id_administrador_usuario, f'Estado de usuario {id_administrador} actualizado')
             return jsonify({"message": "Estado del usuario actualizado exitosamente"}), 200
         except Exception as e:
             return jsonify({"message": f"Error al actualizar estado: {str(e)}"}), 500

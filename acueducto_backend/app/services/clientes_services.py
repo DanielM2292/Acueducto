@@ -39,10 +39,10 @@ class ClientesServices:
             user = User.get_user_by_username(mysql, user_name)
             id_administrador = user['id_administrador']
             id_cliente = data.get("id_cliente")
-            tipo_documento = data.get("tipo_documento"),
-            numero_documento = data.get("numero_documento"),
-            nombre = data.get("nombre"),
-            telefono = data.get("telefono"),
+            tipo_documento = data.get("tipo_documento")
+            numero_documento = data.get("numero_documento")
+            nombre = data.get("nombre")
+            telefono = data.get("telefono")
             
             Clientes.update_cliente(mysql, tipo_documento, numero_documento, nombre, telefono, id_cliente)
             Auditoria.log_audit(mysql, custom_id_auditoria, "clientes", id_cliente, "UPDATE", id_administrador, f"Se actualiza datos del cliente {id_cliente}")

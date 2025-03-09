@@ -295,6 +295,9 @@ const FacturacionPage = () => {
         try {
             const response = await fetch('http://localhost:9090/facturas/generarFacturasAutomaticas', {
                 method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({nombre_usuario: name})
             });
 
             if (!response.ok) {
