@@ -6,26 +6,25 @@ class FacturasServices:
     @staticmethod
     def generarFacturasAutomaticas():
         mysql = current_app.mysql
-        #if "user" not in session:
-            #return jsonify({'message': 'Unauthorized'}), 401
+        if "user" not in session:
+            return jsonify({'message': 'Unauthorized'}), 401
         try:
-            # data = request.get_json()
-            # user_name = data.get('nombre_usuario')
-            # user = User.get_user_by_username(mysql, user_name)
-            # id_administrador = user['id_administrador']
+            data = request.get_json()
+            user_name = data.get('nombre_usuario')
+            user = User.get_user_by_username(mysql, user_name)
+            id_administrador = user['id_administrador']
             datos_estandar = Tarifas_estandar.obtener_datos_estandar(mysql)
             valor_pendiente = datos_estandar['tarifa_definida']
             id_tarifa_estandar = datos_estandar['id_tarifa_estandar']
-            
+            print(id_administrador)
             fecha_actual = datetime.now()
-            dia_siguiente = fecha_actual.day + 25
             anio = fecha_actual.year
             
             if fecha_actual.month > 12:
                 fecha_actual.month = 1
                 anio += 1
                 
-            fecha_vencimiento = fecha_actual.replace(year=anio, day=dia_siguiente)
+            fecha_vencimiento = fecha_actual.replace(year=anio, day=25)
             id_matricula_cliente = Clientes.get_clientes_facturas_estandar(mysql)
             if id_matricula_cliente:
                 facturas_generadas = [] 
@@ -53,7 +52,7 @@ class FacturasServices:
                             Estandar_factura.crear_factura_estandar(mysql, custom_id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, 1)
                             
                             Facturas.generar_facturas(mysql, custom_id, fecha_vencimiento, id_cliente, 'ESF0001', valor_pendiente, id_matricula_cliente, custom_id_estandar_factura)
-                            Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', 'ADM0001', f'Factura generada para el cliente {id_matricula_cliente}')
+                            Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', id_administrador, f'Factura generada para el cliente {id_matricula_cliente}')
                         
                             factura_info = {
                                 "id_factura": custom_id,
@@ -92,7 +91,7 @@ class FacturasServices:
                         Estandar_factura.crear_factura_estandar(mysql, custom_id_estandar_factura, id_tarifa_estandar, id_matricula_cliente, 1)
                         
                         Facturas.generar_facturas(mysql, custom_id, fecha_vencimiento, id_cliente, 'ESF0001', valor_pendiente, id_matricula_cliente, custom_id_estandar_factura)
-                        Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', 'ADM0001', f'Factura generada para el cliente {id_matricula_cliente}')
+                        Auditoria.log_audit(mysql, custom_id_auditoria, 'facturas', custom_id, 'INSERT', id_administrador, f'Factura generada para el cliente {id_matricula_cliente}')
                         
                         factura_info = {
                             "id_factura": custom_id,
