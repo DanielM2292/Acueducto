@@ -45,7 +45,7 @@ class EgresosServices:
                     return jsonify({'error': 'La cantidad no puede ser mayor al total de inventario'}), 400
                 total_egreso = valor_producto * cantidad
                 
-                Egresos.crear_egreso_producto(mysql, custom_id_egreso, descripcion_egreso, cantidad, total_egreso, id_producto)
+                Egresos.crear_egreso_producto(mysql, custom_id_egreso, descripcion_egreso, cantidad, 0, id_producto)
                 Auditoria.log_audit(mysql, custom_id, 'egresos', custom_id_egreso, 'INSERT', id_administrador, f'Se crea egreso de inventario{custom_id_egreso}')
                 
                 nueva_cantidad = cantidad_producto-cantidad
@@ -76,18 +76,21 @@ class EgresosServices:
         if "user" not in session:
             return jsonify({'message': 'Unauthorized'}), 401
         try:
+            print('entra al end')
+            print(data)
             user_name = data.get('nombre_usuario')
-            user = User.get_user_by_username(mysql, user_name)
+            user = User.get_user_by_username(mysql, user_name)        
             id_administrador = user['id_administrador']
             descripcion_egreso = data.get('descripcionEgreso')
             cantidad = data.get('cantidadEgreso')
             total_egreso = data.get('valorEgreso')
             id_producto = data.get('idProducto')
+            id_egreso = data.get('idEgreso')
             cantidad = int(cantidad)
-            
-            id_egreso = Egresos.obtener_id_egreso(mysql, id_producto)
-            id_egreso = id_egreso['id_egreso']
+
             custom_id = Auditoria.generate_custom_id(mysql, 'AUD', 'id_auditoria', 'auditoria')
+            
+            
             
             if not id_producto:
                 Egresos.actualizar_egreso_general(mysql, id_egreso, descripcion_egreso, cantidad, total_egreso)

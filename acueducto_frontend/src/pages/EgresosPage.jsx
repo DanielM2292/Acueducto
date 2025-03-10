@@ -9,7 +9,8 @@ const EgresosPage = () => {
         descripcionEgreso: "",
         cantidadEgreso: "",
         valorEgreso: "",
-        idProducto: ""
+        idProducto: "",
+        idEgreso: null
     });
     const [egresos, setEgresos] = useState([]);
     const [filteredEgresos, setFilteredEgresos] = useState([]);
@@ -52,6 +53,7 @@ const EgresosPage = () => {
 
     const resetForm = () => {
         setFormData({
+            nombre_usuario: name,
             descripcionEgreso: "",
             cantidadEgreso: "",
             valorEgreso: "",
@@ -123,15 +125,17 @@ const EgresosPage = () => {
         }
     };
 
-    const handleEdit = (item) => {
+    const handleSelectEgreso = (egreso) => {
         setFormData({
             nombre_usuario: name,
-            descripcionEgreso: item.descripcion_egreso,
-            cantidadEgreso: item.cantidad,
-            valorEgreso: item.total_egreso,
-            idProducto: item.id_producto
+            idEgreso: egreso.id_egreso,
+            descripcionEgreso: egreso.descripcion_egreso,
+            cantidadEgreso: egreso.cantidad,
+            valorEgreso: egreso.total_egreso,
+            idProducto: egreso.id_producto
         });
-        setEditMode(true); // Activar el modo de edición
+        setEditMode(true);
+        setIsModalOpen(false);
     };
 
     const handleCloseModal = () => {
@@ -303,7 +307,7 @@ const EgresosPage = () => {
                                             <td>{new Date(item.fecha_egreso).toLocaleDateString()}</td>
                                             <td>{item.id_producto}</td>
                                             <td>
-                                                <button onClick={() => handleEdit(item)} className="edit-button">
+                                                <button onClick={() => handleSelectEgreso(item)} className="edit-button">
                                                     <FaEdit /> Editar
                                                 </button>
                                             </td>
