@@ -1,0 +1,53 @@
+services:
+  # Frontend: React con Vite
+  frontend:
+    build:
+      context: ./acueducto_frontend  # Ruta de la carpeta frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"  # Exponer el puerto 5173 en el contenedor
+    networks:
+      - app-network
+    depends_on:
+      - backend  # Asegurarse de que el backend esté levantado primero
+
+  # Backend: Flask con Python 3.12.6
+  backend:
+    build:
+      context: ./acueducto_backend
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"  # Asegúrate de que el puerto 9090 esté mapeado correctamente
+    networks:
+      - app-network
+    environment:
+      - FLASK_ENV=development
+      - MYSQL_HOST=database  # Cambié localhost por el nombre del servicio "database"
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=1004624494
+      - MYSQL_DB=acueducto_santander  # Nombre de la base de datos
+    volumes:
+      - ./acueducto_backend:/app  # Volumen para desarrollo en vivo (auto-recarga)
+    depends_on:
+      - database  # Asegúrate de que la base de datos esté levantada antes
+
+  # Base de datos: MySQL
+  database:
+    image: mysql:8.0  # O cualquier otra versión que necesites
+    environment:
+      MYSQL_ROOT_PASSWORD: 1004624494
+      MYSQL_DATABASE: acueducto_santander  # Nombre de la base de datos
+    ports:
+      - "3307:3306"  # Puerto de MySQL
+    networks:
+      - app-network
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./data:/docker-entrypoint-initdb.d # Volumen persistente para datos de MySQL
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:  # Volumen persistente para los datos de la base de datos

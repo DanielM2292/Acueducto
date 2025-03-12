@@ -65,7 +65,7 @@ class FacturasServices:
                                 "direccion": datos_cliente['direccion'],
                                 "numero_matricula": datos_cliente['numero_matricula'],
                                 "multas": datos_cliente['total_multas'],
-                                "observacion": "Factura generada automaticamente"
+                                "observacion": ""
                             }
                             facturas_generadas.append(factura_info)
                         else:

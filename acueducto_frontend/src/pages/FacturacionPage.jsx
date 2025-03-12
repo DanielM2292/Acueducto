@@ -356,201 +356,201 @@ const FacturacionPage = () => {
     };
 
     // Método mejorado para exportar múltiples facturas a PDF
-    const exportarFacturasPDF = async (facturasParaExportar) => {
-        try {
-            const pdf = new jsPDF();
-            let firstPage = true;
+    // Método mejorado para exportar múltiples facturas a PDF
+const exportarFacturasPDF = async (facturasParaExportar) => {
+    try {
+        const pdf = new jsPDF();
+        let firstPage = true;
 
-            // Crear un elemento oculto para renderizar cada factura
-            const hiddenDiv = document.createElement('div');
-            hiddenDiv.id = 'factura-temp';
-            hiddenDiv.style.position = 'absolute';
-            hiddenDiv.style.left = '-9999px';
-            document.body.appendChild(hiddenDiv);
+        // Crear un elemento oculto para renderizar cada factura
+        const hiddenDiv = document.createElement('div');
+        hiddenDiv.id = 'factura-temp';
+        hiddenDiv.style.position = 'absolute';
+        hiddenDiv.style.left = '-9999px';
+        document.body.appendChild(hiddenDiv);
 
-            for (let i = 0; i < facturasParaExportar.length; i++) {
-                const factura = facturasParaExportar[i];
-                console.log(factura); // Cambiado para mostrar la factura completa
+        for (let i = 0; i < facturasParaExportar.length; i++) {
+            const factura = facturasParaExportar[i];
+            console.log(factura); // Cambiado para mostrar la factura completa
 
-                // Renderizar la factura en el div oculto
-                hiddenDiv.innerHTML = `
-                <div id="factura-automatica-${i}" class="factura">
-                    <div class="factura-header">
-                        <div class="modal-content">
-                            <div class="factura-header">
-                                <div class="logo-section">
-                                    <img
-                                        src="${LogoAcueducto}"
-                                        alt="Logo Acueducto"
-                                        class="logo"
+            // Renderizar la factura en el div oculto
+            hiddenDiv.innerHTML = `
+            <div id="factura-automatica-${i}" class="factura" style="width: 210mm; height: 297mm;">
+                <div class="factura-header">
+                    <div class="modal-content">
+                        <div class="factura-header">
+                            <div class="logo-section">
+                                <img
+                                    src="${LogoAcueducto}"
+                                    alt="Logo Acueducto"
+                                    class="logo"
+                                />
+                                <div class="company-info">
+                                    <h2>JUNTA ADMINISTRA DE ACUEDUCTO Y ALCANTARILLADO</h2>
+                                    <p>NIT: 900.306.104-7</p>
+                                    <h3>AGUA PURA, VIDA SEGURA</h3>
+                                </div>
+                            </div>
+                            <div class="factura-numero">
+                                <p>${factura.id_factura}</p>
+                            </div>
+                        </div>
+                        <div class="cliente-info">
+                            <div class="info-group">
+                                <div class="input-group">
+                                    <label>IDENTIFICACIÓN:</label>
+                                    <input
+                                        type="text"
+                                        name="identificacion"
+                                        value="${factura.numero_documento || ''}"
+                                        readOnly
                                     />
-                                    <div class="company-info">
-                                        <h2>JUNTA ADMINISTRA DE ACUEDUCTO Y ALCANTARILLADO</h2>
-                                        <p>NIT: 900.306.104-7</p>
-                                        <h3>AGUA PURA, VIDA SEGURA</h3>
-                                    </div>
                                 </div>
-                                <div class="factura-numero">
-                                    <p>${factura.id_factura}</p>
+                                <div class="input-group">
+                                    <label>USUARIO:</label>
+                                    <input
+                                        type="text"
+                                        name="usuario"
+                                        value="${factura.nombre_cliente || ''}"
+                                        readOnly
+                                    />
                                 </div>
-                            </div>
-                            <div class="cliente-info">
-                                <div class="info-group">
-                                    <div class="input-group">
-                                        <label>IDENTIFICACIÓN:</label>
-                                        <input
-                                            type="text"
-                                            name="identificacion"
-                                            value="${factura.numero_documento || ''}"
-                                            readOnly
-                                        />
-                                    </div>
-                                    <div class="input-group">
-                                        <label>USUARIO:</label>
-                                        <input
-                                            type="text"
-                                            name="usuario"
-                                            value="${factura.nombre_cliente || ''}"
-                                            readOnly
-                                        />
-                                    </div>
-                                    <div class="input-group">
-                                        <label>FECHA INICIO DE COBRO:</label>
-                                        <input
-                                            type="date"
-                                            name="fechaInicioCobro"
-                                            value="${factura.fecha_inicio || ''}"
-                                            readOnly
-                                        />
-                                    </div>
-                                </div>
-                                <div class="info-group">
-                                    <div class="input-group">
-                                        <label>BARRIO:</label>
-                                        <input
-                                            type="text"
-                                            name="barrio"
-                                            value="${factura.direccion || ''}"
-                                            readOnly
-                                        />
-                                    </div>
-                                    <div class="input-group">
-                                        <label>MATRICULA N°</label>
-                                        <input
-                                            type="text"
-                                            name="MatriculaCliente"
-                                            value="${factura.numero_matricula || ''}"
-                                            readOnly
-                                        />
-                                    </div>
-                                    <div class="input-group">
-                                        <label>FECHA DE VENCIMIENTO:</label>
-                                        <input
-                                            type="date"
-                                            name="fechaVencimiento"
-                                            value="${factura.fecha_vencimiento || ''}"
-                                            readOnly
-                                        />
-                                    </div>
+                                <div class="input-group">
+                                    <label>FECHA INICIO DE COBRO:</label>
+                                    <input
+                                        type="date"
+                                        name="fechaInicioCobro"
+                                        value="${factura.fecha_inicio || ''}"
+                                        readOnly
+                                    />
                                 </div>
                             </div>
+                            <div class="info-group">
+                                <div class="input-group">
+                                    <label>BARRIO:</label>
+                                    <input
+                                        type="text"
+                                        name="barrio"
+                                        value="${factura.direccion || ''}"
+                                        readOnly
+                                    />
+                                </div>
+                                <div class="input-group">
+                                    <label>MATRICULA N°</label>
+                                    <input
+                                        type="text"
+                                        name="MatriculaCliente"
+                                        value="${factura.numero_matricula || ''}"
+                                        readOnly
+                                    />
+                                </div>
+                                <div class="input-group">
+                                    <label>FECHA DE VENCIMIENTO:</label>
+                                    <input
+                                        type="date"
+                                        name="fechaVencimiento"
+                                        value="${factura.fecha_vencimiento || ''}"
+                                        readOnly
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                            <div class="factura-tabla">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>DESCRIPCIÓN</th>
-                                            <th>PRECIO UNITARIO</th>
-                                            <th>TOTAL</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>PRECIO TARIFA ESTANDAR</td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    name="precioUnitario"
-                                                    value="${factura.valor_estandar || 0}"
-                                                    readOnly
-                                                />
-                                            </td>
-                                            <td>${formatCurrency(factura.valor_estandar || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>MULTAS</td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    name="multas"
-                                                    value="${factura.multas || 0}"
-                                                    readOnly
-                                                />
-                                            </td>
-                                            <td>${formatCurrency(factura.multas || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>SALDO PENDIENTE</td>
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    name="saldoPendiente"
-                                                    value="${factura.valor_pendiente || 0}"
-                                                    readOnly
-                                                />
-                                            </td>
-                                            <td>${formatCurrency(factura.valor_pendiente || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>OBSERVACIÓN</td>
-                                            <td colSpan="2">
-                                                <input
-                                                    type="text"
-                                                    name="observacion"
-                                                    value="${factura.observacion || ''}"
-                                                    readOnly
-                                                />
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colSpan="2">TOTAL A PAGAR</td>
-                                            <td>
-                                                ${formatCurrency((parseFloat(factura.valor_estandar || 0) +
+                        <div class="factura-tabla">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>DESCRIPCIÓN</th>
+                                        <th>PRECIO UNITARIO</th>
+                                        <th>TOTAL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>PRECIO TARIFA ESTANDAR</td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                name="precioUnitario"
+                                                value="${factura.valor_estandar || 0}"
+                                                readOnly
+                                            />
+                                        </td>
+                                        <td>${formatCurrency(factura.valor_estandar || 0)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>MULTAS</td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                name="multas"
+                                                value="${factura.multas || 0}"
+                                                readOnly
+                                            />
+                                        </td>
+                                        <td>${formatCurrency(factura.multas || 0)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>SALDO PENDIENTE</td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                name="saldoPendiente"
+                                                value="${factura.valor_pendiente || 0}"
+                                                readOnly
+                                            />
+                                        </td>
+                                        <td>${formatCurrency(factura.valor_pendiente || 0)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>OBSERVACIÓN</td>
+                                        <td colSpan="2">
+                                            <input
+                                                type="text"
+                                                name="observacion"
+                                                value="${factura.observacion || ''}"
+                                                readOnly
+                                            />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colSpan="2">TOTAL A PAGAR</td>
+                                        <td>
+                                            ${formatCurrency((parseFloat(factura.valor_estandar || 0) +
+                parseFloat(factura.multas || 0) + parseFloat(factura.valor_pendiente || 0)).toFixed(3))}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="comprobante">
+                            <h4>COMPROBANTE DE PAGO</h4>
+                            <div class="comprobante-grid">
+                                <div class="comprobante-item">
+                                    <p class="label">USUARIO</p>
+                                    <p class="value">${factura.nombre_cliente || '-'}</p>
+                                </div>
+                                <div class="comprobante-item">
+                                    <p class="label">IDENTIFICACIÓN</p>
+                                    <p class="value">${factura.numero_documento || '-'}</p>
+                                </div>
+                                <div class="comprobante-item">
+                                    <p class="label">BARRIO</p>
+                                    <p class="value">${factura.direccion || '-'}</p>
+                                </div>
+                                <div class="comprobante-item">
+                                    <p class="label">MATRICULA N°</p>
+                                    <p class="value">${factura.numero_matricula || '-'}</p>
+                                </div>
+                                <div class="comprobante-item">
+                                    <p class="label">TOTAL PAGADO</p>
+                                    <p class="value">
+                                    ${formatCurrency((parseFloat(factura.valor_estandar || 0) +
                     parseFloat(factura.multas || 0) + parseFloat(factura.valor_pendiente || 0)).toFixed(3))}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            <div class="comprobante">
-                                <h4>COMPROBANTE DE PAGO</h4>
-                                <div class="comprobante-grid">
-                                    <div class="comprobante-item">
-                                        <p class="label">USUARIO</p>
-                                        <p class="value">${factura.nombre_cliente || '-'}</p>
-                                    </div>
-                                    <div class="comprobante-item">
-                                        <p class="label">IDENTIFICACIÓN</p>
-                                        <p class="value">${factura.numero_documento || '-'}</p>
-                                    </div>
-                                    <div class="comprobante-item">
-                                        <p class="label">BARRIO</p>
-                                        <p class="value">${factura.direccion || '-'}</p>
-                                    </div>
-                                    <div class="comprobante-item">
-                                        <p class="label">MATRICULA N°</p>
-                                        <p class="value">${factura.numero_matricula || '-'}</p>
-                                    </div>
-                                    <div class="comprobante-item">
-                                        <p class="label">TOTAL PAGADO</p>
-                                        <p class="value">
-                                        ${formatCurrency((parseFloat(factura.valor_estandar || 0) +
-                        parseFloat(factura.multas || 0) + parseFloat(factura.valor_pendiente || 0)).toFixed(3))}
-                                        </p>
-                                    </div>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -558,47 +558,47 @@ const FacturacionPage = () => {
                 </div>
             `;
 
-                // Esperar un momento para que el DOM se actualice
-                await new Promise(resolve => setTimeout(resolve, 300));
+            // Esperar un momento para que el DOM se actualice
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-                const element = document.getElementById(`factura-automatica-${i}`);
-                if (!element) {
-                    console.error('Elemento de factura no encontrado');
-                    continue;
-                }
-
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    logging: false,
-                    useCORS: true
-                });
-
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const imgWidth = pdf.internal.pageSize.getWidth();
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                if (!firstPage) {
-                    pdf.addPage(); // Agregar una nueva página para cada factura
-                }
-                firstPage = false;
-
-                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            const element = document.getElementById(`factura-automatica-${i}`);
+            if (!element) {
+                console.error('Elemento de factura no encontrado');
+                continue;
             }
 
-            // Eliminar el div temporal
-            document.body.removeChild(hiddenDiv);
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                logging: false,
+                useCORS: true
+            });
 
-            // Guardar el PDF
-            const fecha = new Date();
-            const mes = fecha.toLocaleString('es-ES', { month: 'long' });
-            const año = fecha.getFullYear();
-            pdf.save(`facturas_automaticas_${mes}_${año}.pdf`);
-            toast.success('PDF generado exitosamente');
-        } catch (error) {
-            toast.error('Error al generar el PDF');
-            console.error('Error:', error);
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            const imgWidth = pdf.internal.pageSize.getWidth();
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            if (!firstPage) {
+                pdf.addPage(); // Agregar una nueva página para cada factura
+            }
+            firstPage = false;
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
         }
-    };
+
+        // Eliminar el div temporal
+        document.body.removeChild(hiddenDiv);
+
+        // Guardar el PDF
+        const fecha = new Date();
+        const mes = fecha.toLocaleString('es-ES', { month: 'long' });
+        const año = fecha.getFullYear();
+        pdf.save(`facturas_automaticas_${mes}_${año}.pdf`);
+        toast.success('PDF generado exitosamente');
+    } catch (error) {
+        toast.error('Error al generar el PDF');
+        console.error('Error:', error);
+    }
+};
 
     const obtenerFacturas = async () => {
         try {
@@ -911,9 +911,10 @@ const FacturacionPage = () => {
                             </div>
                             <div className="comprobante-item">
                                 <p className="label">TOTAL PAGADO</p>
-                                <p className="value">{formatCurrency((parseFloat(facturaData.precioUnitario || 0) +
-                                    parseFloat(facturaData.multas || 0) +
-                                    parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}</p>
+                                <p className="value"> {formatCurrency(((parseFloat(facturaData.lecturaActual || 0) - parseFloat(facturaData.lecturaAnterior || 0))
+                                            * parseFloat(facturaData.precioUnitario || 0) +
+                                            parseFloat(facturaData.multas || 0) +
+                                            parseFloat(facturaData.saldoPendiente || 0)).toFixed(2))}</p>
                             </div>
                         </div>
                     </div>
